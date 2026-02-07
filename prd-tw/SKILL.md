@@ -1,7 +1,7 @@
 ---
 name: prd-tw
 description: Help non-technical stakeholders write clear requirements documents. Translates business needs into structured specs with user goals, workflows, and success criteria. No technical jargon. Output in Taiwan Traditional Chinese. Use when boss/PM/stakeholder wants to define what a feature should do without specifying how.
-license: Proprietary
+license: MIT
 ---
 
 # Prd TW Skill

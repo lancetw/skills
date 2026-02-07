@@ -98,4 +98,4 @@ npx skills remove -g learn-tw
 
 ## License
 
-Proprietary
+MIT
