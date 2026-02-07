@@ -1,7 +1,7 @@
 ---
 name: learn-tw
 description: Generate a personalized learning document (FOR[yourname].md) that explains a project in plain, engaging Taiwan Traditional Chinese. Covers technical architecture, codebase structure, technologies, design decisions, and lessons learned. Use when user wants to understand a codebase deeply or create project documentation for learning purposes.
-license: Proprietary
+license: MIT
 ---
 
 # Learn TW Skill
