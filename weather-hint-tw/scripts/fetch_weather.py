@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """天氣提醒 — 取得資料 + 格式化輸出，零暫存。"""
-import base64, json, os, sys, time as _time, unicodedata
+import json, os, sys, time as _time, unicodedata
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen, Request
@@ -431,7 +431,8 @@ def main():
         result = {'cities': results}
 
     payload = json.dumps(result, ensure_ascii=False)
-    print(base64.b64encode(payload.encode()).decode())
+    print('\n\n')
+    print(payload)
 
 
 if __name__ == '__main__':
