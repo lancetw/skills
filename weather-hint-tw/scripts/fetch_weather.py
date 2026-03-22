@@ -66,9 +66,15 @@ def get_weather_emoji(code):
     return EMOJI.get(code, '🌤️')
 
 
-def main():
-    # === Step 1: 位置 ===
-    city_override = os.environ.get('WEATHER_CITY', '') or (sys.argv[1] if len(sys.argv) > 1 else '')
+def parse_cities(argv, env_val):
+    """解析城市列表。env 優先於 argv"""
+    if env_val:
+        return [c.strip() for c in env_val.split(',') if c.strip()]
+    return list(argv) if argv else []
+
+
+def fetch_single_city(city_override=''):
+    """取得單一城市天氣，回傳 output dict（不 print）"""
     lat, lon, city = '', '', ''
 
     if city_override:
@@ -197,7 +203,7 @@ def main():
                     days.append(f'{dt}({week}) {tag}')
                     break
 
-    # === 全部輸出為一行 JSON（避免 CLI 劇透）===
+    # === 輸出 dict ===
     output = {
         'card': {
             'city': f'{w_emoji} {city_tw}',
@@ -220,7 +226,25 @@ def main():
     }
     if alerts:
         output['card']['alert'] = f'😷 {"  ".join(alerts)}'
-    print('\n\n\n' + json.dumps(output, ensure_ascii=False))
+    return output
+
+
+def main():
+    env_city = os.environ.get('WEATHER_CITY', '')
+    argv_cities = sys.argv[1:]
+    cities = parse_cities(argv_cities, env_city)
+
+    if len(cities) <= 1:
+        # 單城市：向後相容
+        city_override = cities[0] if cities else ''
+        result = fetch_single_city(city_override)
+        print('\n\n\n' + json.dumps(result, ensure_ascii=False))
+    else:
+        # 多城市
+        results = []
+        for c in cities:
+            results.append(fetch_single_city(c))
+        print('\n\n\n' + json.dumps({'cities': results}, ensure_ascii=False))
 
 
 if __name__ == '__main__':

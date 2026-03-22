@@ -105,5 +105,32 @@ class TestForecast(unittest.TestCase):
         self.assertEqual(result, [])
 
 
+class TestMultiCity(unittest.TestCase):
+    def test_parse_cities_from_argv(self):
+        result = fw.parse_cities(['台北', '高雄'], '')
+        self.assertEqual(result, ['台北', '高雄'])
+
+    def test_parse_cities_from_env(self):
+        result = fw.parse_cities([], '台北,高雄,新竹')
+        self.assertEqual(result, ['台北', '高雄', '新竹'])
+
+    def test_parse_cities_env_with_spaces(self):
+        result = fw.parse_cities([], ' 台北 , 高雄 ')
+        self.assertEqual(result, ['台北', '高雄'])
+
+    def test_parse_cities_single(self):
+        result = fw.parse_cities(['台中'], '')
+        self.assertEqual(result, ['台中'])
+
+    def test_parse_cities_empty(self):
+        result = fw.parse_cities([], '')
+        self.assertEqual(result, [])
+
+    def test_parse_cities_env_overrides_argv(self):
+        """環境變數優先"""
+        result = fw.parse_cities(['台北'], '高雄')
+        self.assertEqual(result, ['高雄'])
+
+
 if __name__ == '__main__':
     unittest.main()
