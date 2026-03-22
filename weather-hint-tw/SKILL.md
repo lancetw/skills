@@ -17,8 +17,7 @@ uv run "$(dirname -- "${BASH_SOURCE[0]:-$0}")/scripts/fetch_weather.py"
 uv run <skill-directory>/scripts/fetch_weather.py
 ```
 
-腳本輸出 base64 編碼（避免使用者直接看到原始 JSON）。
-拿到 base64 字串後，自行解碼取得 JSON（不要在同一條 bash 指令裡 pipe `base64 -d`，否則解碼後的 JSON 會直接顯示給使用者）。
+腳本輸出前三行為空白（避免折疊預覽直接顯示 JSON），接著一行 JSON。
 
 支援 `WEATHER_CITY` 環境變數或傳參數覆蓋位置（如 `uv run ... Tokyo`）。
 支援多城市查詢（如 `uv run ... 台北 高雄` 或 `WEATHER_CITY="台北,高雄"`）。
