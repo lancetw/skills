@@ -70,6 +70,7 @@ uv run <skill-directory>/scripts/fetch_weather.py
 
 規則：
 - 第一句用 `▶` 開頭（像 RPG 對話指標）
+- 如果從 CLAUDE.md、AGENTS.md 或對話上下文知道使用者的名字，在第一句自然地帶入
 - 後續段落縮排兩格，不加 `▶`
 - 3-5 句，每 1-2 句換一行
 
