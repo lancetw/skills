@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from urllib.error import URLError
-from datetime import datetime
+from datetime import datetime, timedelta
 import importlib.util, os, sys
 
 # import module without executing main()
@@ -312,6 +312,70 @@ class TestComputeHints(unittest.TestCase):
         self.assertEqual(h['temp_range'], 0)
         self.assertEqual(h['feel_diff'], 0)
         self.assertEqual(h['tomorrow_trend'], '差不多')
+
+
+class TestTomorrowTempHints(unittest.TestCase):
+    """明天各時段溫度 hints"""
+
+    def _make_hourly(self, today='2026-03-22'):
+        """建構跨今晚到明天下午的逐時溫度資料"""
+        tomorrow = (datetime.strptime(today, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+        times, temps = [], []
+        # 今晚 20:00-23:00
+        for h in range(20, 24):
+            times.append(f'{today}T{h:02d}:00')
+            temps.append(18.0)
+        # 明天 00:00-17:00
+        tm_temps = {
+            0: 17, 1: 16.5, 2: 16, 3: 15.5, 4: 15, 5: 15.5,
+            6: 16, 7: 18, 8: 20, 9: 22, 10: 24, 11: 26,
+            12: 28, 13: 29, 14: 28, 15: 27, 16: 25, 17: 23,
+        }
+        for h in range(18):
+            times.append(f'{tomorrow}T{h:02d}:00')
+            temps.append(tm_temps[h])
+        return {'time': times, 'temperature_2m': temps}
+
+    def test_peak_temp_period(self):
+        h = fw.compute_hints('2026-03-22T20:00', 20, 21, 28, 18, 27, '', [])
+        self.assertEqual(h['peak_temp_period'], '中午')
+
+    def test_tomorrow_morning_temp(self):
+        hourly = self._make_hourly()
+        h = fw.compute_hints('2026-03-22T20:00', 20, 21, 28, 18, 27, '', [],
+                             hourly_data=hourly)
+        # morning = avg(7:18, 8:20, 9:22) = 20
+        self.assertEqual(h['tomorrow_morning_temp'], 20)
+
+    def test_tomorrow_noon_temp(self):
+        hourly = self._make_hourly()
+        h = fw.compute_hints('2026-03-22T20:00', 20, 21, 28, 18, 27, '', [],
+                             hourly_data=hourly)
+        # noon = avg(12:28, 13:29, 14:28) = 28.33 → 28
+        self.assertEqual(h['tomorrow_noon_temp'], 28)
+
+    def test_no_hourly_data_returns_none(self):
+        h = fw.compute_hints('2026-03-22T20:00', 20, 21, 28, 18, 27, '', [])
+        self.assertIsNone(h['tomorrow_morning_temp'])
+        self.assertIsNone(h['tomorrow_noon_temp'])
+
+    def test_partial_hourly_morning_only(self):
+        """只有早上資料，沒有中午"""
+        times = ['2026-03-23T07:00', '2026-03-23T08:00', '2026-03-23T09:00']
+        temps = [19, 21, 23]
+        hourly = {'time': times, 'temperature_2m': temps}
+        h = fw.compute_hints('2026-03-22T20:00', 20, 21, 28, 18, 27, '', [],
+                             hourly_data=hourly)
+        self.assertEqual(h['tomorrow_morning_temp'], 21)  # avg(19,21,23)
+        self.assertIsNone(h['tomorrow_noon_temp'])
+
+    def test_bad_time_str_with_hourly(self):
+        """time_str 壞掉 → tomorrow 算不出來 → None"""
+        hourly = self._make_hourly()
+        h = fw.compute_hints('bad', 20, 21, 28, 18, 27, '', [],
+                             hourly_data=hourly)
+        self.assertIsNone(h['tomorrow_morning_temp'])
+        self.assertIsNone(h['tomorrow_noon_temp'])
 
 
 if __name__ == '__main__':
