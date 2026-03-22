@@ -50,6 +50,17 @@ def fetch(url, retries=2, delay=1):
                 print(f'[warn] failed: {url[:60]}… ({e})', file=sys.stderr)
     return {}
 
+
+def geocode_nominatim(query):
+    """Nominatim fallback — 支援中文區/鄉/鎮名（南港區、霧台鄉…）"""
+    q = quote(f'{query},台灣')
+    url = f'https://nominatim.openstreetmap.org/search?q={q}&format=json&limit=1&countrycodes=tw'
+    data = fetch(url)
+    if isinstance(data, list) and data:
+        return str(data[0].get('lat', '')), str(data[0].get('lon', ''))
+    return '', ''
+
+
 def ri(v):
     try: return str(round(float(v)))
     except: return '?'
@@ -159,6 +170,11 @@ def fetch_single_city(city_override=''):
         if results:
             lat = str(results[0].get('latitude', ''))
             lon = str(results[0].get('longitude', ''))
+        # Open-Meteo 查不到 → Nominatim fallback（區/鄉/鎮名）
+        if not lat or not lon:
+            lat, lon = geocode_nominatim(city_display or city)
+        if not lat or not lon:
+            print(f'[error] 找不到「{city_display or city}」的位置資料', file=sys.stderr)
         if lat and lon:
             with ThreadPoolExecutor(max_workers=2) as pool:
                 wf = pool.submit(fetch, f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,uv_index&hourly=precipitation_probability,weather_code&forecast_hours=6&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset&forecast_days=7&timezone=auto')
