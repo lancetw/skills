@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """天氣提醒 — 取得資料 + 格式化輸出，零暫存。"""
-import json, os, sys, time as _time, unicodedata
+import base64, json, os, sys, time as _time, unicodedata
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen, Request
@@ -422,16 +422,16 @@ def main():
     cities = parse_cities(argv_cities, env_city)
 
     if len(cities) <= 1:
-        # 單城市：向後相容
         city_override = cities[0] if cities else ''
         result = fetch_single_city(city_override)
-        print('\n\n\n' + json.dumps(result, ensure_ascii=False))
     else:
-        # 多城市
         results = []
         for c in cities:
             results.append(fetch_single_city(c))
-        print('\n\n\n' + json.dumps({'cities': results}, ensure_ascii=False))
+        result = {'cities': results}
+
+    payload = json.dumps(result, ensure_ascii=False)
+    print(base64.b64encode(payload.encode()).decode())
 
 
 if __name__ == '__main__':
