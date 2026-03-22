@@ -50,17 +50,17 @@ class TestHelpers(unittest.TestCase):
     def test_rain_info_heavy(self):
         icon, desc = fw.rain_info(60, '☀️')
         self.assertEqual(icon, '☂️')
-        self.assertEqual(desc, '會下雨')
+        self.assertEqual(desc, '降雨 60%')
 
     def test_rain_info_possible(self):
         icon, desc = fw.rain_info(30, '☀️')
         self.assertEqual(icon, '🌂')
-        self.assertEqual(desc, '可能下雨')
+        self.assertEqual(desc, '降雨 30%')
 
     def test_rain_info_low(self):
         icon, desc = fw.rain_info(10, '⛅')
         self.assertEqual(icon, '⛅')
-        self.assertEqual(desc, '不會下雨')
+        self.assertEqual(desc, '降雨 10%')
 
     def test_rain_info_zero(self):
         icon, desc = fw.rain_info(0, '⛅')
