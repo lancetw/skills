@@ -141,8 +141,8 @@ class TestHolidays(unittest.TestCase):
             {'date': '20260323', 'isHoliday': False, 'week': '一', 'description': ''},
         ]
         result = fw.parse_holidays(holidays, now)
-        self.assertEqual(result[0], '20260322(日) holiday')
-        self.assertEqual(result[1], '20260323(一) workday')
+        self.assertEqual(result[0], '今天 週日 放假')
+        self.assertEqual(result[1], '明天 週一 上班')
 
     def test_parse_holidays_with_name(self):
         now = datetime(2026, 6, 25)
@@ -150,7 +150,15 @@ class TestHolidays(unittest.TestCase):
             {'date': '20260625', 'isHoliday': True, 'week': '四', 'description': '端午節'},
         ]
         result = fw.parse_holidays(holidays, now)
-        self.assertIn('端午節', result[0])
+        self.assertEqual(result[0], '今天 週四 端午節(放假)')
+
+    def test_parse_holidays_makeup_workday(self):
+        now = datetime(2026, 6, 20)
+        holidays = [
+            {'date': '20260620', 'isHoliday': False, 'week': '六', 'description': '補行上班日'},
+        ]
+        result = fw.parse_holidays(holidays, now)
+        self.assertEqual(result[0], '今天 週六 補行上班日(上班)')
 
     def test_parse_holidays_empty(self):
         result = fw.parse_holidays([], datetime(2026, 1, 1))
@@ -159,6 +167,100 @@ class TestHolidays(unittest.TestCase):
     def test_parse_holidays_not_list(self):
         result = fw.parse_holidays({}, datetime(2026, 1, 1))
         self.assertEqual(result, [])
+
+
+class TestComputeHints(unittest.TestCase):
+    def test_period_morning(self):
+        h = fw.compute_hints('2026-03-22T08:30', 20, 21, 28, 18, 27, '', [])
+        self.assertEqual(h['period'], '早上')
+
+    def test_period_evening(self):
+        h = fw.compute_hints('2026-03-22T18:30', 20, 21, 28, 18, 27, '', [])
+        self.assertEqual(h['period'], '傍晚')
+
+    def test_period_late_night(self):
+        h = fw.compute_hints('2026-03-22T23:00', 20, 21, 28, 18, 27, '', [])
+        self.assertEqual(h['period'], '深夜')
+
+    def test_period_early_morning(self):
+        h = fw.compute_hints('2026-03-22T03:00', 20, 21, 28, 18, 27, '', [])
+        self.assertEqual(h['period'], '深夜')
+
+    def test_period_all_slots(self):
+        cases = [
+            ('04:00', '深夜'), ('05:30', '清晨'), ('07:30', '早上'),
+            ('10:00', '上午'), ('13:00', '中午'), ('15:00', '下午'),
+            ('18:00', '傍晚'), ('20:00', '晚上'), ('23:00', '深夜'),
+        ]
+        for time_part, expected in cases:
+            h = fw.compute_hints(f'2026-03-22T{time_part}', 20, 21, 28, 18, 27, '', [])
+            self.assertEqual(h['period'], expected, f'{time_part} should be {expected}')
+
+    def test_temp_range(self):
+        h = fw.compute_hints('2026-03-22T12:00', 20, 21, 30, 18, 27, '', [])
+        self.assertEqual(h['temp_range'], 12.0)
+
+    def test_feel_diff_hotter(self):
+        h = fw.compute_hints('2026-03-22T12:00', 20, 25, 28, 18, 27, '', [])
+        self.assertEqual(h['feel_diff'], 5.0)
+
+    def test_feel_diff_colder(self):
+        h = fw.compute_hints('2026-03-22T12:00', 20, 17, 28, 18, 27, '', [])
+        self.assertEqual(h['feel_diff'], -3.0)
+
+    def test_rain_soon_true(self):
+        hourly = '18:00:10% 19:00:50% 20:00:60% 21:00:30% 22:00:0% 23:00:0%'
+        h = fw.compute_hints('2026-03-22T18:00', 20, 21, 28, 18, 27, hourly, [])
+        self.assertTrue(h['rain_soon'])
+
+    def test_rain_soon_false(self):
+        hourly = '18:00:0% 19:00:10% 20:00:5% 21:00:0% 22:00:0% 23:00:0%'
+        h = fw.compute_hints('2026-03-22T18:00', 20, 21, 28, 18, 27, hourly, [])
+        self.assertFalse(h['rain_soon'])
+
+    def test_tomorrow_trend_warming(self):
+        h = fw.compute_hints('2026-03-22T12:00', 20, 21, 25, 18, 30, '', [])
+        self.assertEqual(h['tomorrow_trend'], '明顯升溫')
+
+    def test_tomorrow_trend_cooling(self):
+        h = fw.compute_hints('2026-03-22T12:00', 20, 21, 30, 18, 25, '', [])
+        self.assertEqual(h['tomorrow_trend'], '明顯降溫')
+
+    def test_tomorrow_trend_stable(self):
+        h = fw.compute_hints('2026-03-22T12:00', 20, 21, 28, 18, 27, '', [])
+        self.assertEqual(h['tomorrow_trend'], '差不多')
+
+    def test_forecast_change_rain(self):
+        forecast = [
+            {'day': '03/25(三)', 'max': 28, 'min': 18, 'rain': 70, 'code': 61},
+            {'day': '03/26(四)', 'max': 27, 'min': 17, 'rain': 10, 'code': 2},
+        ]
+        h = fw.compute_hints('2026-03-22T12:00', 20, 21, 28, 18, 27, '', forecast)
+        self.assertIn('03/25(三) 有雨', h['forecast_change'])
+
+    def test_forecast_change_cold(self):
+        forecast = [
+            {'day': '03/26(四)', 'max': 20, 'min': 10, 'rain': 0, 'code': 2},
+        ]
+        h = fw.compute_hints('2026-03-22T12:00', 20, 21, 28, 18, 27, '', forecast)
+        self.assertIn('03/26(四) 轉涼', h['forecast_change'])
+
+    def test_forecast_change_none(self):
+        forecast = [
+            {'day': '03/25(三)', 'max': 28, 'min': 18, 'rain': 10, 'code': 2},
+        ]
+        h = fw.compute_hints('2026-03-22T12:00', 20, 21, 28, 18, 27, '', forecast)
+        self.assertIsNone(h['forecast_change'])
+
+    def test_invalid_time(self):
+        h = fw.compute_hints('bad', 20, 21, 28, 18, 27, '', [])
+        self.assertEqual(h['period'], '中午')  # fallback hour=12
+
+    def test_invalid_temps(self):
+        h = fw.compute_hints('2026-03-22T12:00', '?', '?', '?', '?', '?', '', [])
+        self.assertEqual(h['temp_range'], 0)
+        self.assertEqual(h['feel_diff'], 0)
+        self.assertEqual(h['tomorrow_trend'], '差不多')
 
 
 if __name__ == '__main__':

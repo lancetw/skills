@@ -102,11 +102,81 @@ def get_weather_emoji(code):
     return EMOJI.get(code, '🌤️')
 
 
+def compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast):
+    """預先計算 AI 回應用的衍生提示，減少 AI 推理負擔"""
+    hints = {}
+
+    # 時段
+    try:
+        hour = int(time_str.split('T')[1][:2])
+    except Exception:
+        hour = 12
+    periods = [
+        (5, '清晨'), (7, '早上'), (9, '上午'), (12, '中午'),
+        (14, '下午'), (17, '傍晚'), (19, '晚上'), (22, '深夜'),
+    ]
+    hints['period'] = '深夜'
+    for start, name in periods:
+        if hour < start:
+            break
+        hints['period'] = name
+
+    # 今日溫差
+    try:
+        hints['temp_range'] = round(float(t_max) - float(t_min), 1)
+    except Exception:
+        hints['temp_range'] = 0
+
+    # 體感差異（正=體感更熱，負=體感更冷）
+    try:
+        hints['feel_diff'] = round(float(feel) - float(temp), 1)
+    except Exception:
+        hints['feel_diff'] = 0
+
+    # 未來 6 小時會不會下雨（任一小時 ≥30%）
+    try:
+        probs = [int(e.split(':')[-1].replace('%', '')) for e in hourly_str.split()]
+        hints['rain_soon'] = any(p >= 30 for p in probs)
+    except Exception:
+        hints['rain_soon'] = False
+
+    # 明天趨勢
+    try:
+        diff = float(tm_max) - float(t_max)
+        if diff >= 3:
+            hints['tomorrow_trend'] = '明顯升溫'
+        elif diff <= -3:
+            hints['tomorrow_trend'] = '明顯降溫'
+        else:
+            hints['tomorrow_trend'] = '差不多'
+    except Exception:
+        hints['tomorrow_trend'] = '差不多'
+
+    # 未來幾天劇變（供判斷是否帶出多天預報）
+    changes = []
+    if isinstance(forecast, list):
+        for day in forecast:
+            rain = day.get('rain', 0)
+            if isinstance(rain, (int, float)) and rain >= 50:
+                changes.append(f'{day.get("day", "?")} 有雨')
+            try:
+                if float(day.get('min', 20)) <= float(t_min) - 5:
+                    changes.append(f'{day.get("day", "?")} 轉涼')
+                elif float(day.get('max', 25)) >= float(t_max) + 5:
+                    changes.append(f'{day.get("day", "?")} 變熱')
+            except Exception:
+                pass
+    hints['forecast_change'] = changes if changes else None
+
+    return hints
+
+
 def parse_holidays(holidays, now):
     """解析未來 3 天假日資訊"""
     days = []
     if not isinstance(holidays, list):
         return days
+    labels = ['今天', '明天', '後天']
     for i in range(3):
         dt = (now + timedelta(days=i)).strftime('%Y%m%d')
         for hol in holidays:
@@ -114,8 +184,11 @@ def parse_holidays(holidays, now):
                 desc = hol.get('description', '')
                 is_h = hol.get('isHoliday', False)
                 week = hol.get('week', '?')
-                tag = desc if desc else ('holiday' if is_h else 'workday')
-                days.append(f'{dt}({week}) {tag}')
+                status = '放假' if is_h else '上班'
+                if desc:
+                    days.append(f'{labels[i]} 週{week} {desc}({status})')
+                else:
+                    days.append(f'{labels[i]} 週{week} {status}')
                 break
     return days
 
@@ -260,6 +333,13 @@ def fetch_single_city(city_override=''):
     holidays = data.get('holiday', [])
     days = parse_holidays(holidays, datetime.now())
 
+    # === 逐時字串（供 hints 用）===
+    hourly_str = ' '.join(hourly)
+
+    # === 預算提示 ===
+    forecast_data = build_forecast(dy)
+    hints = compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast_data)
+
     # === 輸出 dict ===
     output = {
         'card': {
@@ -273,12 +353,13 @@ def fetch_single_city(city_override=''):
             'city': city_tw, 'time': time_str,
             'temp': temp, 'feel': feel, 'hum': hum, 'code': code,
             'wind': wind, 'uv': uv,
-            'hourly': ' '.join(hourly),
+            'hourly': hourly_str,
             'today': f'max{t_max}/min{t_min} sunset{sunset_s}',
             'tomorrow': f'max{tm_max}/min{tm_min} rain{tm_rain}%',
             'aqi': aqi_val, 'pm25': pm25,
             'days': days,
-            'forecast': build_forecast(dy),
+            'forecast': forecast_data,
+            'hints': hints,
         }
     }
     if alerts:
