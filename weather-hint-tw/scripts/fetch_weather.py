@@ -66,8 +66,10 @@ def ri(v):
     except: return '?'
 
 def rain_info(pct, weather_emoji):
-    if pct > 0:
-        return '☂️', '可能下雨'
+    if pct >= 60:
+        return '☂️', '會下雨'
+    if pct >= 30:
+        return '🌂', '可能下雨'
     return weather_emoji, '不會下雨'
 
 def build_forecast(daily, start=2, end=7):
