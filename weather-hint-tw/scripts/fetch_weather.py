@@ -151,7 +151,7 @@ def render_card(display):
     result.append(SEP)
     for line in lines[1:]:
         result.append(f'{BAR} {line}')
-    return '\n'.join(result)
+    return result
 
 
 def compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast, hourly_data=None):
