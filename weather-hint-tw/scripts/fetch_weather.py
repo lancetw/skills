@@ -157,7 +157,7 @@ def render_card(display):
     return '\n'.join(result)
 
 
-def compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast):
+def compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast, hourly_data=None):
     """預先計算 AI 回應用的衍生提示，減少 AI 推理負擔"""
     hints = {}
 
@@ -223,6 +223,30 @@ def compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, foreca
                 pass
     hints['forecast_change'] = changes if changes else None
 
+    # 最高溫時段（台灣氣象常識：中午～下午 1 點）
+    hints['peak_temp_period'] = '中午'
+
+    # 明天各時段溫度（從逐時資料算出）
+    hints['tomorrow_morning_temp'] = None  # 07-09 平均
+    hints['tomorrow_noon_temp'] = None     # 12-14 平均
+    if hourly_data and 'time' in hourly_data and 'temperature_2m' in hourly_data:
+        try:
+            today = time_str.split('T')[0]
+            tomorrow = (datetime.strptime(today, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+            tm_temps = {}
+            for t, v in zip(hourly_data['time'], hourly_data['temperature_2m']):
+                if t.startswith(tomorrow):
+                    h = int(t.split('T')[1][:2])
+                    tm_temps[h] = v
+            morning = [tm_temps[h] for h in (7, 8, 9) if h in tm_temps]
+            if morning:
+                hints['tomorrow_morning_temp'] = round(sum(morning) / len(morning))
+            noon = [tm_temps[h] for h in (12, 13, 14) if h in tm_temps]
+            if noon:
+                hints['tomorrow_noon_temp'] = round(sum(noon) / len(noon))
+        except Exception:
+            pass
+
     return hints
 
 
@@ -285,7 +309,7 @@ def fetch_single_city(city_override=''):
         'holiday': f'https://cdn.jsdelivr.net/gh/ruyut/TaiwanCalendar/data/{year}.json',
     }
     if lat and lon:
-        urls['weather'] = f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,uv_index&hourly=precipitation_probability,weather_code&forecast_hours=6&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset&forecast_days=7&timezone=auto'
+        urls['weather'] = f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,uv_index&hourly=precipitation_probability,weather_code,temperature_2m&forecast_hours=42&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset&forecast_days=7&timezone=auto'
         urls['aqi'] = f'https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm2_5,pm10,us_aqi&timezone=auto'
 
     with ThreadPoolExecutor(max_workers=4) as pool:
@@ -305,7 +329,7 @@ def fetch_single_city(city_override=''):
             print(f'[error] 找不到「{city_display or city}」的位置資料', file=sys.stderr)
         if lat and lon:
             with ThreadPoolExecutor(max_workers=2) as pool:
-                wf = pool.submit(fetch, f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,uv_index&hourly=precipitation_probability,weather_code&forecast_hours=6&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset&forecast_days=7&timezone=auto')
+                wf = pool.submit(fetch, f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,uv_index&hourly=precipitation_probability,weather_code,temperature_2m&forecast_hours=42&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset&forecast_days=7&timezone=auto')
                 af = pool.submit(fetch, f'https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm2_5,pm10,us_aqi&timezone=auto')
                 data['weather'] = wf.result()
                 data['aqi'] = af.result()
@@ -393,7 +417,9 @@ def fetch_single_city(city_override=''):
 
     # === 預算提示 ===
     forecast_data = build_forecast(dy)
-    hints = compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast_data)
+    hourly_temps_data = {'time': times, 'temperature_2m': h.get('temperature_2m', [])}
+    hints = compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast_data,
+                          hourly_data=hourly_temps_data)
 
     # === 輸出 dict ===
     output = {

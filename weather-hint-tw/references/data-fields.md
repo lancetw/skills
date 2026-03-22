@@ -72,6 +72,9 @@
 | `rain_soon` | bool | 未來 6 小時任一時段降雨 ≥30% | true → 帶傘提醒 |
 | `tomorrow_trend` | string | 明顯升溫 / 明顯降溫 / 差不多 | 不是「差不多」就帶一句 |
 | `forecast_change` | list\|null | 未來劇變天（有雨/轉涼/變熱） | 有值 → 帶出多天預報；null → 不提 |
+| `peak_temp_period` | string | 最高溫時段（固定「中午」） | 描述最高溫何時出現，用這個而不是自己猜 |
+| `tomorrow_morning_temp` | number\|null | 明天 07-09 時平均溫度（°C） | 提供明早出門穿搭建議 |
+| `tomorrow_noon_temp` | number\|null | 明天 12-14 時平均溫度（°C） | 描述明天最熱的時候幾度 |
 
 ## 多城市格式
 
