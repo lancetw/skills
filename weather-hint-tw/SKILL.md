@@ -27,7 +27,7 @@ uv run <skill-directory>/scripts/fetch_weather.py
 
 1. 跑腳本取得 JSON
 2. **讀 `references/prompt-guide.md`**（語氣、時段、台灣用語）
-3. 逐行輸出 `display.rendered`（是陣列，每個元素一行，不要放進 code block）
+3. 用 `display` 欄位組卡片（格式見下方「狀態面板」）
 4. 根據 `data` + prompt-guide 寫對話框
 5. 穿搭：參考 `references/outfit-guide.md`，自然融入聊天
 6. 多天預報：只在連假/天氣劇變時帶出（不要每次都報）
@@ -37,8 +37,20 @@ uv run <skill-directory>/scripts/fetch_weather.py
 
 ### 狀態面板
 
-`display.rendered` 是陣列，每個元素是卡片的一行。**逐行輸出，每行獨立一行，不要放進 code block**。
-多城市時，每個城市的 `rendered` 各輸出一張，中間空一行。
+從 `display` 欄位逐行組合，每行用 `▎ ` 開頭。**不要放進 code block**，直接寫在回應裡。
+
+格式（每行獨立輸出）：
+
+▎ {display.地點}
+▎ ──────────────────
+▎ {display.溫度}
+▎ {display.天氣}
+▎ {display.今日}
+▎ {display.明日}
+▎ {display.提醒}
+
+- `提醒` 不一定存在，有才輸出
+- 多城市時，每張卡片中間空一行
 
 ### 對話框
 

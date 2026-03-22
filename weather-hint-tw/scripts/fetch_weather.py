@@ -137,21 +137,6 @@ def visual_width(s):
     return sum(_char_width(c) for c in s)
 
 
-def render_card(display):
-    """將 display dict 渲染成左側色條卡片（無對齊依賴）"""
-    keys = ['地點', '溫度', '天氣', '今日', '明日', '提醒']
-    lines = [display[k] for k in keys if k in display]
-    if not lines:
-        return ''
-
-    BAR = '▎'
-    SEP = f'{BAR} ──────────────────'
-    result = []
-    result.append(f'{BAR} {lines[0]}')
-    result.append(SEP)
-    for line in lines[1:]:
-        result.append(f'{BAR} {line}')
-    return result
 
 
 def compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast, hourly_data=None):
@@ -424,8 +409,8 @@ def fetch_single_city(city_override=''):
             '地點': f'{w_emoji} {city_tw}',
             '溫度': f'{ri(temp)}°C（體感 {ri(feel)}°C）',
             '天氣': f'💧 {"  ".join(line2_parts)}',
-            '今日': f'{t_icon} {ri(t_max)}°~{ri(t_min)}°  {t_rain_desc}',
-            '明日': f'{tm_icon} {ri(tm_max)}°~{ri(tm_min)}°  {tm_rain_desc}',
+            '今日': f'{t_icon} {ri(t_max)}°～{ri(t_min)}°  {t_rain_desc}',
+            '明日': f'{tm_icon} {ri(tm_max)}°～{ri(tm_min)}°  {tm_rain_desc}',
         },
         'data': {
             'city': city_tw, 'time': time_str,
@@ -443,7 +428,6 @@ def fetch_single_city(city_override=''):
     }
     if alerts:
         output['display']['提醒'] = f'😷 {"  ".join(alerts)}'
-    output['display']['rendered'] = render_card(output['display'])
     return output
 
 
