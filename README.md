@@ -9,6 +9,7 @@ Taiwan Traditional Chinese (繁體中文) skills for AI coding agents.
 | [learn-tw](learn-tw/SKILL.md) | Generate personalized learning docs in Taiwan Chinese |
 | [prd-tw](prd-tw/SKILL.md) | Help stakeholders write requirements documents in Taiwan Chinese |
 | [humanizer-zh-tw](humanizer-zh-tw/SKILL.md) | Remove AI-generated traces from Chinese text |
+| [weather-hint-tw](weather-hint-tw/SKILL.md) | Friendly weather reminders in Taiwan Chinese with outfit advice |
 
 See each skill's `SKILL.md` for details.
 
