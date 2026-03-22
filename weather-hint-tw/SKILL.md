@@ -25,7 +25,7 @@ uv run <skill-directory>/scripts/fetch_weather.py
 
 1. 跑腳本取得 JSON
 2. **讀 `references/prompt-guide.md`**（語氣、時段、台灣用語）
-3. 用 `card` 的值組成 code block 卡片（每個欄位一行）
+3. 用 `display` 的值組成 code block（每個欄位一行）
 4. 根據 `data` + prompt-guide 寫 3-5 句友善聊天
 5. 穿搭：參考 `references/outfit-guide.md`，自然融入聊天
 6. 多天預報：只在連假/天氣劇變時帶出（不要每次都報）

@@ -346,7 +346,7 @@ def fetch_single_city(city_override=''):
 
     # === 輸出 dict ===
     output = {
-        'card': {
+        'display': {
             '地點': f'{w_emoji} {city_tw}',
             '溫度': f'{ri(temp)}°C（體感 {ri(feel)}°C）',
             '天氣': f'💧 {"  ".join(line2_parts)}',
@@ -355,11 +355,12 @@ def fetch_single_city(city_override=''):
         },
         'data': {
             'city': city_tw, 'time': time_str,
-            'temp': temp, 'feel': feel, 'hum': hum, 'code': code,
+            'temp': temp, 'feel': feel, 'hum': hum,
             'wind': wind, 'uv': uv,
             'hourly': hourly_str,
-            'today': f'max{t_max}/min{t_min} sunset{sunset_s}',
-            'tomorrow': f'max{tm_max}/min{tm_min} rain{tm_rain}%',
+            'today_high': t_max, 'today_low': t_min, 'today_rain': t_rain,
+            'sunrise': sunrise_s, 'sunset': sunset_s,
+            'tomorrow_high': tm_max, 'tomorrow_low': tm_min, 'tomorrow_rain': tm_rain,
             'aqi': aqi_val, 'pm25': pm25,
             'days': days,
             'forecast': forecast_data,
@@ -367,7 +368,7 @@ def fetch_single_city(city_override=''):
         }
     }
     if alerts:
-        output['card']['提醒'] = f'😷 {"  ".join(alerts)}'
+        output['display']['提醒'] = f'😷 {"  ".join(alerts)}'
     return output
 
 
