@@ -8,13 +8,13 @@ description: 查詢即時天氣，用友善同事的語氣提醒。自動偵測 
 ## 查詢天氣
 
 ```bash
-uv run "$(dirname -- "${BASH_SOURCE[0]:-$0}")/scripts/fetch-weather.py"
+uv run "$(dirname -- "${BASH_SOURCE[0]:-$0}")/scripts/fetch_weather.py"
 ```
 
 如果上面的相對路徑不行，用 skill 安裝路徑：
 
 ```bash
-uv run <skill-directory>/scripts/fetch-weather.py
+uv run <skill-directory>/scripts/fetch_weather.py
 ```
 
 支援 `WEATHER_CITY` 環境變數或傳參數覆蓋位置（如 `uv run ... Tokyo`）。
