@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """天氣提醒 — 取得資料 + 格式化輸出，零暫存。"""
-import json, os, sys, time as _time, unicodedata
+import json, os, random, sys, time as _time, unicodedata
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen, Request
@@ -35,6 +35,14 @@ TW_CITY_MAP = {
 
 EMOJI = {0:'☀️',1:'🌤️',2:'⛅',3:'⛅',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',
          61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'🌨️',80:'🌧️',81:'🌧️',82:'🌧️',95:'⛈️'}
+
+_SAGE_PREFIX = ['告知', '解答', '確認', '受理', '解析開始']
+_SAGE_ACTION = [
+    '氣象情報解析中', '取得天候資料中', '收集氣象情報',
+    '天候情報檢索中', '環境資訊解析中', '存取氣象資料庫',
+    '啟動技能『天氣預報』', '氣象數據讀取中',
+]
+
 
 def fetch(url, retries=2, delay=1):
     for attempt in range(retries):
@@ -430,13 +438,10 @@ def main():
             results.append(fetch_single_city(c))
         result = {'cities': results}
 
-    payload = json.dumps(result, ensure_ascii=False)
-    print('⏳ 正在讀取天氣資料...')
-    print('▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱  25%')
-    print('▰▰▰▰▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱  50%')
-    print('▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▱▱▱▱▱  75%')
-    print('▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰ 100%')
-    print(payload)
+    print('\n')
+    print(f'⏳ {random.choice(_SAGE_PREFIX)}。{random.choice(_SAGE_ACTION)}...')
+    print('\n')
+    print(json.dumps(result, ensure_ascii=False))
 
 
 if __name__ == '__main__':
