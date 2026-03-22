@@ -34,5 +34,44 @@ class TestFetch(unittest.TestCase):
         self.assertEqual(result, {})
 
 
+class TestHelpers(unittest.TestCase):
+    def test_ri_normal(self):
+        self.assertEqual(fw.ri(24.6), '25')
+        self.assertEqual(fw.ri(24.4), '24')
+
+    def test_ri_string(self):
+        self.assertEqual(fw.ri('18.7'), '19')
+
+    def test_ri_invalid(self):
+        self.assertEqual(fw.ri('?'), '?')
+        self.assertEqual(fw.ri(None), '?')
+
+    def test_rain_info_with_rain(self):
+        icon, desc = fw.rain_info(30, '☀️')
+        self.assertEqual(icon, '☂️')
+        self.assertEqual(desc, '可能下雨')
+
+    def test_rain_info_no_rain(self):
+        icon, desc = fw.rain_info(0, '⛅')
+        self.assertEqual(icon, '⛅')
+        self.assertEqual(desc, '不會下雨')
+
+    def test_get_wind_desc(self):
+        self.assertEqual(fw.get_wind_desc(0), '無風')
+        self.assertEqual(fw.get_wind_desc(14.9), '無風')
+        self.assertEqual(fw.get_wind_desc(15), '微風')
+        self.assertEqual(fw.get_wind_desc(29.9), '微風')
+        self.assertEqual(fw.get_wind_desc(30), '風大')
+        self.assertEqual(fw.get_wind_desc(50), '風大')
+
+    def test_get_weather_emoji_known(self):
+        self.assertEqual(fw.get_weather_emoji(0), '☀️')
+        self.assertEqual(fw.get_weather_emoji(61), '🌧️')
+        self.assertEqual(fw.get_weather_emoji(95), '⛈️')
+
+    def test_get_weather_emoji_unknown(self):
+        self.assertEqual(fw.get_weather_emoji(999), '🌤️')
+
+
 if __name__ == '__main__':
     unittest.main()
