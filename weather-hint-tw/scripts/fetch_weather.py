@@ -5,8 +5,33 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen, Request
 from urllib.error import URLError
+from urllib.parse import quote
 
 TIMEOUT = int(os.environ.get('WEATHER_TIMEOUT', '5'))
+
+# 台灣城市中文 → 英文（Open-Meteo geocoding 不支援中文搜尋）
+TW_CITY_MAP = {
+    '台北': 'Taipei', '臺北': 'Taipei', '台北市': 'Taipei', '臺北市': 'Taipei',
+    '新北': 'New Taipei', '新北市': 'New Taipei',
+    '桃園': 'Taoyuan', '桃園市': 'Taoyuan',
+    '台中': 'Taichung', '臺中': 'Taichung', '台中市': 'Taichung', '臺中市': 'Taichung',
+    '台南': 'Tainan', '臺南': 'Tainan', '台南市': 'Tainan', '臺南市': 'Tainan',
+    '高雄': 'Kaohsiung', '高雄市': 'Kaohsiung',
+    '基隆': 'Keelung', '基隆市': 'Keelung',
+    '新竹': 'Hsinchu', '新竹市': 'Hsinchu', '新竹縣': 'Hsinchu County',
+    '苗栗': 'Miaoli', '苗栗縣': 'Miaoli',
+    '彰化': 'Changhua', '彰化縣': 'Changhua',
+    '南投': 'Nantou', '南投縣': 'Nantou',
+    '雲林': 'Yunlin', '雲林縣': 'Yunlin',
+    '嘉義': 'Chiayi', '嘉義市': 'Chiayi', '嘉義縣': 'Chiayi County',
+    '屏東': 'Pingtung', '屏東縣': 'Pingtung',
+    '宜蘭': 'Yilan', '宜蘭縣': 'Yilan',
+    '花蓮': 'Hualien', '花蓮縣': 'Hualien',
+    '台東': 'Taitung', '臺東': 'Taitung', '台東縣': 'Taitung', '臺東縣': 'Taitung',
+    '澎湖': 'Penghu', '澎湖縣': 'Penghu',
+    '金門': 'Kinmen', '金門縣': 'Kinmen',
+    '連江': 'Lienchiang', '連江縣': 'Lienchiang', '馬祖': 'Matsu',
+}
 
 EMOJI = {0:'☀️',1:'🌤️',2:'⛅',3:'⛅',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',
          61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'🌨️',80:'🌧️',81:'🌧️',82:'🌧️',95:'⛈️'}
@@ -94,9 +119,12 @@ def parse_cities(argv, env_val):
 def fetch_single_city(city_override=''):
     """取得單一城市天氣，回傳 output dict（不 print）"""
     lat, lon, city = '', '', ''
+    city_display = ''  # 使用者輸入的原始名稱
 
     if city_override:
-        city = city_override
+        city_display = city_override
+        # 中文城市名 → 英文（geocoding API 不支援中文）
+        city = TW_CITY_MAP.get(city_override, city_override)
     else:
         geo = fetch('https://get.geojs.io/v1/ip/geo.json')
         city = geo.get('city', '')
@@ -114,7 +142,7 @@ def fetch_single_city(city_override=''):
     # === Step 2: 並行 API ===
     year = datetime.now().strftime('%Y')
     urls = {
-        'geo': f'https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&language=zh-TW',
+        'geo': f'https://geocoding-api.open-meteo.com/v1/search?name={quote(city)}&count=1&language=zh-TW',
         'holiday': f'https://cdn.jsdelivr.net/gh/ruyut/TaiwanCalendar/data/{year}.json',
     }
     if lat and lon:
@@ -140,7 +168,14 @@ def fetch_single_city(city_override=''):
 
     # === 解析 ===
     r = data.get('geo', {}).get('results', [{}])[0]
-    city_tw = r.get('admin2', r.get('name', city)).replace('臺', '台')
+    # name 和 admin2 哪個是中文不一定，自動挑含中文字的
+    geo_name = r.get('admin2', '') or r.get('name', '') or city
+    for _f in ('admin2', 'name'):
+        _v = r.get(_f, '')
+        if _v and any('\u4e00' <= c <= '\u9fff' for c in _v):
+            geo_name = _v
+            break
+    city_tw = (city_display or geo_name).replace('臺', '台')
 
     c = data.get('weather', {}).get('current', {})
     temp = c.get('temperature_2m', '?')
