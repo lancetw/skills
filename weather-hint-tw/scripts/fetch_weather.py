@@ -44,7 +44,7 @@ _SAGE_ACTION = [
 ]
 
 
-def fetch(url, retries=2, delay=1):
+def fetch(url, retries=3, delay=2):
     for attempt in range(retries):
         try:
             req = Request(url, headers={'User-Agent': 'weather-hint-tw/1.0'})
@@ -52,8 +52,9 @@ def fetch(url, retries=2, delay=1):
                 return json.loads(r.read())
         except (URLError, ValueError) as e:
             if attempt < retries - 1:
-                print(f'[warn] retry {attempt+1}: {url[:60]}…', file=sys.stderr)
-                _time.sleep(delay)
+                wait = delay * (attempt + 1)
+                print(f'[warn] retry {attempt+1}: {url[:60]}… ({wait}s)', file=sys.stderr)
+                _time.sleep(wait)
             else:
                 print(f'[warn] failed: {url[:60]}… ({e})', file=sys.stderr)
     return {}
