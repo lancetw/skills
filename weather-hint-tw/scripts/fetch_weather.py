@@ -137,23 +137,19 @@ def visual_width(s):
 
 
 def render_card(display):
-    """將 display dict 渲染成 RPG 風格卡片（含右邊框）"""
+    """將 display dict 渲染成左側色條卡片（無對齊依賴）"""
     keys = ['地點', '溫度', '天氣', '今日', '明日', '提醒']
     lines = [display[k] for k in keys if k in display]
     if not lines:
         return ''
-    widths = [visual_width(line) for line in lines]
-    max_w = max(widths)
 
+    BAR = '▎'
+    SEP = f'{BAR} ──────────────────'
     result = []
-    # Header: ╔═ {title} ═══...╗
-    title_w = widths[0]
-    result.append(f'╔═ {lines[0]} {"═" * (max_w - title_w)}╗')
-    # Content: ║ {line}   ...║
-    for line, w in zip(lines[1:], widths[1:]):
-        result.append(f'║ {line}{" " * (max_w - w + 2)}║')
-    # Footer: ╚═══...╝
-    result.append(f'╚{"═" * (max_w + 3)}╝')
+    result.append(f'{BAR} {lines[0]}')
+    result.append(SEP)
+    for line in lines[1:]:
+        result.append(f'{BAR} {line}')
     return '\n'.join(result)
 
 
