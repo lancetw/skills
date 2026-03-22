@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
 """天氣提醒 — 取得資料 + 格式化輸出，零暫存。"""
-import json, os, sys
+import json, os, sys, time as _time
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen, Request
 from urllib.error import URLError
 
-TIMEOUT = 5
+TIMEOUT = int(os.environ.get('WEATHER_TIMEOUT', '5'))
 
 EMOJI = {0:'☀️',1:'🌤️',2:'⛅',3:'⛅',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',
          61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'🌨️',80:'🌧️',81:'🌧️',82:'🌧️',95:'⛈️'}
 
-def fetch(url):
-    try:
-        req = Request(url, headers={'User-Agent': 'weather-hint-tw/1.0'})
-        with urlopen(req, timeout=TIMEOUT) as r:
-            return json.loads(r.read())
-    except:
-        return {}
+def fetch(url, retries=2, delay=1):
+    for attempt in range(retries):
+        try:
+            req = Request(url, headers={'User-Agent': 'weather-hint-tw/1.0'})
+            with urlopen(req, timeout=TIMEOUT) as r:
+                return json.loads(r.read())
+        except (URLError, TimeoutError, ValueError) as e:
+            if attempt < retries - 1:
+                _time.sleep(delay)
+                print(f'[warn] retry {attempt+1}: {url[:60]}…', file=sys.stderr)
+            else:
+                print(f'[warn] failed: {url[:60]}… ({e})', file=sys.stderr)
+    return {}
 
 def ri(v):
     try: return str(round(float(v)))
