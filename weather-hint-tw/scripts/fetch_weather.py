@@ -34,6 +34,27 @@ def rain_info(pct, weather_emoji):
         return '☂️', '可能下雨'
     return weather_emoji, '不會下雨'
 
+def build_forecast(daily, start=2, end=7):
+    """後天到第 7 天的每日摘要"""
+    WEEKDAYS = '一二三四五六日'
+    result = []
+    times = daily.get('time', [])
+    maxs = daily.get('temperature_2m_max', [])
+    mins = daily.get('temperature_2m_min', [])
+    rains = daily.get('precipitation_probability_max', [])
+    codes = daily.get('weather_code', [])
+    for i in range(start, min(end, len(times))):
+        dt = datetime.strptime(times[i], '%Y-%m-%d')
+        result.append({
+            'day': f'{dt.strftime("%m/%d")}({WEEKDAYS[dt.weekday()]})',
+            'max': maxs[i] if i < len(maxs) else '?',
+            'min': mins[i] if i < len(mins) else '?',
+            'rain': rains[i] if i < len(rains) else 0,
+            'code': codes[i] if i < len(codes) else 0,
+        })
+    return result
+
+
 def get_wind_desc(wind):
     """風況描述"""
     if wind >= 30: return '風大'
@@ -73,7 +94,7 @@ def main():
         'holiday': f'https://cdn.jsdelivr.net/gh/ruyut/TaiwanCalendar/data/{year}.json',
     }
     if lat and lon:
-        urls['weather'] = f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,uv_index&hourly=precipitation_probability,weather_code&forecast_hours=6&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset&forecast_days=2&timezone=auto'
+        urls['weather'] = f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,uv_index&hourly=precipitation_probability,weather_code&forecast_hours=6&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset&forecast_days=7&timezone=auto'
         urls['aqi'] = f'https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm2_5,pm10,us_aqi&timezone=auto'
 
     with ThreadPoolExecutor(max_workers=4) as pool:
@@ -88,7 +109,7 @@ def main():
             lon = str(results[0].get('longitude', ''))
         if lat and lon:
             with ThreadPoolExecutor(max_workers=2) as pool:
-                wf = pool.submit(fetch, f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,uv_index&hourly=precipitation_probability,weather_code&forecast_hours=6&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset&forecast_days=2&timezone=auto')
+                wf = pool.submit(fetch, f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,precipitation,uv_index&hourly=precipitation_probability,weather_code&forecast_hours=6&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset&forecast_days=7&timezone=auto')
                 af = pool.submit(fetch, f'https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm2_5,pm10,us_aqi&timezone=auto')
                 data['weather'] = wf.result()
                 data['aqi'] = af.result()
@@ -194,6 +215,7 @@ def main():
             'tomorrow': f'max{tm_max}/min{tm_min} rain{tm_rain}%',
             'aqi': aqi_val, 'pm25': pm25,
             'days': days,
+            'forecast': build_forecast(dy),
         }
     }
     if alerts:
