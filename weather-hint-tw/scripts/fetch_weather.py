@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """天氣提醒 — 取得資料 + 格式化輸出，零暫存。"""
-import json, os, sys, time as _time
+import json, os, sys, time as _time, unicodedata
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen, Request
@@ -104,6 +104,49 @@ def get_wind_desc(wind):
 def get_weather_emoji(code):
     """天氣代碼 → emoji"""
     return EMOJI.get(code, '🌤️')
+
+
+def _char_width(c):
+    """單一字元在 terminal 的顯示寬度"""
+    cp = ord(c)
+    # Zero-width: variation selectors, ZWJ, skin tone modifiers
+    if cp in (0xFE0E, 0xFE0F, 0x200D) or 0x1F3FB <= cp <= 0x1F3FF:
+        return 0
+    # Emoji (U+1F000+) — 大部分 terminal 渲染為 2 cells
+    if cp >= 0x1F000:
+        return 2
+    # Misc symbols 常見 emoji（☀⛅☂⛈…）
+    if 0x2600 <= cp <= 0x27BF or 0x2300 <= cp <= 0x23FF:
+        return 2
+    # CJK & fullwidth
+    eaw = unicodedata.east_asian_width(c)
+    return 2 if eaw in ('F', 'W') else 1
+
+
+def visual_width(s):
+    """字串在 terminal 的顯示寬度"""
+    return sum(_char_width(c) for c in s)
+
+
+def render_card(display):
+    """將 display dict 渲染成 RPG 風格卡片（含右邊框）"""
+    keys = ['地點', '溫度', '天氣', '今日', '明日', '提醒']
+    lines = [display[k] for k in keys if k in display]
+    if not lines:
+        return ''
+    widths = [visual_width(line) for line in lines]
+    max_w = max(widths)
+
+    result = []
+    # Header: ╔═ {title} ═══...╗
+    title_w = widths[0]
+    result.append(f'╔═ {lines[0]} {"═" * (max_w - title_w)}╗')
+    # Content: ║ {line}   ...║
+    for line, w in zip(lines[1:], widths[1:]):
+        result.append(f'║ {line}{" " * (max_w - w + 2)}║')
+    # Footer: ╚═══...╝
+    result.append(f'╚{"═" * (max_w + 3)}╝')
+    return '\n'.join(result)
 
 
 def compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast):
@@ -369,6 +412,7 @@ def fetch_single_city(city_override=''):
     }
     if alerts:
         output['display']['提醒'] = f'😷 {"  ".join(alerts)}'
+    output['display']['rendered'] = render_card(output['display'])
     return output
 
 
