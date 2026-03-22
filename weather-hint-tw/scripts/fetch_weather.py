@@ -66,6 +66,24 @@ def get_weather_emoji(code):
     return EMOJI.get(code, '🌤️')
 
 
+def parse_holidays(holidays, now):
+    """解析未來 3 天假日資訊"""
+    days = []
+    if not isinstance(holidays, list):
+        return days
+    for i in range(3):
+        dt = (now + timedelta(days=i)).strftime('%Y%m%d')
+        for hol in holidays:
+            if hol.get('date') == dt:
+                desc = hol.get('description', '')
+                is_h = hol.get('isHoliday', False)
+                week = hol.get('week', '?')
+                tag = desc if desc else ('holiday' if is_h else 'workday')
+                days.append(f'{dt}({week}) {tag}')
+                break
+    return days
+
+
 def parse_cities(argv, env_val):
     """解析城市列表。env 優先於 argv"""
     if env_val:
@@ -189,19 +207,7 @@ def fetch_single_city(city_override=''):
 
     # === 假日 ===
     holidays = data.get('holiday', [])
-    days = []
-    if isinstance(holidays, list):
-        now = datetime.now()
-        for i in range(3):
-            dt = (now + timedelta(days=i)).strftime('%Y%m%d')
-            for hol in holidays:
-                if hol.get('date') == dt:
-                    desc = hol.get('description', '')
-                    is_h = hol.get('isHoliday', False)
-                    week = hol.get('week', '?')
-                    tag = desc if desc else ('holiday' if is_h else 'workday')
-                    days.append(f'{dt}({week}) {tag}')
-                    break
+    days = parse_holidays(holidays, datetime.now())
 
     # === 輸出 dict ===
     output = {
