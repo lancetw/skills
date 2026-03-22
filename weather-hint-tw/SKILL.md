@@ -37,10 +37,12 @@ uv run <skill-directory>/scripts/fetch_weather.py
 
 ### 狀態面板
 
-從 `display` 欄位逐行組合，每行用 `▎ ` 開頭。**不要放進 code block**，直接寫在回應裡。
+從 `display` 欄位逐行組合，每行用 `▎ ` 開頭。**放進 code block（triple backticks）** 確保換行。
 
-格式（每行獨立輸出）：
+格式（用 code block 包起來）：
 
+````
+```
 ▎ {display.地點}
 ▎ ──────────────────
 ▎ {display.溫度}
@@ -48,9 +50,11 @@ uv run <skill-directory>/scripts/fetch_weather.py
 ▎ {display.今日}
 ▎ {display.明日}
 ▎ {display.提醒}
+```
+````
 
 - `提醒` 不一定存在，有才輸出
-- 多城市時，每張卡片中間空一行
+- 多城市時，每張卡片放在同一個 code block 裡，中間空一行
 
 ### 對話框
 
