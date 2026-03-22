@@ -431,7 +431,11 @@ def main():
         result = {'cities': results}
 
     payload = json.dumps(result, ensure_ascii=False)
-    print('\n\n')
+    print('⏳ 正在讀取天氣資料...')
+    print('▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱  25%')
+    print('▰▰▰▰▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱  50%')
+    print('▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▱▱▱▱▱  75%')
+    print('▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰ 100%')
     print(payload)
 
 
