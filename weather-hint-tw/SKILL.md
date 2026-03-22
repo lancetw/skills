@@ -27,7 +27,7 @@ uv run <skill-directory>/scripts/fetch_weather.py
 
 1. 跑腳本取得 JSON
 2. **讀 `references/prompt-guide.md`**（語氣、時段、台灣用語）
-3. 直接輸出 `display.rendered`（Python 已渲染好的 RPG 卡片）
+3. 逐行輸出 `display.rendered`（是陣列，每個元素一行，不要放進 code block）
 4. 根據 `data` + prompt-guide 寫對話框
 5. 穿搭：參考 `references/outfit-guide.md`，自然融入聊天
 6. 多天預報：只在連假/天氣劇變時帶出（不要每次都報）
@@ -37,7 +37,7 @@ uv run <skill-directory>/scripts/fetch_weather.py
 
 ### 狀態面板
 
-`display.rendered` 是 Python 預先渲染好的卡片字串，**直接輸出，不要修改**。
+`display.rendered` 是陣列，每個元素是卡片的一行。**逐行輸出，每行獨立一行，不要放進 code block**。
 多城市時，每個城市的 `rendered` 各輸出一張，中間空一行。
 
 ### 對話框
