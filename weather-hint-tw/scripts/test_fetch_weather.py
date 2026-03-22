@@ -3,6 +3,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from urllib.error import URLError
+from datetime import datetime
 import importlib.util, os, sys
 
 # import module without executing main()
@@ -130,6 +131,34 @@ class TestMultiCity(unittest.TestCase):
         """環境變數優先"""
         result = fw.parse_cities(['台北'], '高雄')
         self.assertEqual(result, ['高雄'])
+
+
+class TestHolidays(unittest.TestCase):
+    def test_parse_holidays_normal(self):
+        now = datetime(2026, 3, 22)
+        holidays = [
+            {'date': '20260322', 'isHoliday': True, 'week': '日', 'description': ''},
+            {'date': '20260323', 'isHoliday': False, 'week': '一', 'description': ''},
+        ]
+        result = fw.parse_holidays(holidays, now)
+        self.assertEqual(result[0], '20260322(日) holiday')
+        self.assertEqual(result[1], '20260323(一) workday')
+
+    def test_parse_holidays_with_name(self):
+        now = datetime(2026, 6, 25)
+        holidays = [
+            {'date': '20260625', 'isHoliday': True, 'week': '四', 'description': '端午節'},
+        ]
+        result = fw.parse_holidays(holidays, now)
+        self.assertIn('端午節', result[0])
+
+    def test_parse_holidays_empty(self):
+        result = fw.parse_holidays([], datetime(2026, 1, 1))
+        self.assertEqual(result, [])
+
+    def test_parse_holidays_not_list(self):
+        result = fw.parse_holidays({}, datetime(2026, 1, 1))
+        self.assertEqual(result, [])
 
 
 if __name__ == '__main__':
