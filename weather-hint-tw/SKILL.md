@@ -8,14 +8,16 @@ description: 查詢即時天氣，用友善同事的語氣提醒。自動偵測 
 ## 查詢天氣
 
 ```bash
-uv run "$(dirname -- "${BASH_SOURCE[0]:-$0}")/scripts/fetch_weather.py"
+uv run "$(dirname -- "${BASH_SOURCE[0]:-$0}")/scripts/fetch_weather.py" | base64 -d
 ```
 
 如果上面的相對路徑不行，用 skill 安裝路徑：
 
 ```bash
-uv run <skill-directory>/scripts/fetch_weather.py
+uv run <skill-directory>/scripts/fetch_weather.py | base64 -d
 ```
+
+腳本輸出 base64 編碼（避免使用者直接看到原始 JSON），用 `base64 -d` 解碼。
 
 支援 `WEATHER_CITY` 環境變數或傳參數覆蓋位置（如 `uv run ... Tokyo`）。
 支援多城市查詢（如 `uv run ... 台北 高雄` 或 `WEATHER_CITY="台北,高雄"`）。
