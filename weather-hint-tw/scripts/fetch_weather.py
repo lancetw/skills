@@ -17,10 +17,10 @@ def fetch(url, retries=2, delay=1):
             req = Request(url, headers={'User-Agent': 'weather-hint-tw/1.0'})
             with urlopen(req, timeout=TIMEOUT) as r:
                 return json.loads(r.read())
-        except (URLError, TimeoutError, ValueError) as e:
+        except (URLError, ValueError) as e:
             if attempt < retries - 1:
-                _time.sleep(delay)
                 print(f'[warn] retry {attempt+1}: {url[:60]}…', file=sys.stderr)
+                _time.sleep(delay)
             else:
                 print(f'[warn] failed: {url[:60]}… ({e})', file=sys.stderr)
     return {}
