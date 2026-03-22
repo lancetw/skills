@@ -67,9 +67,11 @@ def ri(v):
 
 def rain_info(pct, weather_emoji):
     if pct >= 60:
-        return '☂️', '會下雨'
+        return '☂️', f'降雨 {pct}%'
     if pct >= 30:
-        return '🌂', '可能下雨'
+        return '🌂', f'降雨 {pct}%'
+    if pct > 0:
+        return weather_emoji, f'降雨 {pct}%'
     return weather_emoji, '不會下雨'
 
 def build_forecast(daily, start=2, end=7):
@@ -345,11 +347,11 @@ def fetch_single_city(city_override=''):
     # === 輸出 dict ===
     output = {
         'card': {
-            'city': f'{w_emoji} {city_tw}',
-            'temp': f'{ri(temp)}°C（體感 {ri(feel)}°C）',
-            'detail': f'💧 {"  ".join(line2_parts)}',
-            'today': f'{t_icon} 今日 {ri(t_max)}°~{ri(t_min)}°  {t_rain_desc}',
-            'tomorrow': f'{tm_icon} 明日 {ri(tm_max)}°~{ri(tm_min)}°  {tm_rain_desc}',
+            '地點': f'{w_emoji} {city_tw}',
+            '溫度': f'{ri(temp)}°C（體感 {ri(feel)}°C）',
+            '天氣': f'💧 {"  ".join(line2_parts)}',
+            '今日': f'{t_icon} {ri(t_max)}°~{ri(t_min)}°  {t_rain_desc}',
+            '明日': f'{tm_icon} {ri(tm_max)}°~{ri(tm_min)}°  {tm_rain_desc}',
         },
         'data': {
             'city': city_tw, 'time': time_str,
@@ -365,7 +367,7 @@ def fetch_single_city(city_override=''):
         }
     }
     if alerts:
-        output['card']['alert'] = f'😷 {"  ".join(alerts)}'
+        output['card']['提醒'] = f'😷 {"  ".join(alerts)}'
     return output
 
 
