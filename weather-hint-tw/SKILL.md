@@ -17,7 +17,7 @@ uv run "$(dirname -- "${BASH_SOURCE[0]:-$0}")/scripts/fetch_weather.py"
 uv run <skill-directory>/scripts/fetch_weather.py
 ```
 
-腳本輸出前三行為空白（避免折疊預覽直接顯示 JSON），接著一行 JSON。
+腳本先輸出 RPG 風格的讀取進度條（折疊預覽只會看到「⏳ 正在讀取天氣資料...」），最後一行才是 JSON。
 
 支援 `WEATHER_CITY` 環境變數或傳參數覆蓋位置（如 `uv run ... Tokyo`）。
 支援多城市查詢（如 `uv run ... 台北 高雄` 或 `WEATHER_CITY="台北,高雄"`）。
