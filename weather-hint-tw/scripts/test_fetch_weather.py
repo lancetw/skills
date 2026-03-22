@@ -75,6 +75,47 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(fw.get_wind_desc(30), '風大')
         self.assertEqual(fw.get_wind_desc(50), '風大')
 
+    def test_visual_width_ascii(self):
+        self.assertEqual(fw.visual_width('hello'), 5)
+
+    def test_visual_width_cjk(self):
+        self.assertEqual(fw.visual_width('台中市'), 6)
+
+    def test_visual_width_mixed(self):
+        # ASCII + CJK
+        self.assertEqual(fw.visual_width('21°C'), 4)
+
+    def test_visual_width_emoji(self):
+        # ☀ (U+2600) = 2, ️ (FE0F) = 0
+        w = fw.visual_width('☀️')
+        self.assertEqual(w, 2)
+
+    def test_render_card_has_borders(self):
+        display = {
+            '地點': '☀️ 台中市',
+            '溫度': '21°C（體感 22°C）',
+            '天氣': '💧 濕度 78%  無風',
+            '今日': '⛅ 28°~18°  不會下雨',
+            '明日': '🌫️ 27°~18°  不會下雨',
+        }
+        card = fw.render_card(display)
+        lines = card.split('\n')
+        self.assertTrue(lines[0].startswith('╔'))
+        self.assertTrue(lines[0].endswith('╗'))
+        self.assertTrue(lines[1].startswith('║'))
+        self.assertTrue(lines[1].endswith('║'))
+        self.assertTrue(lines[-1].startswith('╚'))
+        self.assertTrue(lines[-1].endswith('╝'))
+
+    def test_render_card_with_alert(self):
+        display = {
+            '地點': '☀️ 台中市',
+            '溫度': '21°C',
+            '提醒': '😷 空氣不太好',
+        }
+        card = fw.render_card(display)
+        self.assertIn('😷', card)
+
     def test_get_weather_emoji_known(self):
         self.assertEqual(fw.get_weather_emoji(0), '☀️')
         self.assertEqual(fw.get_weather_emoji(61), '🌧️')
