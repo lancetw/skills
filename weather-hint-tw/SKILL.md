@@ -61,7 +61,7 @@ uv run <skill-directory>/scripts/fetch_weather.py
 聊天文字用 `▶` 開頭，自然分段：
 
 ```
-▶ lancetw，週日晚上了，吃飽沒？
+▶ 週日晚上了，吃飽沒？
 
   外面涼涼的，散步不錯。
   空氣霧霧的，口罩帶著吧。
