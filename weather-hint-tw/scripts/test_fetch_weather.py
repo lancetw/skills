@@ -73,5 +73,37 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(fw.get_weather_emoji(999), '🌤️')
 
 
+class TestForecast(unittest.TestCase):
+    def test_build_forecast_normal(self):
+        daily = {
+            'time': ['2026-03-22','2026-03-23','2026-03-24','2026-03-25',
+                     '2026-03-26','2026-03-27','2026-03-28'],
+            'temperature_2m_max': [28, 27, 26, 25, 24, 23, 22],
+            'temperature_2m_min': [18, 17, 16, 15, 14, 13, 12],
+            'precipitation_probability_max': [0, 10, 20, 30, 40, 50, 60],
+            'weather_code': [0, 1, 2, 3, 61, 63, 95],
+        }
+        result = fw.build_forecast(daily)
+        self.assertEqual(len(result), 5)  # day 2-6 (後天~第7天)
+        self.assertEqual(result[0]['day'], '03/24(二)')
+        self.assertEqual(result[0]['max'], 26)
+        self.assertEqual(result[0]['rain'], 20)
+
+    def test_build_forecast_short_data(self):
+        daily = {
+            'time': ['2026-03-22', '2026-03-23'],
+            'temperature_2m_max': [28, 27],
+            'temperature_2m_min': [18, 17],
+            'precipitation_probability_max': [0, 10],
+            'weather_code': [0, 1],
+        }
+        result = fw.build_forecast(daily)
+        self.assertEqual(len(result), 0)  # 不夠天數 → 空
+
+    def test_build_forecast_empty(self):
+        result = fw.build_forecast({})
+        self.assertEqual(result, [])
+
+
 if __name__ == '__main__':
     unittest.main()
