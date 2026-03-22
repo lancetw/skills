@@ -95,7 +95,7 @@ def build_forecast(daily, start=2, end=7):
     for i in range(start, min(end, len(times))):
         dt = datetime.strptime(times[i], '%Y-%m-%d')
         result.append({
-            'day': f'{dt.strftime("%m/%d")}({WEEKDAYS[dt.weekday()]})',
+            'day': f'{dt.strftime("%m/%d")}（{WEEKDAYS[dt.weekday()]}）',
             'max': maxs[i] if i < len(maxs) else '?',
             'min': mins[i] if i < len(mins) else '?',
             'rain': rains[i] if i < len(rains) else 0,
@@ -403,14 +403,21 @@ def fetch_single_city(city_override=''):
     hints = compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast_data,
                           hourly_data=hourly_temps_data)
 
+    # === 日期標籤 ===
+    WEEKDAYS = '一二三四五六日'
+    today_dt = datetime.strptime(time_str.split('T')[0], '%Y-%m-%d')
+    tomorrow_dt = today_dt + timedelta(days=1)
+    today_label = f'今日 {today_dt.strftime("%m/%d")}（{WEEKDAYS[today_dt.weekday()]}）'
+    tomorrow_label = f'明日 {tomorrow_dt.strftime("%m/%d")}（{WEEKDAYS[tomorrow_dt.weekday()]}）'
+
     # === 輸出 dict ===
     output = {
         'display': {
             '地點': f'{w_emoji} {city_tw}',
             '溫度': f'{ri(temp)}°C（體感 {ri(feel)}°C）',
             '天氣': f'💧 {"  ".join(line2_parts)}',
-            '今日': f'{t_icon} {ri(t_max)}°～{ri(t_min)}°  {t_rain_desc}',
-            '明日': f'{tm_icon} {ri(tm_max)}°～{ri(tm_min)}°  {tm_rain_desc}',
+            '今日': f'{t_icon} {today_label} {ri(t_max)}°～{ri(t_min)}°  {t_rain_desc}',
+            '明日': f'{tm_icon} {tomorrow_label} {ri(tm_max)}°～{ri(tm_min)}°  {tm_rain_desc}',
         },
         'data': {
             'city': city_tw, 'time': time_str,
