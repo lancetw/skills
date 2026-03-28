@@ -334,10 +334,12 @@ def fetch_single_city(city_override=''):
     code = c.get('weather_code', 0)
     wind = c.get('wind_speed_10m', 0)
     uv = c.get('uv_index', 0)
+    precip = c.get('precipitation', 0)
     time_str = c.get('time', '?')
 
     w_emoji = get_weather_emoji(code)
     wind_desc = get_wind_desc(wind)
+    is_raining = code in range(51, 83) or code == 95 or float(precip or 0) > 0
 
     dy = data.get('weather', {}).get('daily', {})
     t_max = dy.get('temperature_2m_max', ['?','?'])[0]
@@ -416,13 +418,13 @@ def fetch_single_city(city_override=''):
             '地點': f'{w_emoji} {city_tw}',
             '溫度': f'{ri(temp)}°C（體感 {ri(feel)}°C）',
             '天氣': f'💧 {"  ".join(line2_parts)}',
-            '今日': f'{t_icon} {today_label} {ri(t_max)}°～{ri(t_min)}°  {t_rain_desc}',
+            '今日': f'{t_icon} {today_label} {ri(t_max)}°～{ri(t_min)}°  {"🌧️ 正在下雨" if is_raining else t_rain_desc}',
             '明日': f'{tm_icon} {tomorrow_label} {ri(tm_max)}°～{ri(tm_min)}°  {tm_rain_desc}',
         },
         'data': {
             'city': city_tw, 'time': time_str,
             'temp': temp, 'feel': feel, 'hum': hum,
-            'wind': wind, 'uv': uv,
+            'wind': wind, 'uv': uv, 'is_raining': is_raining,
             'hourly': hourly_str,
             'today_high': t_max, 'today_low': t_min, 'today_rain': t_rain,
             'sunrise': sunrise_s, 'sunset': sunset_s,
