@@ -50,10 +50,11 @@ uv run <skill-directory>/scripts/fetch_weather.py
 ▎ {display.今日}
 ▎ {display.明日}
 ▎ {display.提醒}
+▎ {display.降雨預報}
 ```
 ````
 
-- `提醒` 不一定存在，有才輸出
+- `提醒` 和 `降雨預報` 不一定存在，有才輸出
 - 多城市時，每張卡片放在同一個 code block 裡，中間空一行
 
 ### 對話框
