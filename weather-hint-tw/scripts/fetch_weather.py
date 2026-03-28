@@ -269,10 +269,12 @@ def parse_holidays(holidays, now):
 
 
 def parse_cities(argv, env_val):
-    """解析城市列表。env 優先於 argv"""
+    """解析城市列表。argv 優先於 env（env 作為預設值）"""
+    if argv:
+        return list(argv)
     if env_val:
         return [c.strip() for c in env_val.split(',') if c.strip()]
-    return list(argv) if argv else []
+    return []
 
 
 def fetch_single_city(city_override=''):
