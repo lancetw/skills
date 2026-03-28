@@ -14,6 +14,7 @@
 | `今日` | emoji + 高低溫 + 降雨機率 | `⛅ 26°~18°  降雨 10%` |
 | `明日` | emoji + 高低溫 + 降雨機率 | `☂️ 24°~18°  降雨 70%` |
 | `提醒`（選用） | 空氣/UV 警示 | `😷 空氣不太好` |
+| `降雨預報`（選用） | 未來 3 小時內即將下雨 | `🌂 約 1 小時後可能下雨` |
 
 ## data（AI 判斷用）
 
@@ -69,7 +70,9 @@
 | `period` | string | 時段：清晨/早上/上午/中午/下午/傍晚/晚上/深夜 | 直接對照 prompt-guide 時段關心表 |
 | `temp_range` | number | 今日最高 − 最低 | >10 → 洋蔥穿法提醒 |
 | `feel_diff` | number | 體感 − 實際（正=更熱，負=更冷） | 絕對值 ≥3 才提體感 |
-| `rain_soon` | bool | 未來 6 小時任一時段降雨 ≥30% | true → 帶傘提醒 |
+| `rain_soon` | bool | 未來 6 小時任一時段降雨機率 ≥30% | true → 帶傘提醒 |
+| `rain_approaching` | bool | 未來 3 小時 hourly weather_code 有雨碼（比 rain_soon 更即時） | true → 提醒即將下雨、帶傘 |
+| `rain_approaching_hour` | number\|null | 幾小時後下雨（1-3） | 搭配 rain_approaching 使用，聊天可說「等一下可能會下」 |
 | `tomorrow_trend` | string | 明顯升溫 / 明顯降溫 / 差不多 | 不是「差不多」就帶一句 |
 | `forecast_change` | list\|null | 未來劇變天（有雨/轉涼/變熱） | 有值 → 帶出多天預報；null → 不提 |
 | `peak_temp_period` | string | 最高溫時段（固定「中午」） | 描述最高溫何時出現，用這個而不是自己猜 |

@@ -139,7 +139,7 @@ def visual_width(s):
 
 
 
-def compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast, hourly_data=None):
+def compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast, hourly_data=None, hourly_codes=None):
     """預先計算 AI 回應用的衍生提示，減少 AI 推理負擔"""
     hints = {}
 
@@ -176,6 +176,20 @@ def compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, foreca
         hints['rain_soon'] = any(p >= 30 for p in probs)
     except Exception:
         hints['rain_soon'] = False
+
+    # 未來 3 小時天氣碼有雨（weather_code 偵測，比 probability 更即時）
+    _RAIN_CODES = set(range(51, 83)) | {95, 96, 99}
+    hints['rain_approaching'] = False
+    hints['rain_approaching_hour'] = None
+    if hourly_codes:
+        for i, c in enumerate(hourly_codes[:3]):
+            if c in _RAIN_CODES:
+                hints['rain_approaching'] = True
+                try:
+                    hints['rain_approaching_hour'] = i + 1  # 幾小時後
+                except Exception:
+                    pass
+                break
 
     # 明天趨勢
     try:
@@ -402,8 +416,9 @@ def fetch_single_city(city_override=''):
     # === 預算提示 ===
     forecast_data = build_forecast(dy)
     hourly_temps_data = {'time': times, 'temperature_2m': h.get('temperature_2m', [])}
+    hourly_wcodes = h.get('weather_code', [])
     hints = compute_hints(time_str, temp, feel, t_max, t_min, tm_max, hourly_str, forecast_data,
-                          hourly_data=hourly_temps_data)
+                          hourly_data=hourly_temps_data, hourly_codes=hourly_wcodes)
 
     # === 日期標籤 ===
     WEEKDAYS = '一二三四五六日'
@@ -437,6 +452,9 @@ def fetch_single_city(city_override=''):
     }
     if alerts:
         output['display']['提醒'] = f'😷 {"  ".join(alerts)}'
+    if not is_raining and hints.get('rain_approaching'):
+        h_val = hints.get('rain_approaching_hour', '?')
+        output['display']['降雨預報'] = f'🌂 約 {h_val} 小時後可能下雨'
     return output
 
 
