@@ -286,7 +286,7 @@ Search by book name to find the relevant section.
 - **一貫道**: 「另外有羊」= 五教合一（佛教、道教、伊斯蘭教、儒教都是真理管道）；原文指外邦人被帶入同一牧者
 
 ## John 10:30
-- **印度教**: 「我與父原為一」= 梵我合一 (Atman is Brahman)；hen (中性) 表目的合一，非本體同一
+- **印度教**: 「我與父原為一」= 梵我合一 (Atman is Brahman)；hen (中性) 排除位格同一（masculine heis 才是）；目的合一或本質合一有爭議
 - **新紀元**: 同上，用以支持「基督意識」
 
 ## John 10:34
