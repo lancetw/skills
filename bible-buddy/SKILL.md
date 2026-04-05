@@ -141,130 +141,40 @@ Include a "驗證來源" section at the end of every response:
 
 Apply the principles from the **Hermeneutic Framework** section below. Core lens: **How would a first-century Torah-observant Jewish teacher understand this passage?**
 
-### Step 5: Present AND Save — EVERY response MUST be saved
+### Step 5: Present AND Save
 
-**Present the response to the user AND save it as markdown. These happen together — never present without saving, never save without presenting. This applies to ALL responses: initial answers, follow-ups, Did You Know expansions, everything.**
+Present AND save every response as markdown. Never present without saving. Applies to: initial answers, follow-ups, Did You Know expansions, all Q&A.
 
-**Use Appropriate Format:**
+**Formats:**
+- **Verse-by-verse:** `## [Book Ch:V] — [Topic]` → 經文 (Hebrew + Chinese, cite source) → First-century context → Interpretation → Common misreadings → Sources & Further Reading
+- **Topical:** Hebrew word study → first-century understanding → key passages → what it did NOT mean → sources
+- **Q&A:** Direct answer with Hebrew terms woven in. Sources at end.
 
-**Verse-by-verse study:**
-```
-## [Book Chapter:Verse] — [Topic]
-**經文** (來源: Sefaria / Bible Gateway RCUV):
-[Hebrew text + Chinese text, with source noted]
+**Always include:** Hebrew with transliteration, source citations with dates, text vs. interpretation distinction.
 
-**First-century context**: [historical/cultural setting]
-**Interpretation**: [what this meant to a first-century Jewish audience]
-**Common misreadings**: [later interpretations that distort the original, with evidence]
+**Required sections** (order flexible, may be woven in):
+- **翻譯偏差** — Compare RCUV, CNVT, 呂振中. No bias → "本段中文翻譯未見明顯偏差。"
+- **觀察 vs. 解讀** — Separate grammatical/historical facts from theological interpretations.
 
----
-### Sources & Further Reading
-[Specific citations with dates]
-```
+**Auto-Save — each response gets its own file** (never append):
+- `{date}_{time}_{book}_{chapter}_{verses}.md`
+- Follow-ups: `..._followup_{topic}.md` · Did You Know: `..._Did_You_Know_{topic}.md`
 
-**Topical study:** Hebrew word study → first-century understanding → key passages → what it did NOT mean → sources.
+**Environment detection:**
+- **Claude Code** → `uv run scripts/detect_desktop.py bible-buddy` → save to returned path
+- **Cowork / Claude.ai web** → Do NOT save. Tell user: "你可以複製回應內容存檔，或在 Claude.ai 中使用 Artifact 功能下載。"
 
-**Q&A:** Answer directly with Hebrew terms and context woven in. Sources at the end.
+**YAML frontmatter fields:** `created`, `date`, `reference`, `topic`, `study_type`, `sources`, `verified_claims`, `unverified_claims`
 
-**Always include:** Hebrew with transliteration, source citations with dates, clear distinction between what the text says vs. what it has been interpreted to say.
+### Step 6: Follow Up — AskUserQuestion (MANDATORY)
 
-**Required sections in every response** (order flexible, may be woven into the analysis):
-- **翻譯偏差** (Translation bias) — Flag when any Chinese translation obscures the original meaning. Compare RCUV, CNVT, 呂振中, and note which best reflects the Hebrew/Greek. Even if no bias exists, briefly confirm: "本段中文翻譯未見明顯偏差。"
-- **觀察 vs. 解讀** (Observation vs. Interpretation) — When a key term or passage is debated, explicitly separate grammatical/historical facts from theological interpretations. Can be a named subsection or woven into analysis, but the distinction must be visible.
+Run `uv run scripts/random_fact.py --exclude [當前書卷]`, then AskUserQuestion:
+- question: "想深入哪個方面？" · header: "延伸研讀"
+- options: 希伯來字詞深入, 考古證據, 相關經文, Did You Know? ([fact output])
 
-**Auto-Save (part of Step 5 — NOT optional):**
+Text fallback (if AskUserQuestion unavailable): same 4 options as numbered list, end with "請選擇 (1-4)："
 
-**Every single response must be saved** — not just the initial answer, but also:
-- Follow-up responses when the user picks "希伯來字詞深入", "考古證據", "相關經文"
-- "Did You Know？" expanded explanations
-- Any subsequent Q&A in the same study session
-
-**Each response gets its OWN file** (never append to existing files):
-- Initial answer: `{date}_{time}_{book}_{chapter}_{verses}.md`
-- Follow-ups: `{date}_{time}_{book}_{chapter}_{verses}_followup_{topic}.md`
-- Did You Know: `{date}_{time}_Did You Know_{topic}.md`
-
-**Environment detection — only Claude Code saves markdown files:**
-- **Claude Code / CLI** → Save markdown file to Desktop folder (see below). This is the ONLY environment that auto-saves.
-- **Cowork / Claude.ai web / other** → Do NOT save files. Do NOT create directories. Do NOT attempt filesystem operations. Simply present the response in the conversation. For Claude.ai web, if the user asks to save, tell them: "你可以複製回應內容存檔，或在 Claude.ai 中使用 Artifact 功能下載。"
-
-**For Claude Code — automatically save as a markdown file:**
-
-```bash
-# Detect Desktop path (handles OneDrive on Windows):
-uv run python -c "
-from pathlib import Path
-import os
-home = Path.home()
-# Windows OneDrive: check common redirected Desktop paths
-candidates = [
-    Path(os.environ.get('OneDriveConsumer', '')) / 'Desktop',
-    Path(os.environ.get('OneDrive', '')) / 'Desktop',
-    home / 'OneDrive' / 'Desktop',
-    home / 'OneDrive - Personal' / 'Desktop',
-    home / 'Desktop',  # fallback: standard path
-]
-desktop = next((p for p in candidates if p.exists()), home / 'Desktop')
-out = desktop / 'bible-buddy'
-out.mkdir(parents=True, exist_ok=True)
-print(out)
-"
-# Filename: {date}_{time}_{book}_{chapter}_{verses}.md
-# Example: 2026-04-05_1432_Isaiah_7_10-17.md
-```
-
-Create the directory if it doesn't exist. The file should contain:
-1. The full response (including Hebrew text, Chinese translations, sources)
-2. A YAML frontmatter with metadata:
-
-Use Python to get the timestamp:
-```bash
-uv run python -c "from datetime import datetime; print(datetime.now().strftime('%Y-%m-%d %H:%M:%S %Z'))"
-```
-
-```markdown
----
-created: 2026-04-05T14:32:07+08:00
-date: 2026-04-05
-reference: 以賽亞書 7:10-17
-topic: almah 的語意分析
-study_type: 逐節解讀
-sources: [Sefaria, Bible Gateway RCUV, FHL 呂振中]
-verified_claims: 5
-unverified_claims: 0
----
-
-[Full response content]
-```
-
-This ensures every study session is preserved for future reference.
-
-### Step 6: Follow Up — Use AskUserQuestion (MANDATORY)
-
-Always end every response with AskUserQuestion. The fourth option MUST be a "Did You Know？" fun fact.
-
-**How to generate the "Did You Know？" option:**
-
-Before building the AskUserQuestion, run this script to get a random fact:
-```bash
-uv run scripts/random_fact.py --exclude [當前研讀的書卷名]
-```
-Put the script output directly into the "Did You Know?" option's description, then call the AskUserQuestion tool (or text fallback) with:
-- question: "想深入哪個方面？"
-- header: "延伸研讀"
-- options: 希伯來字詞深入, 考古證據, 相關經文, Did You Know? ([random_fact.py 的輸出])
-
-**Text fallback for Step 6 (if AskUserQuestion tool unavailable):**
-```
-想深入哪個方面？
-1. 希伯來字詞深入 — 完整字根分析和跨經文追蹤
-2. 考古證據 — 支持這個解讀的考古發現和歷史文獻
-3. 相關經文 — 其他相關的經文段落
-4. Did You Know? — [random_fact.py 的輸出]
-請選擇 (1-4)：
-```
-
-If the user clicks "Did You Know？", expand the fact into a full explanation with Hebrew/Greek evidence, auto-save per Step 5b, then show a new AskUserQuestion with a fresh fact.
+If user picks "Did You Know？": expand with Hebrew/Greek evidence → auto-save → new AskUserQuestion with fresh fact.
 
 ---
 
@@ -320,29 +230,8 @@ Three patterns that erode credibility even when the underlying facts are correct
 
 ### Church Practices Assumed to Be Biblical
 
-Many users assume certain church practices come from the Bible. Use the quick-verdict table below for initial responses. **Only Grep the specific practice section** from `references/church-practices.md` when the user wants deeper detail (key evidence, fetching instructions):
-`Grep("## 13\\. Spiritual covering", path="references/church-practices.md", output_mode="content", -A=15)`
-
-| Practice | Origin | Quick verdict |
-|----------|--------|--------------|
-| Trinity (三位一體) | Nicaea 325 / Constantinople 381 CE | Shema (Deut 6:4) echad = cardinal "one"; hen (John 10:30) neuter, debated |
-| Sunday worship (主日崇拜) | Constantine 321 CE civil law | Yeshua/apostles kept Shabbat; early Sunday = additional, not replacement |
-| New replaces Old (新約取代舊約) | 2nd-century terminology | Kainos ≠ replacement; Jer 31 puts Torah IN the heart |
-| TULIP (加爾文主義) | Dort 1618-1619 | Romans 9 = national election (goy/le'om), not individual |
-| Sola fide (因信稱義) | Luther 16th c. | Pistis = emunah (faithfulness); erga nomou = halakhic markers (4QMMT) |
-| Altar call / sinner's prayer | Finney 1820s / Gage 1922 | First-century: mikveh + Torah instruction |
-| Christmas Dec 25 | Sol Invictus ~4th c. | Likely Sukkot; no biblical date |
-| Tithe (十一奉獻) | Levitical Temple system | Three tithes ~23%; not a pastoral salary fund |
-| Seven Mountains (職場轉化) | 1975 Bright/Cunningham; NAR ~2000s | Isaiah 2:2 = nations flow TO Zion, not conquer outward |
-| Prosperity gospel (成功神學) | Modern movement | Mal 3:10 = national covenant; 3 John 2 = letter greeting |
-| Easter (復活節) | Nicaea 325 CE separated from Pesach | First-century: Pesach framework; eggs/rabbits = medieval folk |
-| Devotional individualization (靈修式個人化) | Modern devotional books | Jer 29:11 = exiled Judah; Isa 43:2 = Babylon return; Ps 46:10 = military |
-| Spiritual covering (屬靈遮蓋) | Shepherding Movement 1970s; NAR | Heb 13:17 peithesthe = "be persuaded by," not "obey" |
-| Declaration prayer (宣告禱告) | Word of Faith 1960s+ | First-century prayer = petition/praise (Amidah), not decreeing |
-| Binding and loosing (捆綁與釋放) | Medieval demonology → charismatic 1990s | Asar/hitir = halakhic "prohibit/permit" (Matt 16:19) |
-| Anointing (恩膏/膏抹) | Latter Rain 1948+ | Mashach = commissioning; semikhah = authorization, not power transfer |
-| Territorial spirits (地域靈) | C. Peter Wagner 1990s | Eph 6:12 archai = structural powers, not geographic demons |
-| Five-fold ministry (五重職分) | NAR ~1990s-2000s | Eph 4:11 domata = gifts; apostolos = shaliach (task agent, not rank) |
+Many users assume certain church practices come from the Bible. **Always Grep the specific practice** from `references/church-practices.md` (18 practices, single source of truth):
+`Grep("## 13\\. Spiritual covering", path="references/church-practices.md", output_mode="content", -A=8)`
 
 ### Yeshua Lens for Rabbinic Tradition
 - **Engage, don't dismiss**: Yeshua participated in Torah interpretation tradition, not rejecting it from outside.
@@ -417,7 +306,7 @@ Read these on-demand when needed (not all at once). Files >300 lines have a tabl
 | `anachronism-timeline.md` | 37 | Checking doctrine origin dates (29 entries) |
 | `translation-bias.md` | 47 | Flagging Chinese translation issues (15 verse + 7 systemic) |
 | `commonly-misread-passages.md` | 70 | User asks about a commonly misused passage (58 entries) |
-| `church-practices.md` | ~260 | **Grep per practice** — quick-verdict table is inline; Grep `## N.` section for detail |
+| `church-practices.md` | ~260 | **Grep per practice** — `Grep("## N\\. Name", -A=8)` for each practice (18 practices) |
 | `archaeological-sources.md` | 147 | Citing Josephus, DSS, inscriptions (68 sources) |
 | `denomination-claims.md` | 552 | **Grep per denomination** — `Grep("## .*Name")` for specific section only |
 | `scripture-to-denomination.md` | 380 | **Grep per passage** — reverse lookup in Step 3.8: which denominations misuse this verse |
