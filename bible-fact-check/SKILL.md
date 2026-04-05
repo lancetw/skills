@@ -49,6 +49,9 @@ URLs and pasted text (do not print N/A lines for them).
 1. Determine the input source
 2. **Verify bible-buddy is installed** (see Prerequisites above)
 3. Read / receive the content
+   - For `fun-facts.md`: **Do NOT use Read** (exceeds 10K token limit). Use Grep:
+     `Grep("^- ", path="~/.claude/skills/bible-buddy/references/fun-facts.md", output_mode="content", head_limit=0)`
+     → returns all ~134 facts with line numbers in one call
 4. Load reference files as checking criteria (read on demand, not all at once):
    - `~/.claude/skills/bible-buddy/references/anachronism-timeline.md` → Read entire file (small, 43 lines) → for checks 3, 4
    - `~/.claude/skills/bible-buddy/references/commonly-misread-passages.md` → **Do NOT Read entire file** (44KB wide table). Two-step lookup:
