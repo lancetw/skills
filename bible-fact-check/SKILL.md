@@ -145,10 +145,23 @@ Hindu theology, Vajrayana) are less relevant unless Taiwan has that community.
 
 ## Output Format
 
+When reviewing a **URL or pasted text** (not a bible-buddy reference file):
+1. Create output folder: `~/Desktop/bible-fact-check/`
+2. Write the full report to `~/Desktop/bible-fact-check/YYYYMMDD-HHmmss-<slug>.md`
+   - URL → slug from domain + path (e.g., `cdn-news-org-idol-removal`)
+   - Pasted text → `pasted-text`
+3. Show only the summary table in the conversation, with the file path
+
+When reviewing a **bible-buddy reference file**: output the full report in the conversation as before.
+
+### Report structure
+
 Start with the source being reviewed:
 
 ```
-# 審查：[filename or "使用者提供的內容"]
+# 審查：[filename or URL or "使用者提供的內容"]
+來源：[URL if applicable]
+日期：[YYYY-MM-DD HH:mm:ss]
 ```
 
 For each check:
