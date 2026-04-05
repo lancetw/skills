@@ -63,7 +63,10 @@
         {"text": "Defines almah as young woman of marriageable age (not exclusively virgin)", "type": "content"},
         {"text": "Contrasts with betulah (more specifically 'virgin')", "type": "content"},
         {"text": "Mentions LXX translation to parthenos and its significance", "type": "content"},
-        {"text": "Presents the broader context of Isaiah 7:10-17 (Ahaz situation)", "type": "content"}
+        {"text": "Presents the broader context of Isaiah 7:10-17 (Ahaz situation)", "type": "content"},
+        {"text": "Flags RCUV '童女' as translation bias vs 呂振中 '少婦'", "type": "precision"},
+        {"text": "Contains [✓ verified] markers on factual claims", "type": "flow"},
+        {"text": "Includes 驗證來源 table at end of response", "type": "flow"}
       ]
     },
     {
