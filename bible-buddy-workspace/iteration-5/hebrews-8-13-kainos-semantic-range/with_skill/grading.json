@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Distinguishes kainos (qualitative) from neos (temporal)",
+      "passed": true,
+      "evidence": "kainos (καινός) = 質的更新：「new in nature, different from the usual, impressive, better than the old, superior in value or attraction」 and neos (νέος) = 時間上的新：「new in time, recent, young」"
+    },
+    {
+      "text": "Cites standard lexicon (BDAG, Thayer, or similar) for kainos definition",
+      "passed": true,
+      "evidence": "標準詞典的定義（BDAG, Thayer）：kainos (καινός) = 質的更新"
+    },
+    {
+      "text": "Does NOT assert kainos definitively means 'renewed' without noting the range",
+      "passed": true,
+      "evidence": "kainos 的語意範圍包括「renewed/refreshed」（更新）和「qualitatively different/superior」（質性不同、更優）兩個方向。把 kainos 直接等同於「renewed = 只是翻新」是一種語意窄化；把 kainos 等同於「replacement = 完全取代」同樣是語意窄化。上下文決定哪個語意最適合。"
+    },
+    {
+      "text": "References Jeremiah 31:31-33 and Torah internalization",
+      "passed": true,
+      "evidence": "希伯來書 8:8-12 整段引用的是 耶利米書 31:31-34 and 耶利米書 31:33 希伯來原文 (來源: Sefaria.org): 我要將我的律法（torati / תּוֹרָתִי）放在他們裏面，寫在他們心上。 and 「新約」的內容不是廢除律法，而是把同一部律法從石板轉移到人心。"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

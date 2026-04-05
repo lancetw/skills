@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Identifies harpu from root raphah with Hifil imperative form",
+      "passed": true,
+      "evidence": "字根：ר-פ-ה (r-p-h)，即 raphah（רָפָה）and 詞態：Hifil 使役態 (causative)，命令式 (imperative)，第二人稱陽性複數（你們）"
+    },
+    {
+      "text": "Notes Psalm 46 military context (wars, kingdoms, weapons)",
+      "passed": true,
+      "evidence": "第 7 節 — 「萬邦喧嚷（הָמוּ / hamu），國度動搖（מָטוּ / matu）」 and 第 9 節 — 「他止息戰爭（מַשְׁבִּית מִלְחָמוֹת / mashbit milchamot），直到地極」 and 第 10 節 — 「他折弓…斷槍…把戰車焚燒在火中」 and 弓、槍、戰車 —— 全是古代近東戰爭裝備"
+    },
+    {
+      "text": "Does NOT call it exclusively a 'military command' (presents semantic range)",
+      "passed": true,
+      "evidence": "The response provides a full semantic range section titled 'raphah 在希伯來聖經中的語意範圍 — 跨經文追蹤' with 5 cross-references showing meanings including 停止/住手 (stop), 不要撤退 (don't retreat), 放我走 (let me go), 放了他 (released him), 住手！放下武器！(stop! lay down weapons!). BDB definition given as 'sink down, relax, let go — 鬆開、放下、停止、退縮、放鬆'. Strong's range: 'abate, cease, consume, fail, be faint, forsake, idle, leave, let alone, be slack, stay, be still, be slothful, be weak'."
+    },
+    {
+      "text": "Contrasts with common devotional reading while noting the range",
+      "passed": true,
+      "evidence": "現代教會靈修文化把詩篇 46:10 變成了安靜默想的金句，但希伯來原文講的是完全不同的事 and 誤讀：「你們要休息（Be still），要知道我是神」＝ 在忙碌生活中安靜下來，進入與神的親密默想時刻。這是荒漠甘泉（Streams in the Desert）等靈修書籍的標準解讀。 and 靈修式個人化（Devotional Individualization）的問題：把一個國際軍事場景中的停戰命令，變成個人安靜時間的座右銘，是現代靈修文化（約 19-20 世紀）的產物"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

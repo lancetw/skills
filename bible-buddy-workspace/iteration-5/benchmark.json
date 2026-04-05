@@ -1,0 +1,239 @@
+{
+  "metadata": {
+    "skill_name": "bible-buddy",
+    "skill_path": "/home/lancetw/vibe_workspace/skills/lancetw/skills/bible-buddy",
+    "executor_model": "claude-opus-4-6",
+    "timestamp": "2026-04-05T12:00:00+08:00",
+    "evals_run": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1, "eval_name": "TULIP Progressive Development", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 427.4, "tokens": 87860, "tool_calls": 30, "errors": 0},
+      "expectations": [
+        {"text": "Mentions TULIP acronym is a later creation", "passed": true, "evidence": "States TULIP acronym is 20th century English mnemonic"},
+        {"text": "Mentions Calvin died 1564 before Dort", "passed": true, "evidence": "Calvin died 1564, Dort 1618-1619"},
+        {"text": "Romans 9 as national/covenantal", "passed": true, "evidence": "Uses goyim/le'ummim for national election"},
+        {"text": "Progressive development (not Dort as origin)", "passed": true, "evidence": "Shows progressive development timeline"}
+      ]
+    },
+    {
+      "eval_id": 1, "eval_name": "TULIP Progressive Development", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.5, "passed": 2, "failed": 2, "total": 4, "time_seconds": 135.0, "tokens": 24363, "tool_calls": 2, "errors": 0},
+      "expectations": [
+        {"text": "Mentions TULIP acronym is a later creation", "passed": false, "evidence": "Treats TULIP as theological system, not historical construct"},
+        {"text": "Mentions Calvin died 1564 before Dort", "passed": false, "evidence": "Does not note Calvin's death date"},
+        {"text": "Romans 9 as national/covenantal", "passed": true, "evidence": "Mentions sovereignty-responsibility tension"},
+        {"text": "Progressive development (not Dort as origin)", "passed": true, "evidence": "Does not claim Dort originated Calvinism"}
+      ]
+    },
+    {
+      "eval_id": 2, "eval_name": "John 10:30 Observation vs Interpretation", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 289.8, "tokens": 90614, "tool_calls": 30, "errors": 0},
+      "expectations": [
+        {"text": "hen is neuter, not masculine heis", "passed": true, "evidence": "Clearly states hen is neuter, contrasts with heis"},
+        {"text": "2+ scholarly interpretations of hen", "passed": true, "evidence": "Presents 4 interpretive options"},
+        {"text": "NOT only unity of purpose", "passed": true, "evidence": "Notes debate between purpose, nature, and other readings"},
+        {"text": "Separates observation from interpretation", "passed": true, "evidence": "Dedicated Observation vs. Interpretation section"}
+      ]
+    },
+    {
+      "eval_id": 2, "eval_name": "John 10:30 Observation vs Interpretation", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.5, "passed": 2, "failed": 2, "total": 4, "time_seconds": 83.5, "tokens": 22118, "tool_calls": 2, "errors": 0},
+      "expectations": [
+        {"text": "hen is neuter, not masculine heis", "passed": true, "evidence": "Identifies hen as neuter"},
+        {"text": "2+ scholarly interpretations of hen", "passed": true, "evidence": "Mentions church fathers"},
+        {"text": "NOT only unity of purpose", "passed": false, "evidence": "Frames primarily through Trinitarian lens"},
+        {"text": "Separates observation from interpretation", "passed": false, "evidence": "Mixes grammar with Trinitarian conclusions"}
+      ]
+    },
+    {
+      "eval_id": 3, "eval_name": "Hebrews 8:13 Kainos Semantic Range", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 290.4, "tokens": 79072, "tool_calls": 31, "errors": 0},
+      "expectations": [
+        {"text": "Distinguishes kainos from neos", "passed": true, "evidence": "Cites BDAG, contrasts with Heb 12:24 neos"},
+        {"text": "Cites standard lexicon", "passed": true, "evidence": "Cites both BDAG and Thayer"},
+        {"text": "NOT kainos = renewed only", "passed": true, "evidence": "Presents full semantic range"},
+        {"text": "Jeremiah 31 Torah internalization", "passed": true, "evidence": "Quotes Jer 31:33 Hebrew, Torah on hearts"}
+      ]
+    },
+    {
+      "eval_id": 3, "eval_name": "Hebrews 8:13 Kainos Semantic Range", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.5, "passed": 2, "failed": 2, "total": 4, "time_seconds": 83.9, "tokens": 21884, "tool_calls": 2, "errors": 0},
+      "expectations": [
+        {"text": "Distinguishes kainos from neos", "passed": true, "evidence": "Notes kainos vs neos"},
+        {"text": "Cites standard lexicon", "passed": false, "evidence": "No specific lexicon citation"},
+        {"text": "NOT kainos = renewed only", "passed": false, "evidence": "Narrows kainos to renewal"},
+        {"text": "Jeremiah 31 Torah internalization", "passed": true, "evidence": "References Jeremiah 31"}
+      ]
+    },
+    {
+      "eval_id": 4, "eval_name": "Psalm 46:10 Harpu Semantic Range", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 264.4, "tokens": 71198, "tool_calls": 29, "errors": 0},
+      "expectations": [
+        {"text": "Hifil imperative from root raphah", "passed": true, "evidence": "Identifies Hifil imperative from raphah"},
+        {"text": "Psalm 46 military context", "passed": true, "evidence": "Lists wars, kingdoms, bows, spears, chariots"},
+        {"text": "NOT exclusively military", "passed": true, "evidence": "Full BDB/Strong's semantic range"},
+        {"text": "Contrasts devotional reading with range", "passed": true, "evidence": "Contrasts devotional misreading, presents range"}
+      ]
+    },
+    {
+      "eval_id": 4, "eval_name": "Psalm 46:10 Harpu Semantic Range", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.75, "passed": 3, "failed": 1, "total": 4, "time_seconds": 70.9, "tokens": 21464, "tool_calls": 2, "errors": 0},
+      "expectations": [
+        {"text": "Hifil imperative from root raphah", "passed": true, "evidence": "Identifies Hifil imperative"},
+        {"text": "Psalm 46 military context", "passed": true, "evidence": "Notes war context"},
+        {"text": "NOT exclusively military", "passed": false, "evidence": "Overstates as solemn battlefield command"},
+        {"text": "Contrasts devotional reading with range", "passed": true, "evidence": "Contrasts but overstates military side"}
+      ]
+    },
+    {
+      "eval_id": 5, "eval_name": "Almah Isaiah 7:14 Semantic Range", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 245.7, "tokens": 78084, "tool_calls": 26, "errors": 0},
+      "expectations": [
+        {"text": "Almah = young woman of marriageable age", "passed": true, "evidence": "Defines almah as young woman"},
+        {"text": "Contrasts with betulah", "passed": true, "evidence": "Betulah as more specifically virgin"},
+        {"text": "LXX parthenos translation", "passed": true, "evidence": "LXX parthenos + Aquila/Theodotion corrections"},
+        {"text": "Isaiah 7:10-17 Ahaz context", "passed": true, "evidence": "Syro-Ephraimite crisis, Ahaz situation"}
+      ]
+    },
+    {
+      "eval_id": 5, "eval_name": "Almah Isaiah 7:14 Semantic Range", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 73.4, "tokens": 21805, "tool_calls": 2, "errors": 0},
+      "expectations": [
+        {"text": "Almah = young woman of marriageable age", "passed": true, "evidence": "Defines almah correctly"},
+        {"text": "Contrasts with betulah", "passed": true, "evidence": "Contrasts betulah"},
+        {"text": "LXX parthenos translation", "passed": true, "evidence": "Notes LXX parthenos"},
+        {"text": "Isaiah 7:10-17 Ahaz context", "passed": true, "evidence": "Notes Ahaz and Ugaritic cognate"}
+      ]
+    },
+    {
+      "eval_id": 6, "eval_name": "Church Language Detection (Trinity)", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 0.75, "passed": 3, "failed": 1, "total": 4, "time_seconds": 235.0, "tokens": 82322, "tool_calls": 31, "errors": 0},
+      "expectations": [
+        {"text": "Detects 三位一體 as post-first-century", "passed": true, "evidence": "Flags Trinity as post-first-century throughout"},
+        {"text": "AskUserQuestion BEFORE interpretation", "passed": false, "evidence": "Jumps into analysis without visible detection step"},
+        {"text": "Offers redirection options", "passed": true, "evidence": "Follow-up options at end"},
+        {"text": "NOT pro/anti-Trinity without asking", "passed": true, "evidence": "Presents evidence, not argument"}
+      ]
+    },
+    {
+      "eval_id": 6, "eval_name": "Church Language Detection (Trinity)", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.0, "passed": 0, "failed": 4, "total": 4, "time_seconds": 93.7, "tokens": 22782, "tool_calls": 2, "errors": 0},
+      "expectations": [
+        {"text": "Detects 三位一體 as post-first-century", "passed": false, "evidence": "Treats Trinity as established doctrine"},
+        {"text": "AskUserQuestion BEFORE interpretation", "passed": false, "evidence": "No routing"},
+        {"text": "Offers redirection options", "passed": false, "evidence": "No options"},
+        {"text": "NOT pro/anti-Trinity without asking", "passed": false, "evidence": "Immediately presents pro-Trinity argument"}
+      ]
+    },
+    {
+      "eval_id": 7, "eval_name": "Denomination Routing (Charismatic)", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 207.6, "tokens": 84587, "tool_calls": 33, "errors": 0},
+      "expectations": [
+        {"text": "Identifies charismatic/Pentecostal teaching", "passed": true, "evidence": "Identifies as Pentecostal doctrine"},
+        {"text": "Fetches 1 Cor 12-14 and/or Acts 2", "passed": true, "evidence": "Fetched Acts 2, 1 Cor 12, 14"},
+        {"text": "Distinguishes first-century vs modern tongues", "passed": true, "evidence": "Acts 2 dialektos = known languages"},
+        {"text": "References Azusa Street 1906", "passed": true, "evidence": "References Azusa Street 1906"},
+        {"text": "Guides without attacking", "passed": true, "evidence": "Evidence-based, no personal attacks"}
+      ]
+    },
+    {
+      "eval_id": 7, "eval_name": "Denomination Routing (Charismatic)", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.6, "passed": 3, "failed": 2, "total": 5, "time_seconds": 87.6, "tokens": 22203, "tool_calls": 2, "errors": 0},
+      "expectations": [
+        {"text": "Identifies charismatic/Pentecostal teaching", "passed": true, "evidence": "Identifies position"},
+        {"text": "Fetches 1 Cor 12-14 and/or Acts 2", "passed": false, "evidence": "References but no live fetch"},
+        {"text": "Distinguishes first-century vs modern tongues", "passed": true, "evidence": "Notes Acts 2 known languages"},
+        {"text": "References Azusa Street 1906", "passed": false, "evidence": "No historical origin date"},
+        {"text": "Guides without attacking", "passed": true, "evidence": "Balanced presentation"}
+      ]
+    },
+    {
+      "eval_id": 8, "eval_name": "Interfaith Buddhism Comparison", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 286.4, "tokens": 72983, "tool_calls": 36, "errors": 0},
+      "expectations": [
+        {"text": "Hebrew hesed/ahavah analysis", "passed": true, "evidence": "Three terms: ahav, hesed, rachamim"},
+        {"text": "Buddhist karuna/metta as distinct framework", "passed": true, "evidence": "Four immeasurables as distinct framework"},
+        {"text": "Covenantal vs universal/non-attached", "passed": true, "evidence": "Vertical covenant vs horizontal universal"},
+        {"text": "NOT dismissive of Buddhism", "passed": true, "evidence": "Structural differences without hierarchy"}
+      ]
+    },
+    {
+      "eval_id": 8, "eval_name": "Interfaith Buddhism Comparison", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.75, "passed": 3, "failed": 1, "total": 4, "time_seconds": 87.9, "tokens": 22357, "tool_calls": 2, "errors": 0},
+      "expectations": [
+        {"text": "Hebrew hesed/ahavah analysis", "passed": true, "evidence": "Covers hesed, ahavah, agape"},
+        {"text": "Buddhist karuna/metta as distinct framework", "passed": true, "evidence": "Explains with anatta framework"},
+        {"text": "Covenantal vs universal/non-attached", "passed": true, "evidence": "Notes personal vs impersonal"},
+        {"text": "NOT dismissive of Buddhism", "passed": false, "evidence": "Subtly frames biblical love as richer"}
+      ]
+    },
+    {
+      "eval_id": 9, "eval_name": "CCV Unavailable OT Fallback", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 174.8, "tokens": 55683, "tool_calls": 19, "errors": 0},
+      "expectations": [
+        {"text": "Attempts CCV and handles unavailability", "passed": true, "evidence": "Script returned unavailability notice"},
+        {"text": "Informs user CCV is partial", "passed": true, "evidence": "Explicitly states Isaiah not in CCV"},
+        {"text": "Falls back to alternatives", "passed": true, "evidence": "RCUV, CNVT, Luzhenzhong"},
+        {"text": "Hebrew analysis of qavah", "passed": true, "evidence": "Qavah tension/rope semantics"}
+      ]
+    },
+    {
+      "eval_id": 9, "eval_name": "CCV Unavailable OT Fallback", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.25, "passed": 1, "failed": 3, "total": 4, "time_seconds": 82.8, "tokens": 22106, "tool_calls": 2, "errors": 0},
+      "expectations": [
+        {"text": "Attempts CCV and handles unavailability", "passed": false, "evidence": "No script execution"},
+        {"text": "Informs user CCV is partial", "passed": false, "evidence": "Unknown to baseline"},
+        {"text": "Falls back to alternatives", "passed": false, "evidence": "Hebrew only, no Chinese translations"},
+        {"text": "Hebrew analysis of qavah", "passed": true, "evidence": "Analyzes qavah"}
+      ]
+    },
+    {
+      "eval_id": 10, "eval_name": "Follow-up Did You Know Cycle", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 251.5, "tokens": 85676, "tool_calls": 25, "errors": 0},
+      "expectations": [
+        {"text": "Romans 3:23 with hamartia and Jew-Gentile equality", "passed": true, "evidence": "Hamartia analysis, Paul's Jew-Gentile argument"},
+        {"text": "NOT total depravity or original sin", "passed": true, "evidence": "Yetzer framework, no Augustinian framing"},
+        {"text": "4 follow-up options", "passed": true, "evidence": "Text fallback with 4 options"},
+        {"text": "Did You Know about non-Romans topic", "passed": true, "evidence": "Parakletos fact (John 14:16)"}
+      ]
+    },
+    {
+      "eval_id": 10, "eval_name": "Follow-up Did You Know Cycle", "configuration": "without_skill", "run_number": 1,
+      "result": {"pass_rate": 0.25, "passed": 1, "failed": 3, "total": 4, "time_seconds": 92.8, "tokens": 22502, "tool_calls": 2, "errors": 0},
+      "expectations": [
+        {"text": "Romans 3:23 with hamartia and Jew-Gentile equality", "passed": true, "evidence": "Greek analysis but generic sin framing"},
+        {"text": "NOT total depravity or original sin", "passed": false, "evidence": "Universal depravity foundation"},
+        {"text": "4 follow-up options", "passed": false, "evidence": "No follow-up options"},
+        {"text": "Did You Know about non-Romans topic", "passed": false, "evidence": "No Did You Know feature"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 0.976, "stddev": 0.053, "min": 0.75, "max": 1.0},
+      "time_seconds": {"mean": 267.3, "stddev": 66.7, "min": 174.8, "max": 427.4},
+      "tokens": {"mean": 78808, "stddev": 9611, "min": 55683, "max": 90614}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.46, "stddev": 0.30, "min": 0.0, "max": 1.0},
+      "time_seconds": {"mean": 89.2, "stddev": 17.7, "min": 70.9, "max": 135.0},
+      "tokens": {"mean": 22138, "stddev": 799, "min": 21464, "max": 24363}
+    },
+    "delta": {
+      "pass_rate": "+0.516",
+      "time_seconds": "+178.1",
+      "tokens": "+56670"
+    }
+  },
+  "notes": [
+    "Eval 5 (almah) passes 100% in both configurations — non-discriminating for content assertions.",
+    "Eval 6 (church language) shows biggest delta: 0.75 vs 0.0 — church language routing is high-value.",
+    "Eval 9 (CCV fallback) clearest flow advantage: 1.0 vs 0.25 — only the skill can execute scripts.",
+    "Eval 10 (follow-up) shows 1.0 vs 0.25 — Did You Know + yetzer framing only exist with skill.",
+    "With-skill averages 3.5x tokens and 3x time, but 97.6% vs 46% pass rate (+52% improvement).",
+    "The one failure (eval 6 assertion 2): Step 1 church language detection should produce visible output before analysis."
+  ]
+}
