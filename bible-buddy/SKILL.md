@@ -183,7 +183,7 @@ This rule overrides the Explanatory output style default of "not in the codebase
 - **觀察 vs. 解讀** — Separate grammatical/historical facts from theological interpretations.
 
 **Auto-Save — each response gets its own file** (never append):
-- `{date}_{time}_{book}_{chapter}_{verses}.md`
+- `YYYYMMDD_HHmm_{book}_{chapter}_{verses}.md` (e.g., `20260406_1430_Mark_6_3.md`)
 - Follow-ups: `..._followup_{topic}.md` · Did You Know: `..._Did_You_Know_{topic}.md`
 
 **Environment detection:**
