@@ -22,7 +22,8 @@ Report issues with specific line numbers. Never auto-fix — only report.
    → reads the specified file
 3. **URL** — e.g., `/review-bible-buddy https://example.com/article`
    → Do NOT use WebFetch — many news sites block it with 403.
-   Run `uv run <bible-buddy-directory>/scripts/fetch_url.py "<URL>"` to extract article text.
+   Run `uv run --project bible-buddy bible-buddy/scripts/fetch_url.py "<URL>"` to extract article text.
+   The script auto-falls back to patchright (headless Chromium) when urllib gets 403.
 4. **Pasted text** — user pastes content directly in the conversation
    → review the pasted text
 5. **No argument** — use AskUserQuestion to ask the user whether they want to
@@ -30,9 +31,14 @@ Report issues with specific line numbers. Never auto-fix — only report.
 
 ## Prerequisites
 
-Verify `bible-buddy/references/` exists (sibling directory or project root).
-If not found, **stop immediately** and tell the user:
-「bible-fact-check 需要 bible-buddy skill。請先安裝：`npx skills add lancetw/skills/bible-buddy`」
+1. Verify `bible-buddy/references/` exists (sibling directory or project root).
+   If not found, **stop immediately** and tell the user:
+   「bible-fact-check 需要 bible-buddy skill。請先安裝：`npx skills add lancetw/skills/bible-buddy`」
+
+2. Run dependency setup (one-time):
+   ```bash
+   cd bible-buddy && uv sync && uv run patchright install chromium
+   ```
 
 ## How to Run
 

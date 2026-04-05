@@ -1,0 +1,11 @@
+[project]
+name = "bible-buddy"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "trafilatura",
+    "patchright",
+]
+
+[tool.uv]
+# After `uv sync`, run: uv run patchright install chromium
