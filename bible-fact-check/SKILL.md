@@ -51,7 +51,10 @@ URLs and pasted text (do not print N/A lines for them).
 3. Read / receive the content
 4. Load reference files as checking criteria (read on demand, not all at once):
    - `~/.claude/skills/bible-buddy/references/anachronism-timeline.md` → Read entire file (small, 43 lines) → for checks 3, 4
-   - `~/.claude/skills/bible-buddy/references/commonly-misread-passages.md` → **Do NOT Read entire file** (44KB wide table). Use Grep to search by scripture reference or keyword, e.g., `Grep("Genesis 1:26", path="~/.claude/skills/bible-buddy/references/commonly-misread-passages.md")` → for checks 2, 4, 7, 8
+   - `~/.claude/skills/bible-buddy/references/commonly-misread-passages.md` → **Do NOT Read entire file** (44KB wide table). Two-step lookup:
+     1. Load index: `bash: grep '|' ~/.claude/skills/bible-buddy/references/commonly-misread-passages.md | awk -F'|' '{print $2}' | sed 's/^ *//;s/ *$//' | grep -v '^-' | grep -v '^Scripture'` → gives all 79 scripture references (~2KB)
+     2. For each relevant passage, Grep the full row: `Grep("Isaiah 7:14", path="~/.claude/skills/bible-buddy/references/commonly-misread-passages.md")`
+     → for checks 2, 4, 7, 8
    - `~/.claude/skills/bible-buddy/references/yeshua-hermeneutics.md` → Read entire file (small, 122 lines) → for check 8
 5. Run checks sequentially:
    - **URL or pasted text**: run checks 1-5 only
