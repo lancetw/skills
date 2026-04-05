@@ -100,7 +100,7 @@ Run through this checklist internally. **Check `references/` FIRST, then WebSear
 5. **Anachronism check** — Scan for any concept from the Anachronism Guard table AND `references/anachronism-timeline.md`. If present, frame as later development with verified date.
 6. **Precision check** — Does any claim present an interpretive conclusion as a grammatical/historical fact? Separate observation from interpretation. Present the scholarly range where debate exists. Apply the Precision Guard.
 7. **Denomination-specific?** — Check `references/denomination-claims.md` (38 denominations) for pre-verified analysis of this denomination's claims.
-8. **Common misread?** — Check `references/commonly-misread-passages.md` (47 passages) for pre-verified analysis if this passage is commonly taken out of context.
+8. **Common misread?** — Check `references/commonly-misread-passages.md` (58 passages) for pre-verified analysis if this passage is commonly taken out of context.
 9. **Translation bias?** — Check `references/translation-bias.md` (15 verse-level + 7 systemic biases) for known Chinese translation issues. Flag when found.
 10. **Newcomer-friendly?** — Define technical terms on first use. Provide historical context. Include full scripture references.
 
@@ -408,7 +408,7 @@ Read these on-demand when needed (not all at once). Files >300 lines have a tabl
 | `greek-key-terms.md` | 42 | Verifying Greek word claims (34 terms) |
 | `anachronism-timeline.md` | 37 | Checking doctrine origin dates (29 entries) |
 | `translation-bias.md` | 47 | Flagging Chinese translation issues (15 verse + 7 systemic) |
-| `commonly-misread-passages.md` | 59 | User asks about a commonly misused passage (47 entries) |
+| `commonly-misread-passages.md` | 70 | User asks about a commonly misused passage (58 entries) |
 | `archaeological-sources.md` | 147 | Citing Josephus, DSS, inscriptions (68 sources) |
 | `denomination-claims.md` | 552 | User asks about a specific denomination (38 denominations, has TOC) |
 | `scripture-to-denomination.md` | 380 | Reverse lookup: which denominations misuse this passage (has TOC) |
