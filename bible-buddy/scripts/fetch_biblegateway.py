@@ -151,13 +151,27 @@ def format_output(result: dict) -> str:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(1)
 
     book = sys.argv[1]
-    ref = sys.argv[2]
+    ref = sys.argv[2] if len(sys.argv) > 2 else ""
     version = sys.argv[3] if len(sys.argv) > 3 else "RCU17TS"
+
+    # Handle merged "Book Chapter:Verses" in a single argument
+    # e.g., "Zechariah 3:1-5" → book="Zechariah", ref="3:1-5"
+    # e.g., "1 Chronicles 21:1" → book="1 Chronicles", ref="21:1"
+    if not lookup(book):
+        parts = book.split()
+        for i in range(len(parts) - 1, 0, -1):
+            candidate = " ".join(parts[:i])
+            rest = " ".join(parts[i:])
+            if lookup(candidate):
+                if ref and ref.upper() in VERSION_MAP:
+                    version = ref
+                book, ref = candidate, rest
+                break
 
     result = fetch(book, ref, version)
     print(format_output(result))

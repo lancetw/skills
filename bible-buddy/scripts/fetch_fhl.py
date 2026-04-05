@@ -187,15 +187,6 @@ def format_output(result: dict) -> str:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print(__doc__)
-        sys.exit(1)
-
-    book = sys.argv[1]
-    chapter = int(sys.argv[2])
-    start_v = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3].isdigit() else None
-    end_v = int(sys.argv[4]) if len(sys.argv) > 4 and sys.argv[4].isdigit() else None
-
     # Special: --list-versions
     if len(sys.argv) > 1 and sys.argv[1] == "--list-versions":
         names = _get_version_names()
@@ -203,9 +194,27 @@ if __name__ == "__main__":
             print(f"  {code:15s}  {name}")
         sys.exit(0)
 
-    # Last arg might be version code (default: rcuv)
+    if len(sys.argv) < 3:
+        print(__doc__)
+        sys.exit(1)
+
+    # Handle multi-word book names (e.g., I Corinthians 3 8 → book="I Corinthians")
+    args = sys.argv[1:]
+    chapter_idx = next((i for i, a in enumerate(args) if a.isdigit()), None)
+    if chapter_idx is not None and chapter_idx > 0:
+        book = " ".join(args[:chapter_idx])
+        rest = args[chapter_idx:]
+    else:
+        book = args[0]
+        rest = args[1:]
+
+    chapter = int(rest[0])
+    start_v = int(rest[1]) if len(rest) > 1 and rest[1].isdigit() else None
+    end_v = int(rest[2]) if len(rest) > 2 and rest[2].isdigit() else None
+
+    # Last non-digit arg is version code (default: rcuv)
     version = "rcuv"
-    for arg in sys.argv[3:]:
+    for arg in rest[1:]:
         if not arg.isdigit():
             version = arg
 
