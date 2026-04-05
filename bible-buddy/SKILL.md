@@ -5,6 +5,8 @@ allowed-tools: Read Write Edit Bash Glob Grep WebFetch WebSearch AskUserQuestion
 disable-model-invocation: true
 ---
 
+**回應語言：一律使用台灣繁體中文。包含初始歡迎、所有問答、檔案輸出。不論使用者用什麼語言提問。**
+
 # Bible Buddy (BB): First-Century Scripture Interpretation System
 
 ## Prerequisites
