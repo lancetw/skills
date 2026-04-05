@@ -61,7 +61,11 @@ def fetch(book: str, ref: str, version: str = "RCU17TS") -> dict:
         with urllib.request.urlopen(req, timeout=15) as resp:
             page_html = resp.read().decode("utf-8")
     except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return {"error": f"Passage not found on Bible Gateway. Check book/chapter/verse. Ref: {bg_name} {ref}", "url": url}
         return {"error": f"Bible Gateway error: {e.code} {e.reason}", "url": url}
+    except urllib.error.URLError as e:
+        return {"error": f"Cannot reach Bible Gateway (network issue). Detail: {e.reason}", "url": url}
     except Exception as e:
         return {"error": f"Request failed: {e}", "url": url}
 

@@ -21,6 +21,7 @@ import json
 import sys
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+import urllib.parse
 import urllib.request
 import os
 
@@ -35,7 +36,7 @@ def verify(book: str, chapter: int, verse: int, word: str) -> dict:
 
     chinese_name, sefaria_name, osis, _ = info
     ref = f"{sefaria_name}.{chapter}.{verse}"
-    url = f"https://www.sefaria.org/api/v3/texts/{ref}?version=source&version=all"
+    url = f"https://www.sefaria.org/api/v3/texts/{urllib.parse.quote(ref)}?version=source&version=all"
 
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "bible-buddy-verify/1.0"})
@@ -116,10 +117,19 @@ if __name__ == "__main__":
         print(__doc__)
         sys.exit(1)
 
-    book = sys.argv[1]
-    chapter = int(sys.argv[2])
-    verse = int(sys.argv[3])
-    word = sys.argv[4]
+    # Handle multi-word book names (e.g., I Chronicles 21 1 word)
+    args = sys.argv[1:]
+    chapter_idx = next((i for i, a in enumerate(args) if a.isdigit()), None)
+    if chapter_idx is not None and chapter_idx > 0:
+        book = " ".join(args[:chapter_idx])
+        rest = args[chapter_idx:]
+    else:
+        book = args[0]
+        rest = args[1:]
+
+    chapter = int(rest[0])
+    verse = int(rest[1])
+    word = rest[2]
 
     result = verify(book, chapter, verse, word)
     print(format_output(result))
