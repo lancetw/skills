@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Attempts to fetch CCV for Isaiah and handles the unavailability",
+      "passed": true,
+      "evidence": "The metadata lists 'fetch_ccv.py' as a source, and the verification table confirms: 'CCV 以賽亞書尚未上線 | 高 | fetch_ccv.py 直接確認'. This indicates the tool attempted to fetch CCV and handled the failure."
+    },
+    {
+      "text": "Informs user that CCV OT coverage is partial (Isaiah not available)",
+      "passed": true,
+      "evidence": "A dedicated warning section states: '⚠ 新漢語譯本（CCV）不適用' followed by: '你指定了新漢語譯本（CCV），但以賽亞書的 CCV 翻譯尚未上線（翻譯進行中）。CCV 舊約目前僅涵蓋創世記至約書亞記、路得記、約拿書。'"
+    },
+    {
+      "text": "Falls back to alternative translations (RCUV, 呂振中, or others)",
+      "passed": true,
+      "evidence": "Response states: '因此以下改以其他三個主要中文譯本與希伯來原文進行比較' and provides a full comparison table with RCUV (和合本修訂版), CNVT (新譯本), and 呂振中譯本 for all verses 40:28-31."
+    },
+    {
+      "text": "Still provides Hebrew analysis of Isaiah 40:31 (qavah = wait/hope with tension)",
+      "passed": true,
+      "evidence": "Extensive Hebrew analysis is provided: 'קָוָה (qavah, 字根 ק-ו-ח) 是本節最關鍵的動詞。其原始意義為「拉緊、繫繩」— 像繩索被拉緊時所承受的張力' and 'Qavah 不是消極的等待（如在候診室等候），而是帶著張力的盼望 — 像一條被拉緊的繩索，繫在 YHWH 的信實（emunah）上'. Also analyzes chalaf (交換), nesher (禿鷲/兀鷹), and other key terms."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

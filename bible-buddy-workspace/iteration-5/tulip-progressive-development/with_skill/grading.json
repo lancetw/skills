@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Mentions TULIP acronym is a later creation, not from Dort itself",
+      "passed": true,
+      "evidence": "「TULIP」這個英文首字母縮寫更是 20 世紀的產物。 and the timeline table: TULIP 縮寫 | 20 世紀英文 | ~1,900 年"
+    },
+    {
+      "text": "Mentions Calvin died 1564 before Dort",
+      "passed": true,
+      "evidence": "加爾文本人於 1564 年去世，從未提出這五個要點。"
+    },
+    {
+      "text": "Presents Romans 9 as national/covenantal, not individual predestination",
+      "passed": true,
+      "evidence": "這些經文討論的是兩個民族的角色，不是兩個個人的永恆命運。 and YHWH 對利百加說的是：「你腹中有兩個民族（גוֹיִם / goyim）」 and 這是國族性的盟約揀選，不是個人性的永恆命運預定。"
+    },
+    {
+      "text": "Does not present Dort as originating Calvinism (progressive development)",
+      "passed": true,
+      "evidence": "The response clearly states TULIP was formulated at Dort (1618-1619) as a response to Arminianism, Calvin died in 1564 before Dort, the TULIP acronym is a 20th century product, and Original Sin comes from Augustine (4-5th century). It presents a progressive development timeline rather than claiming Dort originated Calvinism itself."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

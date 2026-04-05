@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Analyzes Hebrew hesed (covenantal loyalty) and/or ahavah, not just generic 'love'",
+      "passed": true,
+      "evidence": "Response dedicates extensive sections to both: 'אַהֲבָה / אהב (ahavah / ahav) — 盟約行動之愛' with analysis of Deut 6:4-5 and Lev 19:18, and 'חֶסֶד (hesed) — 盟約忠誠之愛' with analysis of Hosea 2:21 and Micah 6:8. It explicitly states: 'Hesed 不是泛泛的善意，而是 YHWH 在以色列背約的情況下仍然堅持履行盟約承諾的忠誠'. Also includes רַחֲמִים (rachamim) analysis."
+    },
+    {
+      "text": "Explains Buddhist karuna/metta as a distinct conceptual framework, not a Bible equivalent",
+      "passed": true,
+      "evidence": "Response presents the Four Immeasurables (四無量心) with Sanskrit and Pali terms: 'maitrī/mettā (慈)' and 'karuṇā (悲)', explicitly noting 4 core characteristics including '無對象性（non-referential）', '以「捨」為基礎', '最終目標是離苦', and '無「神」的維度'. The comparison table clearly distinguishes the two as separate frameworks, not equivalents."
+    },
+    {
+      "text": "Highlights the covenantal/relational nature of biblical love vs. the universal/non-attached nature of Buddhist compassion",
+      "passed": true,
+      "evidence": "The comparison table in Section 5 explicitly contrasts: '對象: 盟約中的特定對象（以色列、鄰舍、寄居者）' vs '一切有情眾生，無差別'; '結構: 垂直（人-神）+ 水平（人-人），不可分離' vs '水平（修行者-眾生），無垂直維度'; '倫理基礎: 具體的盟約義務' vs '內在心靈狀態的轉化'. Section 6 further states: '表面上，佛教的慈悲和聖經的愛都要求善待他人...但它們的哲學前提完全不同'."
+    },
+    {
+      "text": "Does NOT dismiss Buddhism or claim biblical love is 'superior' — presents structural differences",
+      "passed": true,
+      "evidence": "The conclusion states: '佛教的慈悲和聖經的愛各自回答不同的問題。佛教問：「如何從苦中解脫？」聖經問：「如何在盟約中與 YHWH 同行...」兩者都能產生善行，但它們的根基、動力和最終目標截然不同。' No language of superiority or dismissal is used. The response consistently frames the differences as structural, not evaluative."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

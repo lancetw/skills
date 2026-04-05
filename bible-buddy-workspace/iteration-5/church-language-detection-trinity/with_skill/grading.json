@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Detects 三位一體 as a post-first-century concept and flags it",
+      "passed": true,
+      "evidence": "Response states: \"你提到的「三位一體」這個概念在第一世紀尚不存在\" and provides a detailed timeline: Tertullian ~200 CE, Nicaea 325 CE, Constantinople 381 CE. The concept is explicitly flagged as anachronistic."
+    },
+    {
+      "text": "Calls AskUserQuestion (or text fallback) BEFORE starting interpretation — acknowledges church language detection before diving into analysis",
+      "passed": false,
+      "evidence": "The response does NOT acknowledge the church language detection as a separate step before diving into analysis. It immediately begins the study under the heading '「三位一體」的第一世紀原始概念' with the subtitle '釐清方向' and jumps straight into the content. The metadata shows 'study_type: 主題研究 (第一世紀的原始概念)' suggesting it already chose a direction without asking. There is no evidence of a pause or acknowledgment that the term triggered a detection before the analysis began."
+    },
+    {
+      "text": "Offers redirection options (第一世紀的原始概念, 概念發展史, or similar)",
+      "passed": true,
+      "evidence": "The response ends with 4 options: '1. 希伯來字詞深入 — 完整字根分析和跨經文追蹤 2. 考古證據 — 支持這個解讀的考古發現和歷史文獻 3. 相關經文 — 其他相關的經文段落 4. Did You Know?'. Additionally, the metadata shows 'study_type: 主題研究 (第一世紀的原始概念)' and the opening section '釐清方向' explicitly redirects the topic to first-century original concepts. However, the redirection options were not offered BEFORE the analysis; they appear only at the end. This is a partial pass — redirection options exist but are follow-up options rather than initial routing options like '第一世紀的原始概念 vs 概念發展史'."
+    },
+    {
+      "text": "Does NOT immediately present a pro-Trinity or anti-Trinity argument without asking first",
+      "passed": true,
+      "evidence": "The response explicitly states: '這不是說三位一體「對」或「錯」——這是一個信仰和神學的判斷。但作為歷史事實，我們必須誠實地說：第一世紀的經文本身不使用這個詞、不用這個框架'. It presents historical and linguistic evidence without taking a pro-Trinity or anti-Trinity stance. It acknowledges the texts provide 'partial raw materials' (部分原料) but the 'finished formula' (成品配方) came later."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 1,
+    "total": 4,
+    "pass_rate": 0.75
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Presents Romans 3:23 analysis with Greek/Hebrew terms (hamartia, Paul's argument about Jew-Gentile equality)",
+      "passed": true,
+      "evidence": "Response provides detailed Greek analysis: 'ἥμαρτον (hemarton) — 「犯了罪」' with root 'ἁμαρτάνω (hamartano) = 偏離目標、犯錯、做錯事' and Hebrew background 'חָטָא (chata) = 偏離正路、未達標準'. Paul's Jew-Gentile equality argument is explicitly stated: '保羅的核心論點不是「人類有原罪」，而是「猶太人和外邦人在上帝面前處於同等地位」-- 都犯了罪' and '保羅在這裡不是在建立一個抽象的神學教義。他在回答一個非常具體的問題：猶太人在上帝面前比外邦人有優勢嗎？（3:9）'. Also includes analysis of hysterountai, doxa/kavod, pistis/emunah, hilasterion/kapporet."
+    },
+    {
+      "text": "Does NOT frame Romans 3:23 through 'total depravity' or 'original sin' lens",
+      "passed": true,
+      "evidence": "The response explicitly rejects this framing. Under '誤讀一：羅馬書 3:23 證明奧古斯丁「原罪」教義', it states: '將此解讀為奧古斯丁「原罪」教義（遺傳罪性、全然敗壞），在第一世紀猶太教中沒有根據。保羅是法利賽人，他的框架是 yetzer（傾向），不是 original sin（遺傳罪咎）'. It also notes: '原罪教義始於奧古斯丁（354-430 CE），4-5世紀' and presents the first-century Jewish understanding of yetzer ha-tov/yetzer ha-ra as the proper framework."
+    },
+    {
+      "text": "Ends with AskUserQuestion or text fallback with 4 options",
+      "passed": true,
+      "evidence": "Response ends with: '想深入哪個方面？ 1. 希伯來字詞深入 -- 完整字根分析和跨經文追蹤 2. 考古證據 -- 支持這個解讀的考古發現和歷史文獻 3. 相關經文 -- 其他相關的經文段落 4. Did You Know? -- 約翰福音 14:16 的「保惠師」(parakletos) 是聖靈... 請選擇 (1-4)：'"
+    },
+    {
+      "text": "Fourth option is 'Did You Know?' with a fact NOT about Romans",
+      "passed": true,
+      "evidence": "The fourth option is: 'Did You Know? -- 約翰福音 14:16 的「保惠師」(parakletos) 是聖靈，14:26 直接說明了這一點，不是觀音或穆罕默德'. This is about John 14:16, not about Romans, fulfilling the requirement."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

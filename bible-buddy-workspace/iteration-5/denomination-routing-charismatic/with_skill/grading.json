@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "Identifies this as a charismatic/Pentecostal teaching about tongues",
+      "passed": true,
+      "evidence": "Response explicitly states: '你的教會牧師所說的，反映的是靈恩派（Charismatic/Pentecostal）的核心教義之一：方言是受聖靈洗的唯一證據'"
+    },
+    {
+      "text": "Fetches 1 Corinthians 12-14 and/or Acts 2 scripture text",
+      "passed": true,
+      "evidence": "Response fetches and quotes Greek original text from Acts 2:1-13 (with glossai/dialektos analysis), 1 Corinthians 12:27-31 (with μή analysis), 1 Corinthians 14:1-5, 14:18-25, and 1 Corinthians 12:4-11. Sources listed include 'FHL 新約原文, Bible Gateway RCUV'."
+    },
+    {
+      "text": "Distinguishes first-century glossolalia (known languages in Acts 2) from modern tongues practice",
+      "passed": true,
+      "evidence": "Response clearly states: '五旬節的「方言」不是今天靈恩派聚會中聽到的那種無法辨識的「舌音」' and analyzes: 'γλῶσσαι (glossai) — 「舌頭」或「語言」' vs 'διάλεκτος (dialektos) — 「方言」，即特定地區的已知人類語言'. The table also summarizes: '五旬節方言是超自然舌音 | 希臘文 dialektos 明確指「已知人類語言」(使徒行傳 2:6,8)'."
+    },
+    {
+      "text": "References the historical origin of tongues-as-evidence doctrine (Azusa Street 1906 or Pentecostal movement)",
+      "passed": true,
+      "evidence": "Section seven is titled '歷史溯源：「方言 = 聖靈洗唯一證據」這個教義從哪來？' and states: '這個教義不是來自第一世紀，而是來自 1906 年的 Azusa Street Revival（亞蘇撒街復興）'. It also traces: '1901 年 Charles Fox Parham' and '1906 年 William Seymour 在洛杉磯 Azusa Street 主領復興聚會'."
+    },
+    {
+      "text": "Presents evidence without saying 'your pastor is wrong' (guides, doesn't attack)",
+      "passed": true,
+      "evidence": "The response never says the pastor is wrong. It closes with: '這是第一世紀原文和歷史所呈現的證據。如何應用在你的信仰生活中，是你自己的決定。' It presents textual and historical evidence throughout without personal attacks on the pastor or the charismatic tradition."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Defines almah as young woman of marriageable age (not exclusively virgin)",
+      "passed": true,
+      "evidence": "almah（עַלְמָה），字根 ע-ל-מ（alam），意為「隱藏/遮蔽」，指的是「年輕女子、適婚年齡的女子」 and BDB 明確區分 almah（young woman of marriageable age）和 betulah（virgin）。"
+    },
+    {
+      "text": "Contrasts with betulah (more specifically 'virgin')",
+      "passed": true,
+      "evidence": "希伯來文有一個專門表示「處女」的詞：betulah（בְּתוּלָה），意為「未有性行為的女子」，在塔納赫中出現約 50 次。以賽亞沒有使用 betulah。"
+    },
+    {
+      "text": "Mentions LXX translation to parthenos and its significance",
+      "passed": true,
+      "evidence": "七十士譯本（約公元前 3-2 世紀的希臘文舊約翻譯）將 almah 翻譯為 παρθένος（parthenos，處女）and 這是翻譯偏差。希臘文中有對應 almah 的詞——neanis（νεᾶνις，年輕女子），但 LXX 譯者選擇了 parthenos。後來的希臘文翻譯者認識到了這個問題：阿奎拉（Aquila，約公元 130 年）和提奧多田（Theodotion，約公元 150 年）都將 almah 正確翻譯為 neanis。"
+    },
+    {
+      "text": "Presents the broader context of Isaiah 7:10-17 (Ahaz situation)",
+      "passed": true,
+      "evidence": "以賽亞書第 7 章的背景是一場真實的政治軍事危機：亞蘭王利汛（Rezin）和北國以色列王比加（Pekah）結盟進攻猶大 and 猶大王亞哈斯面臨被消滅的威脅 and 7:16 是理解整段的關鍵。這個「兆頭」是有時間框架的：在這孩子還小的時候，亞蘭和以色列就會被消滅。Full Hebrew text of 7:10-17 is provided."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}

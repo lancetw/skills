@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "States hen is neuter, not masculine heis (grammatical fact)",
+      "passed": true,
+      "evidence": "ἕν (hen) | 中性 (neuter) | 主格 | 一個東西、一個狀態、一種合一 and εἷς (heis) | 陽性 (masculine) | 主格 | 一個人、一個個體 and 約翰福音 10:30 使用的是中性 ἕν (hen)，不是陽性 εἷς (heis)。"
+    },
+    {
+      "text": "Presents at least 2 scholarly interpretations of hen",
+      "passed": true,
+      "evidence": "The response presents four possible interpretations: 1. 目的/行動合一 — 共同完成同一使命 2. 意志合一 — 完全的意願一致 3. 本質合一 — 共享同一神性本質 4. 以上皆有的某種組合"
+    },
+    {
+      "text": "Does NOT gloss hen as ONLY 'unity of purpose' without noting debate",
+      "passed": true,
+      "evidence": "語法本身不能裁決這場神學辯論。 and 結論：語法證據傾向目的/使命合一的解讀，但並不排除其他可能。學者們持續爭論。 and the 常見誤讀 table explicitly lists both 'hen 必然只表示「目的合一」' and 'hen 必然表示「本質合一」' as misreadings."
+    },
+    {
+      "text": "Clearly separates grammatical observation from theological interpretation",
+      "passed": true,
+      "evidence": "Section titled '觀察 vs. 解讀：清楚的區分' explicitly lists '以下是語法和歷史觀察（事實）' with 6 items, then '以下是需要標明為「解讀」的範疇' with 3 items."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  }
+}
