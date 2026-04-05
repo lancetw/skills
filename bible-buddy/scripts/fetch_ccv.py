@@ -241,10 +241,19 @@ if __name__ == "__main__":
         print(__doc__)
         sys.exit(1)
 
-    book = sys.argv[1]
-    chapter = int(sys.argv[2])
-    start_v = int(sys.argv[3]) if len(sys.argv) > 3 else None
-    end_v = int(sys.argv[4]) if len(sys.argv) > 4 else None
+    # Handle multi-word book names (e.g., Song of Songs 1 1 → book="Song of Songs")
+    args = sys.argv[1:]
+    chapter_idx = next((i for i, a in enumerate(args) if a.isdigit()), None)
+    if chapter_idx is not None and chapter_idx > 0:
+        book = " ".join(args[:chapter_idx])
+        nums = args[chapter_idx:]
+    else:
+        book = args[0]
+        nums = args[1:]
+
+    chapter = int(nums[0])
+    start_v = int(nums[1]) if len(nums) > 1 else None
+    end_v = int(nums[2]) if len(nums) > 2 else None
 
     result = fetch(book, chapter, start_v, end_v)
     print(format_output(result))

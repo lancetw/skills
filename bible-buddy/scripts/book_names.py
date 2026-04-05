@@ -80,6 +80,14 @@ _by_chinese = {b[0]: b for b in BOOKS}
 _by_english = {b[1].lower(): b for b in BOOKS}
 _by_osis = {b[2].lower(): b for b in BOOKS}
 
+# Numeric-prefix aliases: "1 Samuel" → "I Samuel", etc.
+_NUMERIC_ALIASES = {}
+for b in BOOKS:
+    eng = b[1].lower()
+    for roman, digit in [("i ", "1 "), ("ii ", "2 "), ("iii ", "3 ")]:
+        if eng.startswith(roman):
+            _NUMERIC_ALIASES[digit + eng[len(roman):]] = eng
+
 
 def lookup(name: str):
     """Look up a book by Chinese name, English name, or OSIS code.
@@ -87,10 +95,15 @@ def lookup(name: str):
     name = name.strip()
     if name in _by_chinese:
         return _by_chinese[name]
-    if name.lower() in _by_english:
-        return _by_english[name.lower()]
-    if name.lower() in _by_osis:
-        return _by_osis[name.lower()]
+    lower = name.lower()
+    if lower in _by_english:
+        return _by_english[lower]
+    if lower in _by_osis:
+        return _by_osis[lower]
+    # Numeric alias: "1 Samuel" → "I Samuel"
+    alias = _NUMERIC_ALIASES.get(lower)
+    if alias and alias in _by_english:
+        return _by_english[alias]
     # Fuzzy: try partial match on Chinese
     for zh, *rest in BOOKS:
         if name in zh or zh in name:

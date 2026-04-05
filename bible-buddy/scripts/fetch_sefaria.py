@@ -13,6 +13,7 @@ import json
 import sys
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+import urllib.parse
 import urllib.request
 import urllib.error
 import os
@@ -36,7 +37,7 @@ def fetch(book: str, chapter: int, start_verse: int = None, end_verse: int = Non
     else:
         ref = f"{sefaria_name}.{chapter}"
 
-    url = f"https://www.sefaria.org/api/v3/texts/{ref}?version=source&version=all"
+    url = f"https://www.sefaria.org/api/v3/texts/{urllib.parse.quote(ref)}?version=source&version=all"
 
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "torah-first-century-skill/1.0"})
@@ -115,10 +116,19 @@ if __name__ == "__main__":
         print(__doc__)
         sys.exit(1)
 
-    book = sys.argv[1]
-    chapter = int(sys.argv[2])
-    start_v = int(sys.argv[3]) if len(sys.argv) > 3 else None
-    end_v = int(sys.argv[4]) if len(sys.argv) > 4 else None
+    # Handle multi-word book names (e.g., I Chronicles 21 1 → book="I Chronicles")
+    args = sys.argv[1:]
+    chapter_idx = next((i for i, a in enumerate(args) if a.isdigit()), None)
+    if chapter_idx is not None and chapter_idx > 0:
+        book = " ".join(args[:chapter_idx])
+        nums = args[chapter_idx:]
+    else:
+        book = args[0]
+        nums = args[1:]
+
+    chapter = int(nums[0])
+    start_v = int(nums[1]) if len(nums) > 1 else None
+    end_v = int(nums[2]) if len(nums) > 2 else None
 
     result = fetch(book, chapter, start_v, end_v)
     print(format_output(result))
