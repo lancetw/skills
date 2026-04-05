@@ -105,8 +105,12 @@ Run through this checklist internally. **Check `references/` FIRST, then WebSear
 4. **Historical claims verified?** — Check `references/archaeological-sources.md` (68 verified sources) and `references/anachronism-timeline.md` (29 verified dates). For claims not listed, WebSearch to verify. Never fabricate scroll numbers or inscription details.
 5. **Anachronism check** — Scan for any concept from the Anachronism Guard table AND `references/anachronism-timeline.md`. If present, frame as later development with verified date.
 6. **Precision check** — Does any claim present an interpretive conclusion as a grammatical/historical fact? Separate observation from interpretation. Present the scholarly range where debate exists. Apply the Precision Guard.
-7. **Denomination-specific?** — Check `references/denomination-claims.md` (38 denominations) for pre-verified analysis of this denomination's claims.
+7. **Denomination-specific?** — **Do NOT Read entire file** (552 lines). Two-step lookup on `references/denomination-claims.md`:
+     1. Identify denomination → Grep its `## Heading`: `Grep("## .*Calvinism", path="references/denomination-claims.md", output_mode="content", -A=30)`
+     2. This returns only the relevant denomination's claims (~15-30 lines) instead of all 38 denominations
 8. **Common misread?** — Check `references/commonly-misread-passages.md` (58 passages) for pre-verified analysis if this passage is commonly taken out of context.
+     Also Grep `references/scripture-to-denomination.md` for the passage to see which denominations misuse it:
+     `Grep("Isaiah 7:14", path="references/scripture-to-denomination.md", output_mode="content", -A=2)`
 9. **Translation bias?** — Check `references/translation-bias.md` (15 verse-level + 7 systemic biases) for known Chinese translation issues. Flag when found.
 10. **Newcomer-friendly?** — Define technical terms on first use. Provide historical context. Include full scripture references.
 
@@ -316,7 +320,8 @@ Three patterns that erode credibility even when the underlying facts are correct
 
 ### Church Practices Assumed to Be Biblical
 
-Many users assume certain church practices come from the Bible. Read `references/church-practices.md` (18 practices with TOC) when a user asks about any of these:
+Many users assume certain church practices come from the Bible. Use the quick-verdict table below for initial responses. **Only Grep the specific practice section** from `references/church-practices.md` when the user wants deeper detail (key evidence, fetching instructions):
+`Grep("## 13\\. Spiritual covering", path="references/church-practices.md", output_mode="content", -A=15)`
 
 | Practice | Origin | Quick verdict |
 |----------|--------|--------------|
@@ -412,12 +417,12 @@ Read these on-demand when needed (not all at once). Files >300 lines have a tabl
 | `anachronism-timeline.md` | 37 | Checking doctrine origin dates (29 entries) |
 | `translation-bias.md` | 47 | Flagging Chinese translation issues (15 verse + 7 systemic) |
 | `commonly-misread-passages.md` | 70 | User asks about a commonly misused passage (58 entries) |
-| `church-practices.md` | ~260 | User asks about a church practice assumed biblical (18 practices, has TOC) |
+| `church-practices.md` | ~260 | **Grep per practice** — quick-verdict table is inline; Grep `## N.` section for detail |
 | `archaeological-sources.md` | 147 | Citing Josephus, DSS, inscriptions (68 sources) |
-| `denomination-claims.md` | 552 | User asks about a specific denomination (38 denominations, has TOC) |
-| `scripture-to-denomination.md` | 380 | Reverse lookup: which denominations misuse this passage (has TOC) |
-| `model-default-biases.md` | 209 | Awareness of model's default theological biases (7 categories) |
-| `verdict-summary.md` | 150 | Quick verdict: does a claim have first-century support? (134 verdicts) |
+| `denomination-claims.md` | 552 | **Grep per denomination** — `Grep("## .*Name")` for specific section only |
+| `scripture-to-denomination.md` | 380 | **Grep per passage** — reverse lookup in Step 3.8: which denominations misuse this verse |
+| `model-default-biases.md` | 209 | Documentation only — not loaded at runtime (describes model's default biases for skill development) |
+| `verdict-summary.md` | 150 | Documentation only — not loaded at runtime (test results summary for skill development) |
 | `yeshua-hermeneutics.md` | 122 | Examples of Yeshua's Jewish interpretive methods (27 examples) |
 | `fun-facts.md` | 105 | Random fact for "Did You Know?" feature (101 facts) |
 
