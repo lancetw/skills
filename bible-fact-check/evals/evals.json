@@ -1,0 +1,20 @@
+{
+  "skill_name": "bible-fact-check",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "檢查 fun facts 有沒有重複",
+      "expected_output": "Should review fun-facts.md, run check #1 (duplicates), report any pairs with line numbers"
+    },
+    {
+      "id": 2,
+      "prompt": "/bible-fact-check",
+      "expected_output": "Should review fun-facts.md (default) with all 10 checks, report findings per check, end with summary table"
+    },
+    {
+      "id": 3,
+      "prompt": "review bible-buddy denomination-claims.md",
+      "expected_output": "Should review denomination-claims.md with all 10 checks, skip inapplicable checks with N/A"
+    }
+  ]
+}
