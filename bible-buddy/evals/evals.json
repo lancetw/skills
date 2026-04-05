@@ -65,6 +65,72 @@
         {"text": "Mentions LXX translation to parthenos and its significance", "type": "content"},
         {"text": "Presents the broader context of Isaiah 7:10-17 (Ahaz situation)", "type": "content"}
       ]
+    },
+    {
+      "id": 6,
+      "name": "church-language-detection-trinity",
+      "prompt": "我想了解三位一體的聖經根據",
+      "expected_output": "Should detect '三位一體' as church language (post-first-century concept), redirect via AskUserQuestion with options like '第一世紀的原始概念' / '概念發展史' / '希伯來文原意', NOT immediately launch into a Trinity defense or attack",
+      "files": [],
+      "assertions": [
+        {"text": "Detects 三位一體 as a post-first-century concept and flags it", "type": "flow"},
+        {"text": "Calls AskUserQuestion (or text fallback) BEFORE starting interpretation", "type": "flow"},
+        {"text": "Offers redirection options (第一世紀的原始概念, 概念發展史, or similar)", "type": "flow"},
+        {"text": "Does NOT immediately present a pro-Trinity or anti-Trinity argument without asking first", "type": "precision"}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "denomination-routing-charismatic",
+      "prompt": "我們教會牧師說要用方言禱告才有聖靈充滿，這是聖經的教導嗎？",
+      "expected_output": "Should detect this as charismatic/Pentecostal denomination question, consult references/denomination-claims.md, present first-century glossolalia evidence, distinguish from modern tongues practice",
+      "files": [],
+      "assertions": [
+        {"text": "Identifies this as a charismatic/Pentecostal teaching about tongues", "type": "content"},
+        {"text": "Fetches 1 Corinthians 12-14 and/or Acts 2 scripture text", "type": "content"},
+        {"text": "Distinguishes first-century glossolalia (known languages in Acts 2) from modern tongues practice", "type": "content"},
+        {"text": "References the historical origin of tongues-as-evidence doctrine (Azusa Street 1906 or Pentecostal movement)", "type": "content"},
+        {"text": "Presents evidence without saying 'your pastor is wrong' (guides, doesn't attack)", "type": "precision"}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "interfaith-buddhism-comparison",
+      "prompt": "佛教的慈悲跟聖經的愛有什麼不同？",
+      "expected_output": "Should analyze Hebrew hesed/ahavah and Greek agape from first-century Jewish perspective, compare with Buddhist karuna/metta conceptual framework, avoid superficial 'they're basically the same' or dismissive 'Buddhism is wrong'",
+      "files": [],
+      "assertions": [
+        {"text": "Analyzes Hebrew hesed (covenantal loyalty) and/or ahavah, not just generic 'love'", "type": "content"},
+        {"text": "Explains Buddhist karuna/metta as a distinct conceptual framework, not a Bible equivalent", "type": "content"},
+        {"text": "Highlights the covenantal/relational nature of biblical love vs. the universal/non-attached nature of Buddhist compassion", "type": "precision"},
+        {"text": "Does NOT dismiss Buddhism or claim biblical love is 'superior' — presents structural differences", "type": "precision"}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "ccv-unavailable-ot-fallback",
+      "prompt": "請用新漢語譯本分析以賽亞書 40:31",
+      "expected_output": "Should attempt fetch_ccv.py for Isaiah 40, handle the unavailability gracefully (CCV OT only has Genesis-Joshua + Ruth + Jonah), fall back to other translations, and inform the user",
+      "files": [],
+      "assertions": [
+        {"text": "Attempts to fetch CCV for Isaiah and handles the unavailability", "type": "flow"},
+        {"text": "Informs user that CCV OT coverage is partial (Isaiah not available)", "type": "flow"},
+        {"text": "Falls back to alternative translations (RCUV, 呂振中, or others)", "type": "flow"},
+        {"text": "Still provides Hebrew analysis of Isaiah 40:31 (qavah = wait/hope with tension)", "type": "content"}
+      ]
+    },
+    {
+      "id": 10,
+      "name": "followup-did-you-know-cycle",
+      "prompt": "羅馬書 3:23 的原文分析",
+      "expected_output": "After presenting the analysis, should end with AskUserQuestion offering 4 options including a 'Did You Know?' fun fact from random_fact.py (excluding Romans). The fact should be from a DIFFERENT book than Romans.",
+      "files": [],
+      "assertions": [
+        {"text": "Presents Romans 3:23 analysis with Greek/Hebrew terms (hamartia, Paul's argument about Jew-Gentile equality)", "type": "content"},
+        {"text": "Does NOT frame Romans 3:23 through 'total depravity' or 'original sin' lens", "type": "precision"},
+        {"text": "Ends with AskUserQuestion or text fallback with 4 options", "type": "flow"},
+        {"text": "Fourth option is 'Did You Know?' with a fact NOT about Romans", "type": "flow"}
+      ]
     }
   ]
 }
