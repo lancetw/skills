@@ -38,7 +38,7 @@ Extracted from 37 with-skill test responses (iteration-3).
 | Josephus, *Jewish War* 2.8.14 | ~75 CE | Some Pharisees, under Hellenistic influence, believed in conscious intermediate state for righteous souls after death; Essene communal property practices ("rich enjoy no more than those with nothing") | adventist-theology, ccp-theology |
 | Josephus, *Jewish War* 6.5.4 | ~75 CE | Records 1st-century Jewish messianic movements | mashiach-concept |
 | Josephus, *Jewish War* 2.9.2-3 | ~75 CE | Jews willing to die collectively to oppose Pilate bringing Caesar-image military standards into Jerusalem; anti-icon evidence | orthodox-theology |
-| Josephus, *Contra Apionem* 1.42 | ~93 CE | Jews would rather die than alter a single word of Scripture; evidence of strict scribal transmission standards (soferim tradition) | islamic-theology |
+| Josephus, *Contra Apionem* 1.42 | c. 97 CE | Jews would rather die than alter a single word of Scripture; evidence of strict scribal transmission standards (soferim tradition) | islamic-theology |
 
 ---
 

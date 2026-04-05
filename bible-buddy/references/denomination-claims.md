@@ -199,7 +199,7 @@ Quick-reference lookup: what each tradition claims the Bible teaches, the script
 **Claim: Easter is the Christian celebration of resurrection**
 - Scripture: Leviticus 23:5-14, 1 Corinthians 5:7, 15:20
 - 1C Reality: Resurrection is embedded in Pesach/Matzot/Bikkurim (Passover/Unleavened Bread/Firstfruits); Paul calls Christ "our Pesach lamb" and "firstfruits" (aparchE = reshit); Quartodeciman controversy shows early believers commemorated on Nisan 14
-- Key Evidence: Nicaea 325 CE formally severed from Jewish calendar; Easter/Ishtar connection is false (Eostre = Germanic dawn goddess, unrelated to Mesopotamian Ishtar); rabbits (1678 CE) and eggs (medieval Lent) have zero 1C basis
+- Key Evidence: Nicaea 325 CE formally severed from Jewish calendar; Easter/Ishtar connection is false (Eostre = Germanic dawn goddess, unrelated to Mesopotamian Ishtar); rabbits (1682 CE, Franckenau) and eggs (medieval Lent) have zero 1C basis
 
 ---
 
@@ -254,7 +254,7 @@ Quick-reference lookup: what each tradition claims the Bible teaches, the script
 
 **Claim 1: Virgin birth parallel (Krishna = Jesus)**
 - Scripture: Isaiah 7:14
-- 1C Reality: almah = young woman, not virgin (betulah); Devaki (Krishna's mother) was married with 7 previous children; Bhagavata Purana dates to 9-10C CE
+- 1C Reality: almah = young woman, not virgin (betulah); Devaki (Krishna's mother) was married with 8 children total (6 killed by Kamsa + Balarama + Krishna); Bhagavata Purana dates to 800-1000 CE (some scholars: as early as 6C)
 - Key Evidence: ha-almah (definite article) = a specific known woman present at the scene; context is Syro-Ephraimite crisis (~735 BCE)
 
 **Claim 2: John 10:30 "I and the Father are one" = Atman is Brahman**
@@ -283,7 +283,7 @@ Quick-reference lookup: what each tradition claims the Bible teaches, the script
 **Claim 3: Parakletos (John 14:16) was originally Periklutos = Ahmad/Muhammad**
 - Scripture: John 14:16-17, 26
 - 1C Reality: Zero MSS (of 5,800) read periklutos; different roots (para+kaleo vs. peri+klyo); 14:26 defines parakletos = "Holy Spirit" (to pneuma to hagion); 14:17 "world cannot see him" -- Muhammad was visible
-- Key Evidence: P66 (~150 CE), Sinaiticus, Vaticanus all read parakletos; Jewish peraklit in Mishnah Avot 4:11 = advocate/defender
+- Key Evidence: P66 (~200 CE; dating debated), Sinaiticus, Vaticanus all read parakletos; Jewish peraklit in Mishnah Avot 4:11 = advocate/defender
 
 ---
 
@@ -326,7 +326,7 @@ Quick-reference lookup: what each tradition claims the Bible teaches, the script
 **Claim 4: Jesus died on a stake, not a cross**
 - Scripture: Deuteronomy 21:22 (etz = wood/tree)
 - 1C Reality: stauros in 1C Roman context = various shapes including crossbeam (Seneca); John 20:25 helon (nails, plural) implies hands nailed separately; Giv'at ha-Mivtar archaeology (1968) shows crucifixion with structure
-- Key Evidence: P66/P75 staurogram (~200 CE) depicts figure on cross; shape doesn't affect theology (qillat Elohim applies regardless), but evidence favors crossbeam
+- Key Evidence: P66/P75 staurogram (~200 CE) may allude to crucifixion form; shape doesn't affect theology (qillat Elohim applies regardless), but evidence favors crossbeam
 
 ---
 
@@ -335,7 +335,7 @@ Quick-reference lookup: what each tradition claims the Bible teaches, the script
 **Claim 1: Deification (theosis) -- humans become God in life and nature**
 - Scripture: 2 Peter 1:4, 2 Corinthians 3:18
 - 1C Reality: koinonoi theias physeos = "sharers in divine nature" = ethical participation, not ontological fusion; metamorphoumetha (passive voice) = being changed by God's kavod, not becoming God
-- Key Evidence: tzelem Elohim (Gen 1:26-27) = humans reflect God's image; imitatio Dei (Deut 28:9) = walk in His ways; Isa 43:10 "before me no god was formed" = Creator/creature distinction absolute; theosis as doctrine begins with Irenaeus (2C)
+- Key Evidence: tzelem Elohim (Gen 1:26-27) = humans reflect God's image; imitatio Dei (Deut 28:9) = walk in His ways; Isa 43:10 "before me no god was formed" = Creator/creature distinction absolute; theosis concept first articulated by Irenaeus (2C); systematized by Athanasius (4C)
 
 **Claim 2: Pray-reading (repeating scripture as prayer)**
 - Scripture: Ephesians 6:17-18
@@ -519,7 +519,7 @@ Quick-reference lookup: what each tradition claims the Bible teaches, the script
 
 ## Yiguandao / I-Kuan Tao (yiguandao-theology)
 
-**Claim: Five Religions Are One -- Bible, Quran, Analerta, Daodejing, Buddhist sutras all teach the same truth**
+**Claim: Five Religions Are One -- Bible, Quran, Analects, Daodejing, Buddhist sutras all teach the same truth**
 - Scripture: John 14:2 ("many rooms"), Acts 17:28 ("in him we live"), Matthew 7:7 ("seek and find")
 - 1C Reality: John 14:2 "many rooms" = places in Father's house for disciples, not "many valid religions"; Acts 17:28 Paul quotes Greek poets strategically while calling Athens to repent from idols (17:30); Matt 7:7 "seek" = seek YHWH within Torah framework
 - Key Evidence: Shema = radical exclusivity; "five religions" concept is 19-20C Chinese folk-religion syncretism; YHWH's covenant has no "multiple paths" clause

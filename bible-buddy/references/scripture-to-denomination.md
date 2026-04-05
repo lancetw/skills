@@ -119,14 +119,14 @@ Search by book name to find the relevant section.
 - **日蓮宗**: 使徒行傳 4:11 引用此詩篇的「名」被類比為「南無妙法蓮華經」的題目功德
 
 ## Proverbs 1:7
-- **儒家**: yir'at YHWH (敬畏耶和華) = 儒家的智慧觀；忽略智慧的本體論基礎在 YHWH
+- **儒家**: yir'at YHWH (敬畏上主) = 儒家的智慧觀；忽略智慧的本體論基礎在上主
 
 ## Proverbs 8:22-31
 - **道教**: hokhmah (智慧) = 老子的道
 - **諾斯底**: 智慧傳統被混淆為諾斯底的以翁 (aeon)
 
 ## Proverbs 10:22
-- **關公信仰**: birkat YHWH (耶和華的祝福) = 關公保佑生意興隆；混淆盟約性祝福與交易性拜拜
+- **關公信仰**: birkat YHWH (上主的祝福) = 關公保佑生意興隆；混淆盟約性祝福與交易性拜拜
 
 ## Proverbs 22:29
 - **職場神學/七山異象**: mahir bi-mlakhto (工匠的精湛) = 基督徒要成為職場菁英；將觀察句變成命令句
@@ -144,7 +144,7 @@ Search by book name to find the relevant section.
 - **安息日會**: 「死了的人毫無所知」支持靈魂沉睡（此處有較強希伯來文根據）
 
 ## Isaiah 2:2
-- **職場神學/七山異象**: har beit-YHWH (耶和華殿的山) = 七個社會領域；原文指一座山（錫安山），方向是萬國流向此山
+- **職場神學/七山異象**: har beit-YHWH (上主殿的山) = 七個社會領域；原文指一座山（錫安山），方向是萬國流向此山
 
 ## Isaiah 7:14
 - **基督教傳統**: almah (年輕女子) 被譯為「童女」/parthenos，發展為處女生子預言
@@ -206,7 +206,7 @@ Search by book name to find the relevant section.
 - **安息日會**: yeshenei admat-afar (睡在塵土中的) 支持靈魂沉睡（此處有較強希伯來文根據）
 
 ## Joel 3:5 / 2:32
-- **淨土宗**: qara' b'shem YHWH (求告耶和華的名) = 念佛稱名即得救；忽略盟約性呼求的前提
+- **淨土宗**: qara' b'shem YHWH (求告上主的名) = 念佛稱名即得救；忽略盟約性呼求的前提
 
 ## Micah 4:4
 - **職場神學/七山異象**: 忽略和平農業意象（人人坐在葡萄樹和無花果樹下）
