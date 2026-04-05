@@ -27,17 +27,24 @@ Report issues with specific line numbers. Never auto-fix — only report.
    → review the pasted text
 5. **No argument** — defaults to `bible-buddy/references/fun-facts.md`
 
+## Prerequisites
+
+Verify `bible-buddy/references/` exists (sibling directory or project root).
+If not found, **stop immediately** and tell the user:
+「bible-fact-check 需要 bible-buddy skill。請先安裝：`npx skills add lancetw/skills/bible-buddy`」
+
 ## How to Run
 
 1. Determine the input source
-2. Read / receive the content
-3. Load reference files as checking criteria (read on demand, not all at once):
+2. **Verify bible-buddy is installed** (see Prerequisites above)
+3. Read / receive the content
+4. Load reference files as checking criteria (read on demand, not all at once):
    - `bible-buddy/references/anachronism-timeline.md` → for checks 3, 4
    - `bible-buddy/references/commonly-misread-passages.md` → for checks 2, 4, 7, 8
    - `bible-buddy/references/yeshua-hermeneutics.md` → for check 8
-4. Run all 10 checks sequentially (skip checks that don't apply)
-5. For each check, report findings with line numbers, or "✅ 通過" if clean
-6. End with a summary table
+5. Run all 10 checks sequentially (skip checks that don't apply)
+6. For each check, report findings with line numbers, or "✅ 通過" if clean
+7. End with a summary table
 
 ## The 10 Checks
 
