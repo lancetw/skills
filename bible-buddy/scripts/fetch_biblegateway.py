@@ -106,6 +106,18 @@ def extract_verses(page_html: str) -> list[dict]:
     # Pattern: <sup class="versenum">14&nbsp;</sup>Text here
     parts = re.split(r'<sup[^>]*class="versenum"[^>]*>', passage)
 
+    # Check for chapternum (verse 1) in the part before the first versenum.
+    # BibleGateway renders verse 1 as <span class="chapternum">N </span>
+    # instead of <sup class="versenum">, so it gets missed by the split.
+    if parts:
+        ch_match = re.search(r'<span class="chapternum">\d+\s*(?:&nbsp;)?\s*</span>(.*)', parts[0], re.DOTALL)
+        if ch_match:
+            text = re.sub(r'<[^>]+>', '', ch_match.group(1))
+            text = html.unescape(text).strip()
+            text = re.sub(r'\s+', ' ', text)
+            if text:
+                verses.append({"verse": "1", "text": text})
+
     for part in parts[1:]:  # Skip first part (before first verse number)
         verse_match = re.match(r'(\d+)\s*(?:&nbsp;)?\s*</sup>(.*?)(?=<sup[^>]*class="versenum"|$)', part, re.DOTALL)
         if verse_match:
