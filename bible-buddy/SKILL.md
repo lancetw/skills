@@ -94,13 +94,13 @@ All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book 
 Run through this checklist internally. **Check `references/` FIRST, then WebSearch for anything not in references:**
 
 1. **Text correct?** — Confirm book/chapter/verse matches the fetched text. Quote the full passage, not a paraphrase.
-2. **Hebrew claims verified?** — Check `references/hebrew-key-terms.md` first (30 verified terms). For terms not listed, use fetched Sefaria data or WebSearch. If unverified: "⚠ 此希伯來文分析尚待線上來源驗證".
-3. **Greek claims verified?** — Check `references/greek-key-terms.md` first (26 verified terms). For terms not listed, use WebSearch. If unverified: "⚠ 此希臘文分析尚待線上來源驗證".
-4. **Historical claims verified?** — Check `references/archaeological-sources.md` (87 verified sources) and `references/anachronism-timeline.md` (25 verified dates). For claims not listed, WebSearch to verify. Never fabricate scroll numbers or inscription details.
+2. **Hebrew claims verified?** — Check `references/hebrew-key-terms.md` first (35 verified terms). For terms not listed, run `uv run scripts/verify_claim.py <book> <chapter> <verse> <word>` to cross-verify against Sefaria, or use WebSearch. If unverified: "⚠ 此希伯來文分析尚待線上來源驗證".
+3. **Greek claims verified?** — Check `references/greek-key-terms.md` first (29 verified terms). For terms not listed, use WebSearch. If unverified: "⚠ 此希臘文分析尚待線上來源驗證".
+4. **Historical claims verified?** — Check `references/archaeological-sources.md` (68 verified sources) and `references/anachronism-timeline.md` (23 verified dates). For claims not listed, WebSearch to verify. Never fabricate scroll numbers or inscription details.
 5. **Anachronism check** — Scan for any concept from the Anachronism Guard table AND `references/anachronism-timeline.md`. If present, frame as later development with verified date.
 6. **Precision check** — Does any claim present an interpretive conclusion as a grammatical/historical fact? Separate observation from interpretation. Present the scholarly range where debate exists. Apply the Precision Guard.
-7. **Denomination-specific?** — Check `references/denomination-claims.md` (37 denominations) for pre-verified analysis of this denomination's claims.
-8. **Common misread?** — Check `references/commonly-misread-passages.md` (45 passages) for pre-verified analysis if this passage is commonly taken out of context.
+7. **Denomination-specific?** — Check `references/denomination-claims.md` (38 denominations) for pre-verified analysis of this denomination's claims.
+8. **Common misread?** — Check `references/commonly-misread-passages.md` (47 passages) for pre-verified analysis if this passage is commonly taken out of context.
 9. **Translation bias?** — Check `references/translation-bias.md` (15 verse-level + 7 systemic biases) for known Chinese translation issues. Flag when found.
 10. **Newcomer-friendly?** — Define technical terms on first use. Provide historical context. Include full scripture references.
 
@@ -398,18 +398,24 @@ Read these on-demand when needed (not all at once). Files >300 lines have a tabl
 
 | File | Lines | When to read |
 |------|-------|-------------|
-| `hebrew-key-terms.md` | 43 | Verifying Hebrew word claims |
-| `greek-key-terms.md` | 37 | Verifying Greek word claims |
-| `anachronism-timeline.md` | 31 | Checking doctrine origin dates |
-| `translation-bias.md` | 47 | Flagging Chinese translation issues |
-| `commonly-misread-passages.md` | 59 | User asks about a commonly misused passage |
-| `archaeological-sources.md` | 147 | Citing Josephus, DSS, inscriptions |
-| `denomination-claims.md` | 518 | User asks about a specific denomination (has TOC) |
-| `scripture-to-denomination.md` | 372 | Reverse lookup: which denominations misuse this passage (has TOC) |
-| `model-default-biases.md` | 209 | Awareness of model's default theological biases |
-| `verdict-summary.md` | 144 | Quick verdict: does a claim have first-century support? |
-| `yeshua-hermeneutics.md` | 122 | Examples of Yeshua's Jewish interpretive methods |
-| `fun-facts.md` | 34 | Random fact for "Did You Know?" feature |
+| `hebrew-key-terms.md` | 43 | Verifying Hebrew word claims (35 terms) |
+| `greek-key-terms.md` | 37 | Verifying Greek word claims (29 terms) |
+| `anachronism-timeline.md` | 31 | Checking doctrine origin dates (23 entries) |
+| `translation-bias.md` | 47 | Flagging Chinese translation issues (15 verse + 7 systemic) |
+| `commonly-misread-passages.md` | 59 | User asks about a commonly misused passage (47 entries) |
+| `archaeological-sources.md` | 147 | Citing Josephus, DSS, inscriptions (68 sources) |
+| `denomination-claims.md` | 552 | User asks about a specific denomination (38 denominations, has TOC) |
+| `scripture-to-denomination.md` | 380 | Reverse lookup: which denominations misuse this passage (has TOC) |
+| `model-default-biases.md` | 209 | Awareness of model's default theological biases (7 categories) |
+| `verdict-summary.md` | 144 | Quick verdict: does a claim have first-century support? (128 verdicts) |
+| `yeshua-hermeneutics.md` | 122 | Examples of Yeshua's Jewish interpretive methods (27 examples) |
+| `fun-facts.md` | 34 | Random fact for "Did You Know?" feature (30 facts) |
+
+**Verification script** (not a reference file, but useful for Step 3):
+
+| Script | Usage | When to use |
+|--------|-------|-------------|
+| `verify_claim.py` | `uv run scripts/verify_claim.py <book> <chapter> <verse> <word>` | Cross-verify a Hebrew word claim against Sefaria. E.g., confirm עַלְמָה in Isaiah 7:14. |
 
 ## Full Scripture Citation Rules
 

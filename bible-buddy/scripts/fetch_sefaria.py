@@ -44,7 +44,11 @@ def fetch(book: str, chapter: int, start_verse: int = None, end_verse: int = Non
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return {"error": f"Passage not found in Sefaria (OT only; no NT). Ref: {ref}", "url": url}
         return {"error": f"Sefaria API error: {e.code} {e.reason}", "url": url}
+    except urllib.error.URLError as e:
+        return {"error": f"Cannot reach Sefaria (network issue). Try fetch_fhl.py instead. Detail: {e.reason}", "url": url}
     except Exception as e:
         return {"error": f"Request failed: {e}", "url": url}
 
