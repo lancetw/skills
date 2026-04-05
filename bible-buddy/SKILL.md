@@ -413,7 +413,7 @@ Read these on-demand when needed (not all at once). Files >300 lines have a tabl
 | `model-default-biases.md` | 209 | Awareness of model's default theological biases (7 categories) |
 | `verdict-summary.md` | 150 | Quick verdict: does a claim have first-century support? (134 verdicts) |
 | `yeshua-hermeneutics.md` | 122 | Examples of Yeshua's Jewish interpretive methods (27 examples) |
-| `fun-facts.md` | 64 | Random fact for "Did You Know?" feature (60 facts) |
+| `fun-facts.md` | 85 | Random fact for "Did You Know?" feature (80 facts) |
 
 **Verification script** (not a reference file, but useful for Step 3):
 
