@@ -1,0 +1,70 @@
+{
+  "skill_name": "bible-buddy",
+  "evals": [
+    {
+      "id": 1,
+      "name": "tulip-progressive-development",
+      "prompt": "加爾文主義 TULIP 是聖經的教導嗎？",
+      "expected_output": "Should mention TULIP acronym is a later English mnemonic (~20th c.), five points from Dort 1618-1619, Calvin never articulated these exact 5 points, present progressive development timeline",
+      "files": [],
+      "assertions": [
+        {"text": "Mentions TULIP acronym is a later creation, not from Dort itself", "type": "content"},
+        {"text": "Mentions Calvin died 1564 before Dort", "type": "content"},
+        {"text": "Presents Romans 9 as national/covenantal, not individual predestination", "type": "content"},
+        {"text": "Does not present Dort as originating Calvinism (progressive development)", "type": "precision"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "john-10-30-observation-vs-interpretation",
+      "prompt": "約翰福音 10:30 「我與父原為一」的希臘原文分析",
+      "expected_output": "Should state hen is neuter (grammatical fact) and present multiple scholarly interpretations (shared purpose vs shared nature) without asserting one as settled by grammar",
+      "files": [],
+      "assertions": [
+        {"text": "States hen is neuter, not masculine heis (grammatical fact)", "type": "content"},
+        {"text": "Presents at least 2 scholarly interpretations of hen", "type": "precision"},
+        {"text": "Does NOT gloss hen as ONLY 'unity of purpose' without noting debate", "type": "precision"},
+        {"text": "Clearly separates grammatical observation from theological interpretation", "type": "precision"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "hebrews-8-13-kainos-semantic-range",
+      "prompt": "希伯來書 8:13 是說舊約被廢棄嗎？",
+      "expected_output": "Should present kainos semantic range from BDAG, note that grammar alone doesn't settle renewal vs replacement debate, show Jeremiah 31 context",
+      "files": [],
+      "assertions": [
+        {"text": "Distinguishes kainos (qualitative) from neos (temporal)", "type": "content"},
+        {"text": "Cites standard lexicon (BDAG, Thayer, or similar) for kainos definition", "type": "content"},
+        {"text": "Does NOT assert kainos definitively means 'renewed' without noting the range", "type": "precision"},
+        {"text": "References Jeremiah 31:31-33 and Torah internalization", "type": "content"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "psalm-46-10-harpu-semantic-range",
+      "prompt": "詩篇 46:10 「你們要休息」的希伯來文原意是什麼？",
+      "expected_output": "Should present raphah root meaning range, note military context of Psalm 46, but not overstate as exclusively 'military command'",
+      "files": [],
+      "assertions": [
+        {"text": "Identifies harpu from root raphah with Hifil imperative form", "type": "content"},
+        {"text": "Notes Psalm 46 military context (wars, kingdoms, weapons)", "type": "content"},
+        {"text": "Does NOT call it exclusively a 'military command' (presents semantic range)", "type": "precision"},
+        {"text": "Contrasts with common devotional reading while noting the range", "type": "precision"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "almah-isaiah-7-14-semantic-range",
+      "prompt": "以賽亞書 7:14 的 almah 是處女的意思嗎？",
+      "expected_output": "Should present almah semantic range (young woman of marriageable age), contrast with betulah, note LXX parthenos translation choice, present scholarly debate without overreaching",
+      "files": [],
+      "assertions": [
+        {"text": "Defines almah as young woman of marriageable age (not exclusively virgin)", "type": "content"},
+        {"text": "Contrasts with betulah (more specifically 'virgin')", "type": "content"},
+        {"text": "Mentions LXX translation to parthenos and its significance", "type": "content"},
+        {"text": "Presents the broader context of Isaiah 7:10-17 (Ahaz situation)", "type": "content"}
+      ]
+    }
+  ]
+}
