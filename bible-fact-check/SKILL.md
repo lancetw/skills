@@ -25,7 +25,8 @@ Report issues with specific line numbers. Never auto-fix — only report.
    Run `uv run <bible-buddy-directory>/scripts/fetch_url.py "<URL>"` to extract article text.
 4. **Pasted text** — user pastes content directly in the conversation
    → review the pasted text
-5. **No argument** — defaults to `bible-buddy/references/fun-facts.md`
+5. **No argument** — use AskUserQuestion to ask the user whether they want to
+   paste a URL or input text. Do NOT default to any file.
 
 ## Prerequisites
 
@@ -48,13 +49,17 @@ If not found, **stop immediately** and tell the user:
 
 ## The 10 Checks
 
-### 1. 重複檢查 (Duplicates)
+### 1. 重複檢查 (Duplicates) ⟨fun-facts only⟩
+
+Skip this check for URLs and pasted text.
 
 Find entries that cover the same verse, topic, or argument.
 Two entries using the same framework applied to different topics are NOT duplicates.
 Two entries making the same point about the same verse ARE duplicates.
 
-### 2. 稻草人檢查 (Strawman Arguments)
+### 2. 稻草人檢查 (Strawman Arguments) ⟨fun-facts only⟩
+
+Skip this check for URLs and pasted text.
 
 Find entries where "不是 X" and X is something nobody in Taiwan would actually
 believe or confuse. Cross-reference `commonly-misread-passages.md`: if the denied
@@ -105,7 +110,9 @@ Verify every chapter:verse reference matches the actual Bible content cited.
 Verify all numerical claims: word/character counts, verse counts, people counts,
 ratios, dates.
 
-### 7. 意味不明檢查 (Unclear Meaning)
+### 7. 意味不明檢查 (Unclear Meaning) ⟨fun-facts only⟩
+
+Skip this check for URLs and pasted text.
 
 Find entries that just state a fact or quote a verse without explaining:
 - What misconception it corrects, OR
@@ -133,12 +140,16 @@ if the content mentions Jesus' teaching methods (parables, arguments from Torah)
 verify it correctly identifies the method (e.g., kal va-chomer, mashal, remez)
 rather than oversimplifying as generic "metaphor" or "symbolism".
 
-### 9. 字數控制檢查 (Verbosity)
+### 9. 字數控制檢查 (Verbosity) ⟨fun-facts only⟩
+
+Skip this check for URLs and pasted text.
 
 Compare each entry's character count to the median of the content. Flag entries
 significantly longer than the median (roughly 2x or more).
 
-### 10. 趣味門檻檢查 (Interest Threshold)
+### 10. 趣味門檻檢查 (Interest Threshold) ⟨fun-facts only⟩
+
+Skip this check for URLs and pasted text.
 
 Flag entries that are too academic, too niche, or lack relevance for Taiwan
 readers. Test questions:
