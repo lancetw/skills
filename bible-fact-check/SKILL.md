@@ -14,6 +14,10 @@ description: >
 Systematically audit biblical reference content through 10 quality checks.
 Report issues with specific line numbers. Never auto-fix — only report.
 
+Checks 1-5 apply to ALL content types (URLs, pasted text, files).
+Checks 6-10 apply to **fun-facts reference files only** — skip entirely for
+URLs and pasted text (do not print N/A lines for them).
+
 ## Input Sources (pick one)
 
 1. **bible-buddy reference file** — e.g., `/review-bible-buddy fun-facts.md`
@@ -46,33 +50,34 @@ Report issues with specific line numbers. Never auto-fix — only report.
 2. **Verify bible-buddy is installed** (see Prerequisites above)
 3. Read / receive the content
 4. Load reference files as checking criteria (read on demand, not all at once):
-   - `bible-buddy/references/anachronism-timeline.md` → for checks 3, 4
-   - `bible-buddy/references/commonly-misread-passages.md` → for checks 2, 4, 7, 8
-   - `bible-buddy/references/yeshua-hermeneutics.md` → for check 8
-5. Run all 10 checks sequentially (skip checks that don't apply)
+   - `bible-buddy/references/anachronism-timeline.md` → for checks 1, 3
+   - `bible-buddy/references/commonly-misread-passages.md` → for checks 1, 4, 7, 8
+   - `bible-buddy/references/yeshua-hermeneutics.md` → for check 4
+5. Run checks sequentially:
+   - **URL or pasted text**: run checks 1-5 only
+   - **fun-facts reference file**: run all 10 checks
 6. For each check, report findings with line numbers, or "✅ 通過" if clean
 7. End with a summary table
 
 ## The 10 Checks
 
-### 1. 重複檢查 (Duplicates) ⟨fun-facts only⟩
+### 1. 事實錯誤檢查 (Factual Errors)
 
-Skip this check for URLs and pasted text.
+Verify:
+- Historical dates (cross-reference `anachronism-timeline.md` for known dates)
+- Person attributions (who did what in which Bible chapter)
+- Word meanings: if a Hebrew/Greek term appears in `commonly-misread-passages.md`'s
+  "Key Hebrew/Greek Term" column, verify the content uses it correctly
+- Scholarly claims (hapax legomenon, manuscript evidence, etc.)
+- If the content's interpretation of a passage contradicts the "Actual First-Century
+  Jewish Context" column in `commonly-misread-passages.md`, flag it
+- Theological teachings without any scripture citation: if the content makes a
+  theological claim (about God, the Spirit, salvation, church practice) without
+  citing scripture, flag as "ungrounded teaching" (無經文根據的教導)
 
-Find entries that cover the same verse, topic, or argument.
-Two entries using the same framework applied to different topics are NOT duplicates.
-Two entries making the same point about the same verse ARE duplicates.
+### 2. 經節編號檢查 (Verse Reference Errors)
 
-### 2. 稻草人檢查 (Strawman Arguments) ⟨fun-facts only⟩
-
-Skip this check for URLs and pasted text.
-
-Find entries where "不是 X" and X is something nobody in Taiwan would actually
-believe or confuse. Cross-reference `commonly-misread-passages.md`: if the denied
-X appears in the "Common Misreading" column, the denial is grounded and valid.
-If X has no basis in the reference file AND no basis in Taiwan church practice,
-it is likely a strawman. Test: does the misreading exist in the reference file,
-or would a Taiwan churchgoer actually think X?
+Verify every chapter:verse reference matches the actual Bible content cited.
 
 ### 3. 年代錯置檢查 (Anachronism)
 
@@ -93,30 +98,45 @@ definitively explain pre-100 CE texts with language like "這才是...的背景"
 Later sources CAN illustrate earlier concepts, but the language must be hedged
 ("可能的背景" not "這才是"). Flag definitive claims only.
 
-### 4. 事實錯誤檢查 (Factual Errors)
+### 4. 過度簡化檢查 (Oversimplification)
 
-Verify:
-- Historical dates (cross-reference `anachronism-timeline.md` for known dates)
-- Person attributions (who did what in which Bible chapter)
-- Word meanings: if a Hebrew/Greek term appears in `commonly-misread-passages.md`'s
-  "Key Hebrew/Greek Term" column, verify the content uses it correctly
-- Scholarly claims (hapax legomenon, manuscript evidence, etc.)
-- If the content's interpretation of a passage contradicts the "Actual First-Century
-  Jewish Context" column in `commonly-misread-passages.md`, flag it
-- Theological teachings without any scripture citation: if the content makes a
-  theological claim (about God, the Spirit, salvation, church practice) without
-  citing scripture, flag as "ungrounded teaching" (無經文根據的教導)
+Find entries that present one scholarly position as definitive when significant
+debate exists. Look for:
+- Minority academic views stated as fact
+- Complex debates reduced to one-sided conclusions
+- Words like "其實是" or "就是" on debated topics
 
-### 5. 經節編號檢查 (Verse Reference Errors)
+Cross-reference `commonly-misread-passages.md`: if the content falls into a
+"Common Misreading" pattern listed there, flag it. Also check `yeshua-hermeneutics.md`:
+if the content mentions Jesus' teaching methods (parables, arguments from Torah),
+verify it correctly identifies the method (e.g., kal va-chomer, mashal, remez)
+rather than oversimplifying as generic "metaphor" or "symbolism".
 
-Verify every chapter:verse reference matches the actual Bible content cited.
-
-### 6. 數量計算檢查 (Counting Errors)
+### 5. 數量計算檢查 (Counting Errors)
 
 Verify all numerical claims: word/character counts, verse counts, people counts,
 ratios, dates.
 
-### 7. 意味不明檢查 (Unclear Meaning) ⟨fun-facts only⟩
+### 6. 重複檢查 (Duplicates) ⟨fun-facts only⟩
+
+Skip this check for URLs and pasted text.
+
+Find entries that cover the same verse, topic, or argument.
+Two entries using the same framework applied to different topics are NOT duplicates.
+Two entries making the same point about the same verse ARE duplicates.
+
+### 7. 稻草人檢查 (Strawman Arguments) ⟨fun-facts only⟩
+
+Skip this check for URLs and pasted text.
+
+Find entries where "不是 X" and X is something nobody in Taiwan would actually
+believe or confuse. Cross-reference `commonly-misread-passages.md`: if the denied
+X appears in the "Common Misreading" column, the denial is grounded and valid.
+If X has no basis in the reference file AND no basis in Taiwan church practice,
+it is likely a strawman. Test: does the misreading exist in the reference file,
+or would a Taiwan churchgoer actually think X?
+
+### 8. 意味不明檢查 (Unclear Meaning) ⟨fun-facts only⟩
 
 Skip this check for URLs and pasted text.
 
@@ -131,20 +151,6 @@ If the entry involves a Hebrew/Greek term, check whether it provides the key ter
 from `commonly-misread-passages.md`. Entries that discuss original language without
 naming the actual word (e.g., saying "原文意思是X" without giving the Hebrew/Greek)
 are weaker than those that do.
-
-### 8. 過度簡化檢查 (Oversimplification)
-
-Find entries that present one scholarly position as definitive when significant
-debate exists. Look for:
-- Minority academic views stated as fact
-- Complex debates reduced to one-sided conclusions
-- Words like "其實是" or "就是" on debated topics
-
-Cross-reference `commonly-misread-passages.md`: if the content falls into a
-"Common Misreading" pattern listed there, flag it. Also check `yeshua-hermeneutics.md`:
-if the content mentions Jesus' teaching methods (parables, arguments from Torah),
-verify it correctly identifies the method (e.g., kal va-chomer, mashal, remez)
-rather than oversimplifying as generic "metaphor" or "symbolism".
 
 ### 9. 字數控制檢查 (Verbosity) ⟨fun-facts only⟩
 
@@ -207,8 +213,8 @@ End with a summary that **explains** the issues, not just counts them:
 
 | 檢查 | 結果 |
 |------|------|
-| 1. 重複 | ✅ |
-| 2. 稻草人 | 2 項 |
+| 1. 事實錯誤 | 2 項 |
+| 2. 經節編號 | ✅ |
 | ... | ... |
 
 ### 主要問題說明
