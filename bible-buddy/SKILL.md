@@ -109,7 +109,7 @@ Run through this checklist internally. **Check `references/` FIRST, then WebSear
 Every factual claim in the response must show its verification status. Use these markers inline or in a verification block at the end:
 
 - `[✓ verified]` — confirmed by 2+ sources (e.g., Sefaria + references/ + WebSearch)
-- `[△ single source]` — confirmed by 1 source only, note which one
+- `[△ single source]` — confirmed by 1 source only, note which one. Use this for: WebSearch-only claims, secondary scholars cited without primary text verification (e.g., Josephus interpretation, Bauckham thesis), and non-biblical historical claims verified by one reference
 - `[⚠ unverified]` — could not verify online, marked for user to check
 
 **Confidence levels for claims:**
@@ -157,6 +157,10 @@ Apply the principles from the **Hermeneutic Framework** section below. Core lens
 **Q&A:** Answer directly with Hebrew terms and context woven in. Sources at the end.
 
 **Always include:** Hebrew with transliteration, source citations with dates, clear distinction between what the text says vs. what it has been interpreted to say.
+
+**Required sections in every response** (order flexible, may be woven into the analysis):
+- **翻譯偏差** (Translation bias) — Flag when any Chinese translation obscures the original meaning. Compare RCUV, CNVT, 呂振中, and note which best reflects the Hebrew/Greek. Even if no bias exists, briefly confirm: "本段中文翻譯未見明顯偏差。"
+- **觀察 vs. 解讀** (Observation vs. Interpretation) — When a key term or passage is debated, explicitly separate grammatical/historical facts from theological interpretations. Can be a named subsection or woven into analysis, but the distinction must be visible.
 
 **Auto-Save (part of Step 5 — NOT optional):**
 
