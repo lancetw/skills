@@ -26,7 +26,7 @@ URLs and pasted text (do not print N/A lines for them).
    → reads the specified file
 3. **URL** — e.g., `/review-bible-buddy https://example.com/article`
    → Do NOT use WebFetch — many news sites block it with 403.
-   Run `uv run --project bible-buddy bible-buddy/scripts/fetch_url.py "<URL>"` to extract article text.
+   Run `uv run --project ~/.claude/skills/bible-buddy ~/.claude/skills/bible-buddy/scripts/fetch_url.py "<URL>"` to extract article text.
    The script auto-falls back to patchright (headless Chromium) when urllib gets 403.
 4. **Pasted text** — user pastes content directly in the conversation
    → review the pasted text
@@ -35,13 +35,13 @@ URLs and pasted text (do not print N/A lines for them).
 
 ## Prerequisites
 
-1. Verify `bible-buddy/references/` exists (sibling directory or project root).
+1. Verify `~/.claude/skills/bible-buddy/references/` exists.
    If not found, **stop immediately** and tell the user:
    「bible-fact-check 需要 bible-buddy skill。請先安裝：`npx skills add lancetw/skills/bible-buddy`」
 
 2. Run dependency setup (one-time):
    ```bash
-   cd bible-buddy && uv sync && uv run patchright install chromium
+   cd ~/.claude/skills/bible-buddy && uv sync && uv run patchright install chromium
    ```
 
 ## How to Run
@@ -50,9 +50,9 @@ URLs and pasted text (do not print N/A lines for them).
 2. **Verify bible-buddy is installed** (see Prerequisites above)
 3. Read / receive the content
 4. Load reference files as checking criteria (read on demand, not all at once):
-   - `bible-buddy/references/anachronism-timeline.md` → for checks 1, 3
-   - `bible-buddy/references/commonly-misread-passages.md` → for checks 1, 4, 7, 8
-   - `bible-buddy/references/yeshua-hermeneutics.md` → for check 4
+   - `~/.claude/skills/bible-buddy/references/anachronism-timeline.md` → for checks 1, 3
+   - `~/.claude/skills/bible-buddy/references/commonly-misread-passages.md` → for checks 1, 4, 7, 8
+   - `~/.claude/skills/bible-buddy/references/yeshua-hermeneutics.md` → for check 4
 5. Run checks sequentially:
    - **URL or pasted text**: run checks 1-5 only
    - **fun-facts reference file**: run all 10 checks
@@ -270,7 +270,7 @@ Reports should be easy to read for a Taiwan churchgoer, not just scholars:
 - When in doubt, flag it — the user will decide whether to act
 - Some checks may not apply to all content types (e.g., key-terms lists won't have
   strawman arguments). Skip with "N/A — 此檢查不適用於本內容"
-- Reference files: read ONLY the 3 files listed in Step 4 by exact path.
-  Do NOT glob `**/bible-buddy/references/*.md` — that directory has 13 files
-  and most are irrelevant to fact-checking.
-  Path: `bible-buddy/references/` relative to the skill's sibling directory.
+- Reference files: read ONLY the 3 files listed in Step 4 by exact path
+  under `~/.claude/skills/bible-buddy/references/`.
+  Do NOT glob `**/references/*.md` — other skills also have references/
+  directories and bible-buddy has 13 files, most irrelevant to fact-checking.
