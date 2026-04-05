@@ -186,11 +186,11 @@ Hindu theology, Vajrayana) are less relevant unless Taiwan has that community.
 - **Claude Code** → `uv run --project ~/.claude/skills/bible-buddy ~/.claude/skills/bible-buddy/scripts/detect_desktop.py bible-fact-check` → save to returned path
 - **Cowork / Claude.ai web** → Do NOT save. Tell user: "你可以複製回應內容存檔，或在 Claude.ai 中使用 Artifact 功能下載。"
 
-Filename: `YYYYMMDD-HHmmss-<slug>.md` (URL → domain+path slug, pasted → `pasted-text`)
+Filename: `YYYYMMDD_HHmm_<slug>.md` (URL → domain+path slug, pasted → `pasted_text`; slug 一律用 `_` 分隔)
 
 When reviewing a **URL or pasted text** (not a bible-buddy reference file):
 1. Detect Desktop path using the script above
-2. Write the full report to `<detected-path>/YYYYMMDD-HHmmss-<slug>.md`
+2. Write the full report to `<detected-path>/YYYYMMDD_HHmm_<slug>.md`
 3. Show only the summary table in the conversation, with the file path
 
 When reviewing a **bible-buddy reference file**: output the full report in the conversation as before.
