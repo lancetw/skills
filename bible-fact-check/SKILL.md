@@ -21,7 +21,8 @@ Report issues with specific line numbers. Never auto-fix — only report.
 2. **Any file path** — e.g., `/review-bible-buddy /path/to/my-notes.md`
    → reads the specified file
 3. **URL** — e.g., `/review-bible-buddy https://example.com/article`
-   → use WebFetch to retrieve the page content, then review it
+   → Do NOT use WebFetch — many news sites block it with 403.
+   Run `uv run <bible-buddy-directory>/scripts/fetch_url.py "<URL>"` to extract article text.
 4. **Pasted text** — user pastes content directly in the conversation
    → review the pasted text
 5. **No argument** — defaults to `bible-buddy/references/fun-facts.md`
