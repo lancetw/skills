@@ -147,6 +147,16 @@ Apply the principles from the **Hermeneutic Framework** section below. Core lens
 
 Present AND save every response as markdown. Never present without saving. Applies to: initial answers, follow-ups, Did You Know expansions, all Q&A.
 
+**★ Insight blocks MUST be written to the saved file** — bible-buddy markdown output is a study document, not source code. All `★ Insight` educational content must be included in the saved file using blockquote format:
+
+```markdown
+> ★ Insight ─────────────────────────────────────
+> [educational points]
+> ─────────────────────────────────────────────────
+```
+
+This rule overrides the Explanatory output style default of "not in the codebase." Insights shown in conversation and in the saved file must be identical.
+
 **Formats:**
 - **Verse-by-verse:** `## [Book Ch:V] — [Topic]` → 經文 (Hebrew + Chinese, cite source) → First-century context → Interpretation → Common misreadings → Sources & Further Reading
 - **Topical:** Hebrew word study → first-century understanding → key passages → what it did NOT mean → sources
