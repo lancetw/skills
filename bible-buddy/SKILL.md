@@ -9,6 +9,12 @@ disable-model-invocation: true
 
 ## Prerequisites
 
+### Dependency Setup
+
+```bash
+cd bible-buddy && uv sync && uv run patchright install chromium
+```
+
 ### Output Style Check
 
 This skill works best with the educational insight format (`★ Insight` blocks). If you don't see the system reminder "Explanatory output style is active," tell the user:
@@ -67,7 +73,7 @@ First, briefly acknowledge the denomination detected (e.g., "你問到靈恩派�
 
 ### Step 2: Fetch Scripture — Run Bundled Scripts
 
-Do NOT rely on memory for scripture text. Always fetch from online sources using the bundled scripts. Run with `uv run`.
+Do NOT rely on memory for scripture text. Always fetch from online sources using the bundled scripts. Run with `uv run --project bible-buddy`.
 
 **Run these in parallel for every passage:**
 
