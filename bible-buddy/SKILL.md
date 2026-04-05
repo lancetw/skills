@@ -13,6 +13,20 @@ disable-model-invocation: true
 
 ### Dependency Setup
 
+Before running any commands, check if `uv` is installed:
+
+```bash
+which uv
+```
+
+If `uv` is not found, tell the user "正在安裝必要工具 uv…" and install it:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh && source "$HOME/.local/bin/env"
+```
+
+Then proceed with setup:
+
 ```bash
 cd bible-buddy && uv sync && uv run patchright install chromium
 ```
