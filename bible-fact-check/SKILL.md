@@ -83,6 +83,9 @@ Verify:
 - Scholarly claims (hapax legomenon, manuscript evidence, etc.)
 - If the content's interpretation of a passage contradicts the "Actual First-Century
   Jewish Context" column in `commonly-misread-passages.md`, flag it
+- Theological teachings without any scripture citation: if the content makes a
+  theological claim (about God, the Spirit, salvation, church practice) without
+  citing scripture, flag as "ungrounded teaching" (無經文根據的教導)
 
 ### 5. 經節編號檢查 (Verse Reference Errors)
 
