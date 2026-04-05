@@ -182,35 +182,11 @@ Hindu theology, Vajrayana) are less relevant unless Taiwan has that community.
 
 ## Output Format
 
-**Environment detection — only Claude Code saves markdown files:**
-- **Claude Code / CLI** → Save markdown file to Desktop folder (see below). This is the ONLY environment that auto-saves.
-- **Cowork / Claude.ai web / other** → Do NOT save files. Do NOT create directories. Do NOT attempt filesystem operations. Simply present the response in the conversation. For Claude.ai web, if the user asks to save, tell them: "你可以複製回應內容存檔，或在 Claude.ai 中使用 Artifact 功能下載。"
+**Environment detection:**
+- **Claude Code** → `uv run --project ~/.claude/skills/bible-buddy ~/.claude/skills/bible-buddy/scripts/detect_desktop.py bible-fact-check` → save to returned path
+- **Cowork / Claude.ai web** → Do NOT save. Tell user: "你可以複製回應內容存檔，或在 Claude.ai 中使用 Artifact 功能下載。"
 
-**For Claude Code — automatically save as a markdown file:**
-
-```bash
-# Detect Desktop path (handles OneDrive on Windows):
-uv run python -c "
-from pathlib import Path
-import os
-home = Path.home()
-# Windows OneDrive: check common redirected Desktop paths
-candidates = [
-    Path(os.environ.get('OneDriveConsumer', '')) / 'Desktop',
-    Path(os.environ.get('OneDrive', '')) / 'Desktop',
-    home / 'OneDrive' / 'Desktop',
-    home / 'OneDrive - Personal' / 'Desktop',
-    home / 'Desktop',  # fallback: standard path
-]
-desktop = next((p for p in candidates if p.exists()), home / 'Desktop')
-out = desktop / 'bible-fact-check'
-out.mkdir(parents=True, exist_ok=True)
-print(out)
-"
-# Filename: YYYYMMDD-HHmmss-<slug>.md
-# URL → slug from domain + path (e.g., 20260405-143200-cdn-news-org-idol-removal.md)
-# Pasted text → 20260405-143200-pasted-text.md
-```
+Filename: `YYYYMMDD-HHmmss-<slug>.md` (URL → domain+path slug, pasted → `pasted-text`)
 
 When reviewing a **URL or pasted text** (not a bible-buddy reference file):
 1. Detect Desktop path using the script above
