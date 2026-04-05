@@ -6,11 +6,12 @@ Taiwan Traditional Chinese (繁體中文) skills for AI coding agents.
 
 | Skill | Description |
 |-------|-------------|
-| [learn-tw](learn-tw/SKILL.md) | Generate personalized learning docs in Taiwan Chinese |
-| [prd-tw](prd-tw/SKILL.md) | Help stakeholders write requirements documents in Taiwan Chinese |
+| [learn-tw](learn-tw/SKILL.md) | Generate personalized learning docs in Taiwan Traditional Chinese |
+| [prd-tw](prd-tw/SKILL.md) | Help non-technical stakeholders write clear requirements documents in Taiwan Traditional Chinese |
 | [humanizer-zh-tw](humanizer-zh-tw/SKILL.md) | Remove AI-generated traces from Chinese text |
-| [weather-hint-tw](weather-hint-tw/SKILL.md) | Friendly weather reminders in Taiwan Chinese with outfit advice |
+| [weather-hint-tw](weather-hint-tw/SKILL.md) | Friendly weather reminders with outfit advice, auto IP detection |
 | [bible-buddy](bible-buddy/SKILL.md) | First-century Hebrew scripture interpretation from Yeshua's Jewish perspective |
+| [bible-fact-check](bible-fact-check/SKILL.md) | 10-point quality checklist for biblical content review |
 
 See each skill's `SKILL.md` for details.
 
