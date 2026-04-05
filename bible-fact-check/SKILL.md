@@ -272,5 +272,3 @@ Reports should be easy to read for a Taiwan churchgoer, not just scholars:
   strawman arguments). Skip with "N/A — 此檢查不適用於本內容"
 - Reference files: read ONLY the 3 files listed in Step 4 by exact path
   under `~/.claude/skills/bible-buddy/references/`.
-  Do NOT glob `**/references/*.md` — other skills also have references/
-  directories and bible-buddy has 13 files, most irrelevant to fact-checking.
