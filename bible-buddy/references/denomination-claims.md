@@ -259,7 +259,7 @@ Quick-reference lookup: what each tradition claims the Bible teaches, the script
 
 **Claim 2: John 10:30 "I and the Father are one" = Atman is Brahman**
 - Scripture: John 10:30-36
-- 1C Reality: Greek hen (neuter "one") = unity of purpose, not ontological identity (masculine heis would mean that); Jesus' own defense cites Psalm 82:6 using kal va-chomer -- lowering the claim to Torah-acceptable range
+- 1C Reality: Greek hen (neuter "one") rules out personal identity (masculine heis would mean that); whether hen indicates shared purpose, shared nature, or both is debated among scholars. Jesus' own defense cites Psalm 82:6 using kal va-chomer -- lowering the claim to Torah-acceptable range
 - Key Evidence: Shema (Deut 6:4) = strict monotheism; shaliach principle ("agent = sender") explains unity as agency, not monism
 
 **Claim 3: John 14:6 = Vedic "truth is one" (Ekam Sat)**
