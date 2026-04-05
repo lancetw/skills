@@ -270,6 +270,7 @@ Reports should be easy to read for a Taiwan churchgoer, not just scholars:
 - When in doubt, flag it — the user will decide whether to act
 - Some checks may not apply to all content types (e.g., key-terms lists won't have
   strawman arguments). Skip with "N/A — 此檢查不適用於本內容"
-- Reference files are at `bible-buddy/references/` relative to the skill's sibling
-  directory. If running from a different location, look for them relative to the
-  project root containing `bible-buddy/`
+- Reference files: read ONLY the 3 files listed in Step 4 by exact path.
+  Do NOT glob `**/bible-buddy/references/*.md` — that directory has 13 files
+  and most are irrelevant to fact-checking.
+  Path: `bible-buddy/references/` relative to the skill's sibling directory.
