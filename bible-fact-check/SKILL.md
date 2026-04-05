@@ -65,9 +65,10 @@ correct date and does not project it back to the first century.
 
 Also detect **implicit** anachronistic terminology even when no verse is cited.
 Scan the content for terms that match any doctrine/practice in
-`anachronism-timeline.md`. If a match is found and the content does not
-acknowledge the post-first-century origin, flag it. This applies to charismatic,
-NAR, prosperity gospel, and any other framework listed in the timeline.
+`anachronism-timeline.md`. If a match is found, note the actual origin date
+as **supplementary context** — not as a criticism. News articles and practical
+guides are not expected to cite historical origins. The goal is to give the
+reader background, not to fault the author for omitting academic footnotes.
 
 Also flag entries that use post-200 CE sources (Mishnah, Talmud, Targums) to
 definitively explain pre-100 CE texts with language like "這才是...的背景".
@@ -156,35 +157,50 @@ When reviewing a **bible-buddy reference file**: output the full report in the c
 
 ### Report structure
 
-Start with the source being reviewed:
-
 ```
 # 審查：[filename or URL or "使用者提供的內容"]
 來源：[URL if applicable]
 日期：[YYYY-MM-DD HH:mm:ss]
 ```
 
-For each check:
+For each check that has findings, use a table:
 
 ```
 ### N. 檢查名稱
 
-[findings with line numbers, or ✅ 通過]
+| # | 原文摘錄 | 問題說明 |
+|---|---------|---------|
+| 1 | 「...」 | 簡短說明 |
+| 2 | 「...」 | 簡短說明 |
 ```
 
-End with:
+Checks with no findings: `### N. 檢查名稱 — ✅ 通過` (one line, no table)
+
+End with a summary that **explains** the issues, not just counts them:
 
 ```
 ## 總結
 
 | 檢查 | 結果 |
 |------|------|
-| 1. 重複 | X 組 |
-| 2. 稻草人 | X 條 |
+| 1. 重複 | ✅ |
+| 2. 稻草人 | 2 項 |
 | ... | ... |
 
-**共 X 個問題，跨 Y 項檢查。**
+### 主要問題說明
+
+1. **[問題類型]** — 2-3 句白話解釋，這些問題為什麼重要、讀者該注意什麼。
+2. ...
 ```
+
+## Readability Rules
+
+Reports should be easy to read for a Taiwan churchgoer, not just scholars:
+- **全中文為主** — 希臘文/希伯來文只在必要時附註，不要大段英文引用
+- **短段落** — 每個發現 2-3 句話就好，不要寫論文
+- **白話** — 用台灣教會能理解的語言，避免學術腔
+- **補充背景 ≠ 批評** — 年代錯置檢查的語氣是「補充資訊」，不是指責作者
+- Reference file 引用只需標示來源名稱和關鍵事實，不要貼原文
 
 ## Important Notes
 
