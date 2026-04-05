@@ -1,0 +1,82 @@
+[
+  {
+    "query": "我在準備小組查經，這禮拜要帶羅馬書第九章。有個弟兄很堅持加爾文的預定論，說雅各和以掃那段經文證明神預定某些人下地獄。我想知道保羅在第一世紀的語境裡到底在講什麼，原文 proorizo 是什麼意思",
+    "should_trigger": true
+  },
+  {
+    "query": "以賽亞書 7:14 的 almah 到底是不是處女？我查了幾個中文譯本都翻成「童女」但有人說希伯來原文不是這個意思",
+    "should_trigger": true
+  },
+  {
+    "query": "pastor 昨天講道說因信稱義所以我們不用守律法了，但我讀雅各書 2:24 明明說不是單因信稱義，到底哪個對？保羅跟雅各是不是互相矛盾",
+    "should_trigger": true
+  },
+  {
+    "query": "三位一體到底有沒有聖經根據？我朋友是耶和華見證人，他說這是異教概念，我不知道怎麼回答他",
+    "should_trigger": true
+  },
+  {
+    "query": "今天靈修讀到耶利米書 29:11 覺得很安慰，神對我有美好的計畫。但有人說這段經文不是對個人講的？",
+    "should_trigger": true
+  },
+  {
+    "query": "希伯來書 8:13 是不是在說舊約已經被廢掉了？那耶穌說的律法一點一畫都不會廢去怎麼解釋",
+    "should_trigger": true
+  },
+  {
+    "query": "詩篇 46:10「你們要休息」的希伯來原文是什麼意思 我們教會用這節經文推安靜退修會",
+    "should_trigger": true
+  },
+  {
+    "query": "我是台灣的基督徒，最近在研究七山策略跟職場轉化，這真的是聖經教的嗎？以賽亞書 2:2 有人說是根據",
+    "should_trigger": true
+  },
+  {
+    "query": "約翰福音 1:1 的 logos 跟希臘哲學的 logos 是同一個概念嗎？有人說約翰福音受了諾斯底主義影響",
+    "should_trigger": true
+  },
+  {
+    "query": "我想比較和合本修訂版跟新漢語譯本在創世記 1:1-3 的翻譯差異，特別是 bara 跟 tohu vavohu 的處理",
+    "should_trigger": true
+  },
+  {
+    "query": "我在用 React Native 做一個聖經 app，需要從 API 抓經文資料，你知道哪個 Bible API 比較好用嗎？要支援中文和合本",
+    "should_trigger": false
+  },
+  {
+    "query": "幫我寫一篇主日講道稿，主題是感恩，大概 15 分鐘，會眾大部分是長輩",
+    "should_trigger": false
+  },
+  {
+    "query": "我在研究古代近東的蘇美爾城邦制度，特別是烏爾第三王朝的行政系統和楔形文字記錄，有沒有好的學術資源推薦",
+    "should_trigger": false
+  },
+  {
+    "query": "台灣的長老教會和靈糧堂在組織架構上有什麼差異？我在寫一篇宗教社會學的論文",
+    "should_trigger": false
+  },
+  {
+    "query": "幫我把這段中文翻譯成英文：『我們公司的使命是成為亞太區最值得信賴的金融服務平台』",
+    "should_trigger": false
+  },
+  {
+    "query": "古蘭經裡面也有提到耶穌（爾撒），跟聖經的記載有什麼不同？我在做比較宗教學的報告",
+    "should_trigger": false
+  },
+  {
+    "query": "我們教會要辦 VBS 暑期聖經營，需要幫小朋友設計一個創世記主題的闖關遊戲，有什麼好點子嗎",
+    "should_trigger": false
+  },
+  {
+    "query": "我要投稿 Journal of Biblical Literature 一篇關於死海古卷社群規章 1QS 的論文，幫我看看 abstract 的學術英文寫作有沒有問題",
+    "should_trigger": false
+  },
+  {
+    "query": "can you help me parse this XML file? it's a USFM Bible text format and I need to extract verse numbers and text content into a JSON structure",
+    "should_trigger": false
+  },
+  {
+    "query": "我弟弟最近去了一個教會，牧師說奉獻十分之一是聖經命令，不奉獻會被神咒詛，這是真的嗎？瑪拉基書 3:10 有這麼說嗎",
+    "should_trigger": true
+  }
+]
