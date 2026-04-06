@@ -70,7 +70,7 @@ BOOK_ALIASES = {
     "西番雅書": "Zeph", "哈該書": "Hag", "撒迦利亞書": "Zech",
     "瑪拉基書": "Mal",
     "詩篇": "Ps", "箴言": "Prov", "約伯記": "Job",
-    "雅歌": "Song", "傳道書": "Qoh", "哀歌": "Lam",
+    "雅歌": "Song", "傳道書": "Eccl", "哀歌": "Lam",
     "以斯帖記": "Esth", "以斯拉記": "Ezra", "尼希米記": "Neh",
     "歷代志上": "1Chr", "歷代志下": "2Chr",
     # English full names → DSS abbreviations
@@ -293,12 +293,24 @@ def cmd_fetch_biblical(A, book_name: str, chapter=None, start_verse=None, end_ve
 
     # Find all scrolls containing this book
     matches = []
+    target = book_abbr.lower()
     for s in F.otype.s('scroll'):
-        words = L.d(s, otype='word')
-        if not words:
+        frags = L.d(s, otype='fragment')
+        if not frags:
             continue
-        bk = F.book.v(words[0])
-        if bk and bk.lower() == book_abbr.lower():
+        # Check first word of each fragment — book changes happen at fragment boundaries
+        # Also check first word of each line for scrolls with mixed content within fragments
+        found = False
+        for frag in frags:
+            lines = L.d(frag, otype='line')
+            for ln in lines:
+                words = L.d(ln, otype='word')
+                if words and (F.book.v(words[0]) or '').lower() == target:
+                    found = True
+                    break
+            if found:
+                break
+        if found:
             matches.append(s)
 
     if not matches:
