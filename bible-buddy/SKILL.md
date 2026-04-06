@@ -106,6 +106,7 @@ Do NOT rely on memory for scripture text. Always fetch from online sources using
 | **Apostolic Fathers** | `uv run scripts/fetch_apostolic_fathers.py <work> [chapter]` | newadvent.org: Didache, 1 Clement, Barnabas, Ignatius (7 letters), Polycarp, Diognetus (~50-200 CE). Run `list` for catalog. |
 | **Dead Sea Scrolls** | `uv run scripts/fetch_dss.py <scroll> [fragment] [start_line] [end_line]` | ETCBC/dss (Abegg transcription, CC-BY-NC): 1001 scrolls, 500K words. By scroll: `1QS`, `社群規章`. By biblical book: `biblical Isaiah 1 1 5`. Run `list` or `list-biblical` for catalog. |
 | **LXX Greek (Septuagint)** | `uv run scripts/fetch_lxx.py <book> <chapter> [start] [end]` | CenterBLC/LXX (Rahlfs 1935): 57 books, Greek text + glosses + morphology. Incl. Psalms of Solomon, Daniel OG/Th, Susanna OG/Th. Run `list` for catalog. |
+| **Latin Vulgate** | `uv run scripts/fetch_vulgate.py <book> <chapter> [start] [end]` | sacredbible.org: Clementine Vulgate (Hetzenauer 1914), 73 books (full Catholic canon incl. deuterocanon). Run `list` for catalog. |
 
 All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book names.
 
