@@ -171,7 +171,10 @@ def fetch(book: str, chapter: int, start_verse: int = None, end_verse: int = Non
         # Try extra-canonical catalog
         extra = _lookup_extra(book)
         if not extra:
-            return {"error": f"Unknown book: {book}. Try 'list-extra' for extra-canonical texts."}
+            # Passthrough: treat the book name as a direct Sefaria ref
+            # This enables access to Mishnah, Talmud, Midrash, etc. without
+            # enumerating thousands of texts in the catalog.
+            extra = (book, book, "ch")
         sefaria_name, chinese_name, ref_style = extra
 
     # Build Sefaria ref
@@ -209,6 +212,10 @@ def fetch(book: str, chapter: int, start_verse: int = None, end_verse: int = Non
         return {"error": f"Cannot reach Sefaria (network issue). Try fetch_fhl.py instead. Detail: {e.reason}", "url": url}
     except Exception as e:
         return {"error": f"Request failed: {e}", "url": url}
+
+    # Check for API-level errors (e.g., invalid title via passthrough)
+    if data.get("error"):
+        return {"error": f"Sefaria: {data['error']}", "url": url}
 
     if extra:
         # v1 API response: data["text"] = English, data["he"] = Hebrew
