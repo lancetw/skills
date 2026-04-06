@@ -63,36 +63,45 @@ _DEUTERO_BOOKS = [
     (["1 maccabees", "瑪加伯上"],       "1 Maccabees",        "1+Maccabees"),
     (["2 maccabees", "瑪加伯下"],       "2 Maccabees",        "2+Maccabees"),
     (["susanna", "蘇撒拿傳"],           "Susanna",            "Susanna"),
+    (["prayer of manasseh", "瑪拿西禱詞"], "Prayer of Manasseh", "Prayer+of+Manasseh"),
+    (["psalm 151", "詩篇 151"],        "Psalm 151",          "Psalm+151"),
 ]
 
 def _lookup_deutero(name: str):
-    """Look up deuterocanonical book for Bible Gateway. Returns (display_name, bg_name) or None."""
+    """Look up deuterocanonical book for Bible Gateway. Returns (display_name, bg_name) or None.
+
+    Uses exact match first, then partial. Called BEFORE canonical lookup
+    to prevent fuzzy conflicts (e.g., '詩篇 151' matching '詩篇').
+    """
     key = name.lower().strip()
+    # Exact match on any alias
     for keys, display, bg in _DEUTERO_BOOKS:
         for k in keys:
-            if key == k or key in k or k in key:
+            if key == k:
                 return display, bg
-    # Also match Chinese name directly
-    for keys, display, bg in _DEUTERO_BOOKS:
-        for k in keys:
-            if name.strip() == k:
-                return display, bg
+    # Partial match (only if key is long enough to avoid false positives)
+    if len(key) > 4:
+        for keys, display, bg in _DEUTERO_BOOKS:
+            for k in keys:
+                if key in k or k in key:
+                    return display, bg
     return None
 
 
 def fetch(book: str, ref: str, version: str = "RCU17TS") -> dict:
-    info = lookup(book)
-    deutero = None
-    if not info:
-        # Try deuterocanonical lookup
-        deutero = _lookup_deutero(book)
-        if not deutero:
-            return {"error": f"Unknown book: {book}"}
+    # Check deuterocanonical FIRST (exact match) to avoid fuzzy conflicts
+    # e.g., "詩篇 151" must not fuzzy-match "詩篇" (Psalms)
+    deutero = _lookup_deutero(book)
+    if deutero:
         chinese_name, bg_name = deutero
         # Deuterocanonical books default to NRSVUE (not available in Chinese versions)
         if version == "RCU17TS":
             version = "NRSVUE"
+        info = None
     else:
+        info = lookup(book)
+        if not info:
+            return {"error": f"Unknown book: {book}"}
         chinese_name, _, _, bg_name = info
 
     version_code = VERSION_MAP.get(version, version)

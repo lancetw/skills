@@ -68,6 +68,21 @@ BOOKS = {
     "book of jasher":     ("Book of Jasher",     "/pseudepigrapha/jasher.html", "jasher"),
     "story of ahikar":    ("Story of Ahikar",    "/pseudepigrapha/ahikar.htm",  "flat"),
     "zadokite document":  ("Zadokite Document",  "/pseudepigrapha/zadokite.html","flat"),
+    # Adam/Eve literature
+    "books of adam and eve":("Books of Adam and Eve","/pseudepigrapha/adamnev.htm","flat"),
+    "life of adam and eve": ("Life of Adam and Eve (Slavonic)","/pseudepigrapha/slanev.htm","flat"),
+    "apocalypse of moses":  ("Apocalypse of Moses","/pseudepigrapha/apcmose.htm","flat"),
+    "apocalypse of adam":   ("Apocalypse of Adam", "/pseudepigrapha/adam.htm",   "flat"),
+    "book of adam":         ("Book of Adam",       "/pseudepigrapha/TheBookOfAdam.htm","flat"),
+    "conflict of adam and eve":("Conflict of Adam and Eve","/pseudepigrapha/ConflictOfAdamEve/AdamEveConflict.html","flat"),
+    # Other pseudepigrapha
+    "second treatise of the great seth":("Second Treatise of the Great Seth","/pseudepigrapha/2seth.html","flat"),
+    "melchizedek":          ("Melchizedek",        "/pseudepigrapha/Melchizedek.html","flat"),
+    "story of asenath":     ("Story of Asenath",   "/pseudepigrapha/TheStoryOfAsenath.html","flat"),
+    "revelation of moses":  ("Revelation of Moses","/pseudepigrapha/revmos2.htm","flat"),
+    "tales of the patriarchs":("Tales of the Patriarchs","/pseudepigrapha/TalesOfThePatriarchs.html","flat"),
+    # Non-Jewish parallels (on site but contextual)
+    "gilgamesh":            ("Epic of Gilgamesh",  "/pseudepigrapha/gilgamesh.html","flat"),
 }
 
 # Chinese aliases
@@ -87,6 +102,11 @@ ALIASES = {
     "以斯帖補篇": "additions to esther", "瑪拿西禱詞": "prayer of manasseh",
     "詩篇 151": "psalm 151", "雅煞珥書": "book of jasher",
     "撒督文獻": "zadokite document", "以利亞啟示錄": "apocalypse of elijah",
+    "亞當夏娃書": "books of adam and eve", "亞當夏娃傳": "life of adam and eve",
+    "摩西啟示錄": "apocalypse of moses", "亞當啟示錄": "apocalypse of adam",
+    "亞當書": "book of adam", "亞瑟拿傳": "story of asenath",
+    "摩西啟示": "revelation of moses", "麥基洗德": "melchizedek",
+    "族長故事": "tales of the patriarchs", "吉爾伽美什": "gilgamesh",
 }
 
 BASE_URL = "https://pseudepigrapha.com"
