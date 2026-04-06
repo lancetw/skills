@@ -44,8 +44,8 @@ BOOKS = {
     "wisdom of solomon":  ("Wisdom of Solomon",  "/apocrypha_ot/wisolom.htm",  "h3"),
     "wisdom":             ("Wisdom of Solomon",  "/apocrypha_ot/wisolom.htm",  "h3"),
     "baruch":             ("Baruch",             "/apocrypha_ot/baruc.htm",    "h3"),
-    "letter of jeremiah": ("Letter of Jeremiah", "/apocrypha_ot/letojer.htm",  "h3"),
-    "prayer of azariah":  ("Prayer of Azariah",  "/apocrypha_ot/azariah.htm",  "h3"),
+    "letter of jeremiah": ("Letter of Jeremiah", "/apocrypha_ot/letojer.htm",  "h3"),  # single chapter: ch=6
+    "prayer of azariah":  ("Prayer of Azariah",  "/apocrypha_ot/azariah.htm",  "h3"),  # h3 has bare "1"
     "bel and the dragon": ("Bel and the Dragon", "/apocrypha_ot/beldrag.htm",  "h3"),
     "susanna":            ("Susanna",            "/apocrypha_ot/susan1.htm",   "h3"),
     "additions to esther":("Additions to Esther","/apocrypha_ot/esther.htm",   "h3"),
@@ -55,17 +55,17 @@ BOOKS = {
     "1 enoch":            ("1 Enoch",            "/pseudepigrapha/enoch.htm",   "enoch"),
     "2 enoch":            ("2 Enoch",            "/pseudepigrapha/enochs2.htm", "enoch"),
     "jubilees":           ("Jubilees",           "/jubilees/{ch}.htm",          "jubilees"),
-    "2 baruch":           ("2 Baruch",           "/pseudepigrapha/2Baruch.html","flat"),
+    "2 baruch":           ("2 Baruch",           "/pseudepigrapha/2Baruch.html","baruch2"),
     "3 baruch":           ("3 Baruch",           "/pseudepigrapha/3Baruch.html","flat"),
-    "testament of abraham":("Testament of Abraham","/pseudepigrapha/1007.htm",  "flat"),
-    "apocalypse of abraham":("Apocalypse of Abraham","/pseudepigrapha/Apocalypse_of_Abraham.html","flat"),
+    "testament of abraham":("Testament of Abraham","/pseudepigrapha/1007.htm",  "roman"),
+    "apocalypse of abraham":("Apocalypse of Abraham","/pseudepigrapha/Apocalypse_of_Abraham.html","apocabraham"),
     "letter of aristeas": ("Letter of Aristeas", "/pseudepigrapha/aristeas.htm","flat"),
     "martyrdom of isaiah":("Martyrdom of Isaiah","/pseudepigrapha/amartis.htm", "flat"),
     "ascension of isaiah":("Ascension of Isaiah","/pseudepigrapha/AscensionOfIsaiah.html","flat"),
     "assumption of moses":("Assumption of Moses","/pseudepigrapha/assumptionofmoses.html","flat"),
     "revelation of esdras":("Revelation of Esdras","/pseudepigrapha/revesd.htm","flat"),
-    "apocalypse of elijah":("Apocalypse of Elijah","/pseudepigrapha/TheApocalypseOfElijah.html","flat"),
-    "book of jasher":     ("Book of Jasher",     "/pseudepigrapha/jasher.html", "flat"),
+    "apocalypse of elijah":("Apocalypse of Elijah","/pseudepigrapha/TheApocalypseOfElijah.html","baruch2"),
+    "book of jasher":     ("Book of Jasher",     "/pseudepigrapha/jasher.html", "jasher"),
     "story of ahikar":    ("Story of Ahikar",    "/pseudepigrapha/ahikar.htm",  "flat"),
     "zadokite document":  ("Zadokite Document",  "/pseudepigrapha/zadokite.html","flat"),
 }
@@ -137,13 +137,26 @@ def _parse_h3(page_html: str, chapter: int = None,
               start_verse: int = None, end_verse: int = None) -> list[dict]:
     """Parse <h3>Abbr.N</h3> + [<b>V</b>] verse format."""
     # Split by chapter headers
-    chapters = re.split(r'<h3[^>]*>\s*', page_html, flags=re.IGNORECASE)
+    chunks = re.split(r'<h3[^>]*>\s*', page_html, flags=re.IGNORECASE)
 
     results = []
-    for chunk in chapters:
-        # Extract chapter number from header like "Tob.1</h3>"
-        ch_match = re.match(r'[A-Za-z0-9\s]+\.(\d+)\s*</h3>', chunk, re.IGNORECASE)
+    for chunk in chunks:
+        # Extract chapter number: "Tob.1</h3>" or "AddEsth.11</h3>" or bare "1</h3>"
+        ch_match = re.match(r'(?:[A-Za-z0-9\s]+\.)?(\d+)\s*</h3>', chunk, re.IGNORECASE)
         if not ch_match:
+            # No h3 chapter found — try extracting verses directly (e.g., 1 Esdras)
+            if not results and chapter is not None:
+                parts = re.split(r'\[<b>(\d+)</b>\]', chunk)
+                for i in range(1, len(parts), 2):
+                    v_num = int(parts[i])
+                    v_text = _clean(parts[i + 1]) if i + 1 < len(parts) else ""
+                    if not v_text:
+                        continue
+                    if start_verse and v_num < start_verse:
+                        continue
+                    if end_verse and v_num > end_verse:
+                        continue
+                    results.append({"chapter": chapter, "verse": str(v_num), "text": v_text})
             continue
         ch_num = int(ch_match.group(1))
         if chapter is not None and ch_num != chapter:
@@ -186,9 +199,9 @@ def _parse_enoch(page_html: str, chapter: int = None,
         if chapter is not None and ch_num != chapter:
             continue
 
-        # Extract verses: <FONT Color="#0000FF" Size="-2">N.</FONT>
+        # Extract verses: <FONT Color="#0000FF" Size="-2">N.</FONT> (period optional for 2 Enoch)
         parts = re.split(
-            r'<FONT\s+Color="#0000FF"\s+Size="-2">(\d+)\.</FONT>',
+            r'<FONT\s+Color="#0000FF"\s+Size="-2">(\d+)\.?</FONT>',
             ch_text, flags=re.IGNORECASE
         )
         for j in range(1, len(parts), 2):
@@ -223,6 +236,135 @@ def _parse_jubilees(page_html: str,
         text = _clean(part)
         if text:
             results.append({"chapter": 0, "verse": str(idx), "text": text})
+
+    return results
+
+
+# ── Parser: baruch2 format (2 Baruch) ────────────────────────────────
+
+def _parse_baruch2(page_html: str, chapter: int = None,
+                   start_verse: int = None, end_verse: int = None) -> list[dict]:
+    """Parse 2 Baruch: <A ID="CN"><FONT>Chapter N</FONT></A> + <A ID="CN.V"><FONT>V </FONT></A>."""
+    results = []
+
+    # Split by chapter anchors: <A ID="CN">
+    chapters = re.split(r'<A\s+ID="C(\d+)">', page_html, flags=re.IGNORECASE)
+
+    for i in range(1, len(chapters), 2):
+        ch_num = int(chapters[i])
+        ch_text = chapters[i + 1] if i + 1 < len(chapters) else ""
+        if chapter is not None and ch_num != chapter:
+            continue
+
+        # Extract verses: <A ID="CN.V"><FONT Color="blue">V </FONT></A>
+        parts = re.split(
+            r'<A\s+ID="C\d+\.(\d+)"[^>]*>\s*<FONT[^>]*>(\d+)\s*</FONT>\s*</A>',
+            ch_text, flags=re.IGNORECASE
+        )
+        for j in range(1, len(parts), 3):
+            v_num = int(parts[j])
+            v_text = _clean(parts[j + 2]) if j + 2 < len(parts) else ""
+            if not v_text:
+                continue
+            if start_verse and v_num < start_verse:
+                continue
+            if end_verse and v_num > end_verse:
+                continue
+            results.append({"chapter": ch_num, "verse": str(v_num), "text": v_text})
+
+    return results
+
+
+# ── Parser: apocabraham format (Apocalypse of Abraham) ──────────────
+
+def _parse_apocabraham(page_html: str, chapter: int = None,
+                       start_verse: int = None, end_verse: int = None) -> list[dict]:
+    """Parse Apocalypse of Abraham: <A Name="T1_CN_VN"> anchors."""
+    results = []
+
+    # Find all verse anchors: T1_C{ch}_V{v}
+    for m in re.finditer(
+        r'<A\s+(?:Name|ID)="T1_C(\d+)_V(\d+)"[^>]*>(.*?)(?=<A\s+(?:Name|ID)="T1_C|$)',
+        page_html, re.IGNORECASE | re.DOTALL
+    ):
+        ch_num = int(m.group(1))
+        v_num = int(m.group(2))
+        v_text = _clean(m.group(3))
+
+        if chapter is not None and ch_num != chapter:
+            continue
+        if start_verse and v_num < start_verse:
+            continue
+        if end_verse and v_num > end_verse:
+            continue
+        # Strip leading "N." from text (verse number repeated in text)
+        v_text = re.sub(r'^\d+\.\s*', '', v_text)
+        if v_text:
+            results.append({"chapter": ch_num, "verse": str(v_num), "text": v_text})
+
+    return results
+
+
+# ── Parser: jasher format (Book of Jasher) ──────────────────────────
+
+def _parse_jasher(page_html: str, chapter: int = None,
+                  start_verse: int = None, end_verse: int = None) -> list[dict]:
+    """Parse Book of Jasher: <A Name="CHN"> + numbered verses after <!-- -->."""
+    results = []
+
+    # Split by chapter anchors: <A Name="CHN">
+    chapters = re.split(r'<A\s+Name="CH(\d+)"', page_html, flags=re.IGNORECASE)
+
+    for i in range(1, len(chapters), 2):
+        ch_num = int(chapters[i])
+        ch_text = chapters[i + 1] if i + 1 < len(chapters) else ""
+        if chapter is not None and ch_num != chapter:
+            continue
+
+        # Verses: "-->N " or "<BR>N " pattern
+        parts = re.split(r'(?:-->|<BR>)\s*(\d+)\s', ch_text)
+        for j in range(1, len(parts), 2):
+            v_num = int(parts[j])
+            v_text = _clean(parts[j + 1]) if j + 1 < len(parts) else ""
+            if not v_text:
+                continue
+            if start_verse and v_num < start_verse:
+                continue
+            if end_verse and v_num > end_verse:
+                continue
+            results.append({"chapter": ch_num, "verse": str(v_num), "text": v_text})
+
+    return results
+
+
+# ── Parser: roman format (Roman numeral chapters) ───────────────────
+
+def _parse_roman(page_html: str, chapter: int = None,
+                 start_verse: int = None, end_verse: int = None) -> list[dict]:
+    """Parse texts with Roman numeral chapter markers: <p>I. , <p>II. , etc."""
+    # Roman numeral mapping
+    _roman = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7,
+              "VIII": 8, "IX": 9, "X": 10, "XI": 11, "XII": 12, "XIII": 13,
+              "XIV": 14, "XV": 15, "XVI": 16, "XVII": 17, "XVIII": 18,
+              "XIX": 19, "XX": 20}
+
+    results = []
+
+    # Split by <p>ROMAN. pattern
+    parts = re.split(r'<p>\s*((?:X{0,3}(?:IX|IV|V?I{0,3})))\.\s', page_html, flags=re.IGNORECASE)
+
+    for i in range(1, len(parts), 2):
+        roman_str = parts[i].upper()
+        ch_num = _roman.get(roman_str)
+        if not ch_num:
+            continue
+        ch_text = parts[i + 1] if i + 1 < len(parts) else ""
+        if chapter is not None and ch_num != chapter:
+            continue
+
+        text = _clean(ch_text)
+        if text:
+            results.append({"chapter": ch_num, "verse": "1", "text": text})
 
     return results
 
@@ -288,6 +430,14 @@ def fetch(book: str, chapter: int = None,
         verses = _parse_enoch(page_html, chapter, start_verse, end_verse)
     elif fmt == "jubilees":
         verses = _parse_jubilees(page_html, start_verse, end_verse)
+    elif fmt == "baruch2":
+        verses = _parse_baruch2(page_html, chapter, start_verse, end_verse)
+    elif fmt == "apocabraham":
+        verses = _parse_apocabraham(page_html, chapter, start_verse, end_verse)
+    elif fmt == "jasher":
+        verses = _parse_jasher(page_html, chapter, start_verse, end_verse)
+    elif fmt == "roman":
+        verses = _parse_roman(page_html, chapter, start_verse, end_verse)
     elif fmt == "flat":
         verses = _parse_flat(page_html)
     else:
