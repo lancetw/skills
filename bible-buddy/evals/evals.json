@@ -217,6 +217,63 @@
         {"text": "Notes scholarly debate about dating of the Parables (no Parables fragments found at Qumran)", "type": "precision"},
         {"text": "Does NOT collapse the Enochic and Gospel Son of Man into identical figures — shows development within Second Temple Judaism", "type": "precision"}
       ]
+    },
+    {
+      "id": 17,
+      "name": "trinitarian-formula-hebrew-matthew-vulgate",
+      "prompt": "教父怎麼引用馬太福音 28:19？希伯來馬太福音有什麼不同？",
+      "expected_output": "Should fetch Matt 28:19-20 from multiple sources: standard Greek (FHL/BibleGateway), Hebrew Matthew (fetch_hebrew_matthew.py shem-tov and du-tillet), Latin Vulgate (fetch_vulgate.py), and Apostolic Fathers for early citations (fetch_apostolic_fathers.py for Didache 7). Compare the Trinitarian baptismal formula across witnesses.",
+      "files": [],
+      "assertions": [
+        {"text": "Fetches Hebrew Matthew via fetch_hebrew_matthew.py (at least shem-tov)", "type": "flow"},
+        {"text": "Notes Shem-Tov Hebrew Matthew lacks the Trinitarian baptismal formula at 28:19-20", "type": "content"},
+        {"text": "Fetches Latin Vulgate via fetch_vulgate.py for Matt 28", "type": "flow"},
+        {"text": "Fetches or references Didache chapter 7 via fetch_apostolic_fathers.py as early baptismal evidence", "type": "flow"},
+        {"text": "Presents the textual evidence without asserting which reading is 'original' — notes the manuscript situation", "type": "precision"}
+      ]
+    },
+    {
+      "id": 18,
+      "name": "aramaic-talitha-kumi",
+      "prompt": "馬可福音 5:41 的 Talitha kumi 是什麼意思？為什麼馬可保留了亞蘭文原話？",
+      "expected_output": "Should fetch Mark 5:41 text, identify Talitha qumi as Aramaic, explain meaning (little girl, arise), discuss why the Gospel preserves original Aramaic words, reference aramaic-key-terms.md.",
+      "files": [],
+      "assertions": [
+        {"text": "Fetches Mark 5:41 scripture text via fetch_fhl.py or fetch_biblegateway.py", "type": "flow"},
+        {"text": "Identifies Talitha qumi as Aramaic (not Hebrew or Greek)", "type": "content"},
+        {"text": "Explains meaning: talitha = little girl/lamb, qumi = arise (feminine imperative)", "type": "content"},
+        {"text": "References aramaic-key-terms.md for verified term data", "type": "flow"},
+        {"text": "Discusses why Gospel preserves original Aramaic (eyewitness memory, not magic formula)", "type": "precision"},
+        {"text": "Does NOT frame preserved Aramaic words as incantations or spells", "type": "precision"}
+      ]
+    },
+    {
+      "id": 19,
+      "name": "church-practice-altar-call",
+      "prompt": "祭壇呼召和決志禱告是聖經的做法嗎？",
+      "expected_output": "Should Grep church-practices.md for altar call and sinner's prayer entries, present historical origins (Finney 1820s, Albert Gage 1922), contrast with first-century practice, reference scripture-to-denomination.md if relevant.",
+      "files": [],
+      "assertions": [
+        {"text": "Looks up altar call in church-practices.md (Finney, 1820s-1830s)", "type": "flow"},
+        {"text": "Looks up sinner's prayer in church-practices.md (Albert Gage, 1922)", "type": "flow"},
+        {"text": "Presents historical origins with dates and key figures", "type": "content"},
+        {"text": "Contrasts with first-century Jewish practice (no equivalent in Second Temple Judaism)", "type": "content"},
+        {"text": "Does NOT attack these practices as 'wrong' — presents historical context and lets user decide", "type": "precision"}
+      ]
+    },
+    {
+      "id": 20,
+      "name": "yeshua-hermeneutics-kal-vachomer",
+      "prompt": "耶穌用了什麼拉比解經方法？舉例說明 kal va-chomer",
+      "expected_output": "Should reference yeshua-hermeneutics.md for the 27 interpretive methods. Present kal va-chomer (light to heavy / a fortiori) with specific Gospel examples. Show Yeshua working within Jewish interpretive tradition.",
+      "files": [],
+      "assertions": [
+        {"text": "References yeshua-hermeneutics.md for interpretive methods", "type": "flow"},
+        {"text": "Explains kal va-chomer (קל וחומר) as 'light to heavy' / a fortiori argument", "type": "content"},
+        {"text": "Gives at least one specific Gospel example of Yeshua using kal va-chomer (e.g., Matt 6:26-30 birds/lilies, Matt 7:11 earthly fathers/heavenly Father, Matt 12:11-12 sheep/human on Sabbath)", "type": "content"},
+        {"text": "Mentions this is one of the standard rabbinic middot (rules of interpretation)", "type": "content"},
+        {"text": "Frames Yeshua as participating in Jewish interpretive tradition, not inventing something new", "type": "precision"}
+      ]
     }
   ]
 }
