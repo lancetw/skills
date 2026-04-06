@@ -125,6 +125,21 @@ def _resolve_book(name: str) -> str:
     return key
 
 
+def _scroll_books(F, L, s):
+    """Return set of real biblical book names in a scroll (scanning line-first-words)."""
+    books = set()
+    for frag in L.d(s, otype='fragment'):
+        for ln in L.d(frag, otype='line'):
+            words = L.d(ln, otype='word')
+            if words:
+                b = F.book.v(words[0])
+                if b and b != 'NA' and not b.startswith(('1Q', '2Q', '3Q', '4Q', '5Q',
+                        '6Q', '8Q', '11Q', 'Mur', 'Mas', 'Pam', 'XH', 'XJ',
+                        'X4', '5/', 'Sd', 'Ar', '34')):
+                    books.add(b)
+    return books
+
+
 def cmd_list(A):
     """List all scrolls."""
     F = A.api.F
@@ -139,11 +154,11 @@ def cmd_list(A):
         frags = L.d(s, otype='fragment')
         words = L.d(s, otype='word')
         word_count = len(words)
-        book = F.book.v(words[0]) if words else None
+        books = _scroll_books(F, L, s)
 
         entry = f"  {name:<20} {len(frags):>4} fragments  {word_count:>6} words"
-        if book and book != 'NA':
-            biblical.append((book, name, entry))
+        if books:
+            biblical.append((sorted(books)[0], name, entry))
         else:
             nonbiblical.append(entry)
 
@@ -169,11 +184,10 @@ def cmd_list_biblical(A):
         words = L.d(s, otype='word')
         if not words:
             continue
-        book = F.book.v(words[0])
-        if not book or book == 'NA':
-            continue
+        scroll_books = _scroll_books(F, L, s)
         name = F.scroll.v(s)
-        books.setdefault(book, []).append((name, len(words)))
+        for book in scroll_books:
+            books.setdefault(book, []).append((name, len(words)))
 
     print("=== DSS Biblical Manuscripts by Book ===\n")
     for book in sorted(books):
