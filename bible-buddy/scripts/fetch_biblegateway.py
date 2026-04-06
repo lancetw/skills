@@ -46,6 +46,7 @@ VERSION_NAMES = {
 # ── Deuterocanonical books (not in book_names.py) ────────────────────
 # (lookup_keys, display_name, bg_search_name)
 _DEUTERO_BOOKS = [
+    # Books on BibleGateway NRSVUE but NOT on Sefaria
     (["1 esdras", "以斯拉續篇上"],      "1 Esdras",           "1+Esdras"),
     (["2 esdras", "以斯拉續篇下"],      "2 Esdras",           "2+Esdras"),
     (["3 maccabees", "瑪加伯三書"],     "3 Maccabees",        "3+Maccabees"),
@@ -54,6 +55,14 @@ _DEUTERO_BOOKS = [
     (["bel and the dragon", "比勒與大龍"],"Bel and the Dragon","Bel+and+the+Dragon"),
     (["letter of jeremiah", "耶利米書信"],"Letter of Jeremiah","Letter+of+Jeremiah"),
     (["prayer of azariah", "亞撒利雅禱詞"],"Prayer of Azariah","Prayer+of+Azariah"),
+    # Books on BOTH BibleGateway NRSVUE and Sefaria
+    (["sirach", "德訓篇", "ecclesiasticus", "ben sira"], "Sirach", "Sirach"),
+    (["tobit", "多俾亞傳"],            "Tobit",              "Tobit"),
+    (["judith", "友弟德傳"],            "Judith",             "Judith"),
+    (["wisdom of solomon", "智慧篇", "wisdom"], "Wisdom of Solomon", "Wisdom+of+Solomon"),
+    (["1 maccabees", "瑪加伯上"],       "1 Maccabees",        "1+Maccabees"),
+    (["2 maccabees", "瑪加伯下"],       "2 Maccabees",        "2+Maccabees"),
+    (["susanna", "蘇撒拿傳"],           "Susanna",            "Susanna"),
 ]
 
 def _lookup_deutero(name: str):
