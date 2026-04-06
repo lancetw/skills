@@ -95,7 +95,7 @@ Do NOT rely on memory for scripture text. Always fetch from online sources using
 
 | Script | Command | Returns |
 |--------|---------|---------|
-| **OT Hebrew + Extra-canonical** | `uv run scripts/fetch_sefaria.py <book> <chapter> [start] [end]` | Sefaria API: Hebrew + English. Covers Tanakh, Josephus, Philo, apocrypha, Testaments of 12 Patriarchs. Also supports Talmud daf format (e.g. `Berakhot 2a`). Run `list-extra` for catalog. |
+| **OT Hebrew + Extra-canonical** | `uv run scripts/fetch_sefaria.py <book> <chapter> [start] [end]` | Sefaria API: Hebrew + English. Covers Tanakh, Josephus, Philo, apocrypha, Testaments of 12 Patriarchs. Run `list-extra` for catalog. |
 | **NT Greek** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] fhlwh` | FHL: NT Greek original |
 | **NT Greek (backup)** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses> SBLGNT` | Bible Gateway: SBLGNT academic Greek |
 | **Chinese RCUV / English NRSVUE** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses> [version]` | Bible Gateway: RCUV (default) or NRSVUE. Auto-switches to NRSVUE for all 17 deuterocanonical books (Tobit, Judith, Sirach, Wisdom, Baruch, 1-2 Maccabees, 1-2 Esdras, 3-4 Maccabees, Susanna, Bel and the Dragon, Letter of Jeremiah, Prayer of Azariah, Prayer of Manasseh, Psalm 151). |
@@ -133,13 +133,13 @@ Run through this checklist internally. **Check `references/` FIRST, then WebSear
 1. **Text correct?** — Confirm book/chapter/verse matches the fetched text. Quote the full passage, not a paraphrase.
 2. **Hebrew claims verified?** — Check `references/hebrew-key-terms.md` first (38 verified terms). For terms not listed, run `uv run scripts/verify_claim.py <book> <chapter> <verse> <word>` to cross-verify against Sefaria, or use WebSearch. If unverified: "⚠ 此希伯來文分析尚待線上來源驗證".
 3. **Greek claims verified?** — Check `references/greek-key-terms.md` first (34 verified terms). For terms not listed, use WebSearch. If unverified: "⚠ 此希臘文分析尚待線上來源驗證".
-4. **Historical claims verified?** — Check `references/archaeological-sources.md` (68 verified sources) and `references/anachronism-timeline.md` (29 verified dates). For claims not listed, WebSearch to verify. Never fabricate scroll numbers or inscription details.
+4. **Historical claims verified?** — Check `references/archaeological-sources.md` (68 verified sources) and `references/anachronism-timeline.md` (35 verified dates). For claims not listed, WebSearch to verify. Never fabricate scroll numbers or inscription details.
 5. **Anachronism check** — Scan for any concept from the Anachronism Guard table AND `references/anachronism-timeline.md`. If present, frame as later development with verified date.
 6. **Precision check** — Does any claim present an interpretive conclusion as a grammatical/historical fact? Separate observation from interpretation. Present the scholarly range where debate exists. Apply the Precision Guard.
 7. **Denomination-specific?** — **Do NOT Read entire file** (552 lines). Two-step lookup on `references/denomination-claims.md`:
      1. Identify denomination → Grep its `## Heading`: `Grep("## .*Calvinism", path="references/denomination-claims.md", output_mode="content", -A=30)`
      2. This returns only the relevant denomination's claims (~15-30 lines) instead of all 38 denominations
-8. **Common misread?** — Check `references/commonly-misread-passages.md` (58 passages) for pre-verified analysis if this passage is commonly taken out of context.
+8. **Common misread?** — Check `references/commonly-misread-passages.md` (73 passages) for pre-verified analysis if this passage is commonly taken out of context.
      Also Grep `references/scripture-to-denomination.md` for the passage to see which denominations misuse it:
      `Grep("Isaiah 7:14", path="references/scripture-to-denomination.md", output_mode="content", -A=2)`
 9. **Translation bias?** — Check `references/translation-bias.md` (15 verse-level + 7 systemic biases) for known Chinese translation issues. Flag when found.
@@ -358,17 +358,17 @@ Read these on-demand when needed (not all at once). Files >300 lines have a tabl
 |------|-------|-------------|
 | `hebrew-key-terms.md` | 46 | Verifying Hebrew word claims (38 terms) |
 | `greek-key-terms.md` | 42 | Verifying Greek word claims (34 terms) |
-| `anachronism-timeline.md` | 37 | Checking doctrine origin dates (29 entries) |
+| `anachronism-timeline.md` | 43 | Checking doctrine origin dates (35 entries) |
 | `translation-bias.md` | 47 | Flagging Chinese translation issues (15 verse + 7 systemic) |
-| `commonly-misread-passages.md` | 70 | User asks about a commonly misused passage (58 entries) |
-| `church-practices.md` | ~260 | **Grep per practice** — `Grep("## N\\. Name", -A=8)` for each practice (18 practices) |
+| `commonly-misread-passages.md` | 94 | User asks about a commonly misused passage (73 entries) |
+| `church-practices.md` | 215 | **Grep per practice** — `Grep("## N\\. Name", -A=8)` for each practice (18 practices) |
 | `archaeological-sources.md` | 147 | Citing Josephus, DSS, inscriptions (68 sources) |
 | `denomination-claims.md` | 552 | **Grep per denomination** — `Grep("## .*Name")` for specific section only |
 | `scripture-to-denomination.md` | 380 | **Grep per passage** — reverse lookup in Step 3.8: which denominations misuse this verse |
 | `model-default-biases.md` | 209 | Documentation only — not loaded at runtime (describes model's default biases for skill development) |
 | `verdict-summary.md` | 150 | Documentation only — not loaded at runtime (test results summary for skill development) |
 | `yeshua-hermeneutics.md` | 122 | Examples of Yeshua's Jewish interpretive methods (27 examples) |
-| `fun-facts.md` | 105 | Random fact for "Did You Know?" feature (101 facts) |
+| `fun-facts.md` | 141 | Random fact for "Did You Know?" feature (137 facts) |
 
 **Verification script** (not a reference file, but useful for Step 3):
 
