@@ -5,6 +5,8 @@ requires-python = ">=3.10"
 dependencies = [
     "trafilatura",
     "patchright",
+    "pygments>=2.18,<2.20",
+    "text-fabric>=13.1.0",
 ]
 
 [tool.uv]
