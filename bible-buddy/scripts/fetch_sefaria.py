@@ -42,6 +42,7 @@ EXTRA_CANON = [
     ("tobit",               "Book of Tobit",              "多俾亞傳",        "ch"),
     ("judith",              "Book of Judith",             "友弟德傳",        "ch"),
     ("1 maccabees",         "The Book of Maccabees I",    "瑪加伯上",        "ch"),
+    ("1 maccabees kahana",  "The Book of Maccabees I (Kahana Translation)", "瑪加伯上(Kahana校勘版)", "ch"),
     ("2 maccabees",         "The Book of Maccabees II",   "瑪加伯下",        "ch"),
     ("wisdom of solomon",   "The Wisdom of Solomon",      "智慧篇",          "ch"),
     ("wisdom",              "The Wisdom of Solomon",      "智慧篇",          "ch"),
@@ -49,29 +50,48 @@ EXTRA_CANON = [
     ("letter of aristeas",  "Letter of Aristeas",         "亞里斯提亞書信",   "ch"),
     ("prayer of manasseh",  "Prayer of Manasseh",         "瑪拿西禱詞",      "ch"),
     ("psalm 151",           "Psalm 151",                  "詩篇 151",        "ch"),
-    ("testaments of the twelve patriarchs", "The Testaments of the Twelve Patriarchs", "十二族長遺訓", "ch"),
+    ("psalm 154",           "Psalm 154",                  "詩篇 154",        "ch"),
+    ("testaments reuben",    "The Testaments of the Twelve Patriarchs, The Testament of Reuben the First born Son of Jacob and Leah", "十二族長遺訓：流便", "ch"),
+    ("testaments simeon",    "The Testaments of the Twelve Patriarchs, The Testament of Simeon the Second of Jacob and Leah", "十二族長遺訓：西緬", "ch"),
+    ("testaments levi",      "The Testaments of the Twelve Patriarchs, The Testament of Levi the Third Son of Jacob and Leah", "十二族長遺訓：利未", "ch"),
+    ("testaments judah",     "The Testaments of the Twelve Patriarchs, The Testament of Judah the Fourth Son of Jacob and Leah", "十二族長遺訓：猶大", "ch"),
+    ("testaments issachar",  "The Testaments of the Twelve Patriarchs, The Testament of Issachar the Fifth Son of Jacob and Leah", "十二族長遺訓：以薩迦", "ch"),
+    ("testaments zebulun",   "The Testaments of the Twelve Patriarchs, The Testament of Zebulun the Sixth Son of Jacob and Leah", "十二族長遺訓：西布倫", "ch"),
+    ("testaments dan",       "The Testaments of the Twelve Patriarchs, The Testament of Dan the Seventh Son of Jacob and Bilhah", "十二族長遺訓：但", "ch"),
+    ("testaments naphtali",  "The Testaments of the Twelve Patriarchs, The Testament of Naphtali the Eighth Son of Jacob and Bilhah", "十二族長遺訓：拿弗他利", "ch"),
+    ("testaments gad",       "The Testaments of the Twelve Patriarchs, The Testament of Gad the Ninth Son of Jacob and Zilpah", "十二族長遺訓：迦得", "ch"),
+    ("testaments asher",     "The Testaments of the Twelve Patriarchs, The Testament of Asher the Tenth Son of Jacob and Zilpah", "十二族長遺訓：亞設", "ch"),
+    ("testaments joseph",    "The Testaments of the Twelve Patriarchs, The Testament of Joseph the Eleventh Son of Jacob and Rachel", "十二族長遺訓：約瑟", "ch"),
+    ("testaments benjamin",  "The Testaments of the Twelve Patriarchs, The Testament of Benjamin the Twelfth Son of Jacob and Rachel", "十二族長遺訓：便雅憫", "ch"),
     # Josephus
     ("josephus antiquities", "The Antiquities of the Jews", "約瑟夫斯《猶太古史》", "ch.sec"),
     ("josephus war",         "The War of the Jews",         "約瑟夫斯《猶太戰記》", "ch.sec"),
     ("against apion",        "Against Apion",               "約瑟夫斯《駁阿比安》", "ch.sec"),
     # Philo
     ("philo creation",       "On the Account of the World's Creation", "斐羅《論創世》", "ch"),
-    ("philo moses",          "On the Life of Moses",        "斐羅《摩西傳》",       "ch.sec"),
+    ("philo moses",          "On the Life of Moses, Book I", "斐羅《摩西傳》",       "ch"),
+    ("philo moses 2",        "On the Life of Moses, Book II","斐羅《摩西傳》卷二",   "ch"),
     ("philo abraham",        "On Abraham",                  "斐羅《論亞伯拉罕》",   "ch"),
     ("philo joseph",         "On Joseph",                   "斐羅《論約瑟》",       "ch"),
     ("philo decalogue",      "On the Decalogue",            "斐羅《論十誡》",       "ch"),
-    ("philo special laws",   "On the Special Laws",         "斐羅《論特別律法》",   "ch.sec"),
+    ("philo special laws",   "On the Special Laws, Book I",  "斐羅《論特別律法》",   "ch"),
+    ("philo special laws 2", "On the Special Laws, Book II", "斐羅《論特別律法》卷二","ch"),
+    ("philo special laws 3", "On the Special Laws, Book III","斐羅《論特別律法》卷三","ch"),
+    ("philo special laws 4", "On the Special Laws, Book IV", "斐羅《論特別律法》卷四","ch"),
     ("philo virtues",        "On the Virtues",              "斐羅《論美德》",       "ch"),
     ("philo contemplative",  "On the Contemplative Life or Suppliants", "斐羅《論靜觀生活》", "ch"),
     ("philo flaccus",        "Against Flaccus",             "斐羅《駁弗拉庫斯》",   "ch"),
-    ("philo dreams",         "On Dreams",                   "斐羅《論夢》",         "ch.sec"),
+    ("philo dreams",         "On Dreams, Book I",            "斐羅《論夢》",         "ch"),
+    ("philo dreams 2",       "On Dreams, Book II",           "斐羅《論夢》卷二",     "ch"),
     ("philo giants",         "On the Giants",               "斐羅《論巨人》",       "ch"),
     ("philo drunkenness",    "On Drunkenness",              "斐羅《論醉》",         "ch"),
     ("philo migration",      "On the Migration of Abraham", "斐羅《論亞伯拉罕遷徙》","ch"),
     ("philo heir",           "Who is the Heir of Divine Things", "斐羅《論神聖繼承》", "ch"),
     ("philo cherubim",       "On the Cherubim",             "斐羅《論基路伯》",     "ch"),
     ("philo confusion",      "On the Confusion of Tongues", "斐羅《論混亂語言》",   "ch"),
-    ("philo allegory",       "Allegorical Interpretation of Genesis", "斐羅《創世記寓意解經》", "ch.sec"),
+    ("philo allegory",       "Allegorical Interpretation of Genesis, Book I", "斐羅《創世記寓意解經》", "ch"),
+    ("philo allegory 2",     "Allegorical Interpretation of Genesis, Book II","斐羅《創世記寓意解經》卷二", "ch"),
+    ("philo allegory 3",     "Allegorical Interpretation of Genesis, Book III","斐羅《創世記寓意解經》卷三", "ch"),
     ("philo every good man", "Every Good Man is Free",      "斐羅《論善人自由》",   "ch"),
     ("philo husbandry",      "On Husbandry",                "斐羅《論農耕》",       "ch"),
     ("philo rewards",        "On Rewards and Punishments",  "斐羅《論賞罰》",       "ch"),
@@ -89,7 +109,7 @@ EXTRA_CANON = [
     ("philo noah curses",    "On the Prayers and Curses Uttered by Noah when he Became Sober", "斐羅《論挪亞醒後禱咒》", "ch"),
     # Other
     ("megillat antiochus",   "Megillat Antiochus",          "安提約古卷",       "ch"),
-    ("megillat taanit",      "Megillat Ta'anit",            "禁食卷",           "ch"),
+    # Megillat Ta'anit omitted: complex schema with month-based refs (Nisan, Iyyar, etc.)
 ]
 
 # Chinese aliases for extra-canonical
@@ -106,27 +126,37 @@ _EXTRA_ALIASES = {
     "駁阿比安": "against apion",
 }
 
-# Build lookup
+# Build lookups
 _extra_by_key = {}
+_extra_by_sefaria = {}  # Sefaria title → row
 for row in EXTRA_CANON:
     _extra_by_key[row[0]] = row
+    _extra_by_sefaria[row[1].lower()] = row
 
 
 def _lookup_extra(name: str):
     """Look up extra-canonical text. Returns (sefaria_title, display_name, ref_style) or None."""
     key = name.lower().strip()
-    # Direct match
+    # Direct match on lookup key
     if key in _extra_by_key:
         _, sefaria, display, style = _extra_by_key[key]
+        return sefaria, display, style
+    # Direct match on Sefaria title
+    if key in _extra_by_sefaria:
+        _, sefaria, display, style = _extra_by_sefaria[key]
         return sefaria, display, style
     # Chinese alias
     alias = _EXTRA_ALIASES.get(name.strip())
     if alias and alias in _extra_by_key:
         _, sefaria, display, style = _extra_by_key[alias]
         return sefaria, display, style
-    # Partial match
+    # Partial match on key
     for k, row in _extra_by_key.items():
         if key in k or k in key:
+            return row[1], row[2], row[3]
+    # Partial match on Sefaria title
+    for st, row in _extra_by_sefaria.items():
+        if key in st or st in key:
             return row[1], row[2], row[3]
     return None
 
