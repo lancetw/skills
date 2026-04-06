@@ -168,9 +168,19 @@ Include a "驗證來源" section at the end of every response:
 
 Apply the principles from the **Hermeneutic Framework** section below. Core lens: **How would a first-century Torah-observant Jewish teacher understand this passage?**
 
-### Step 5: Present AND Save
+### Step 5: Save First, Then Present Summary
 
-Present AND save every response as markdown. Never present without saving. Applies to: initial answers, follow-ups, Did You Know expansions, all Q&A.
+**Execution order matters for speed.** Save the full study document FIRST via Write tool, THEN display a concise summary on screen. This avoids generating the same content twice.
+
+**Phase A — Save (Write tool):** Write the complete study document to file. This is the primary deliverable. Include all sections, full Hebrew text, translations, Insight blocks, and verification table.
+
+**Phase B — Screen summary:** After saving, display a concise导读 on screen (~30-50 lines) that includes:
+- Key findings (bullet points)
+- 1-2 most important ★ Insight blocks (shown inline, not all of them)
+- Verification summary (abbreviated)
+- File path confirmation
+
+Do NOT repeat the full analysis on screen — the user can read the saved file.
 
 **★ Insight blocks MUST be written to the saved file** — bible-buddy markdown output is a study document, not source code. All `★ Insight` educational content must be included in the saved file using blockquote format:
 
@@ -180,16 +190,16 @@ Present AND save every response as markdown. Never present without saving. Appli
 > ─────────────────────────────────────────────────
 ```
 
-This rule overrides the Explanatory output style default of "not in the codebase." Insights shown in conversation and in the saved file must be identical.
+This rule overrides the Explanatory output style default of "not in the codebase."
 
-**Formats:**
+**Formats (for saved file):**
 - **Verse-by-verse:** `## [Book Ch:V] — [Topic]` → 經文 (Hebrew + Chinese, cite source) → First-century context → Interpretation → Common misreadings → Sources & Further Reading
 - **Topical:** Hebrew word study → first-century understanding → key passages → what it did NOT mean → sources
 - **Q&A:** Direct answer with Hebrew terms woven in. Sources at end.
 
-**Always include:** Hebrew with transliteration, source citations with dates, text vs. interpretation distinction.
+**Always include (in saved file):** Hebrew with transliteration, source citations with dates, text vs. interpretation distinction.
 
-**Required sections** (order flexible, may be woven in):
+**Required sections (in saved file)** (order flexible, may be woven in):
 - **翻譯偏差** — Compare RCUV, CNVT, 呂振中. No bias → "本段中文翻譯未見明顯偏差。"
 - **觀察 vs. 解讀** — Separate grammatical/historical facts from theological interpretations.
 
