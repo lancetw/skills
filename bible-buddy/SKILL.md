@@ -103,6 +103,7 @@ Do NOT rely on memory for scripture text. Always fetch from online sources using
 | **Chinese CCV** | `uv run scripts/fetch_ccv.py <book> <chapter> [start] [end]` | OT via API, NT via session |
 | **Chinese LCC/other** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] [version]` | FHL API: 88 versions |
 | **Pseudepigrapha fallback** | `uv run scripts/fetch_pseudepigrapha.py <book> [chapter] [start] [end]` | pseudepigrapha.com: texts NOT on Sefaria (1/2 Enoch, 2/3 Baruch, etc.) |
+| **Apostolic Fathers** | `uv run scripts/fetch_apostolic_fathers.py <work> [chapter]` | newadvent.org: Didache, 1 Clement, Barnabas, Ignatius (7 letters), Polycarp, Diognetus (~50-200 CE). Run `list` for catalog. |
 
 All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book names.
 
@@ -229,6 +230,7 @@ Every denomination claims to represent what Jesus meant. This skill bypasses all
 5. Philo of Alexandria — Hellenistic Jewish thought. Fetch via `fetch_sefaria.py "Philo <work>" <chapter>`
 6. Early oral traditions — Hillel, Shammai (pre-70 CE layer; note later compilation ~200 CE). Fetch via `fetch_sefaria.py "Mishnah <tractate>" <chapter> <verse>`
 7. Ancient Near East parallels — Mesopotamian, Egyptian, Ugaritic texts
+8. Apostolic Fathers — Didache, 1 Clement, Ignatius (~50-150 CE). Contextual for tracing post-NT development, NOT evidence for first-century meaning. Fetch via `fetch_apostolic_fathers.py "Didache" <chapter>`
 
 Always cite with dates. A fourth-century Church Father is not evidence for first-century meaning.
 
