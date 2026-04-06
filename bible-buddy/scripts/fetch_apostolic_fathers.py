@@ -33,8 +33,12 @@ WORKS = [
      "1 Clement", "1010", "~96 CE"),
     (["barnabas", "巴拿巴書信"],
      "Epistle of Barnabas", "0124", "~70-132 CE"),
-    (["shepherd of hermas", "黑馬牧人書", "hermas"],
-     "Shepherd of Hermas", "0201", "~100-160 CE"),
+    (["hermas visions", "黑馬牧人書：異象", "shepherd visions"],
+     "Shepherd of Hermas: Visions", "02011", "~100-160 CE"),
+    (["hermas commandments", "黑馬牧人書：誡命", "shepherd commandments"],
+     "Shepherd of Hermas: Commandments", "02012", "~100-160 CE"),
+    (["hermas similitudes", "黑馬牧人書：比喻", "shepherd similitudes"],
+     "Shepherd of Hermas: Similitudes", "02013", "~100-160 CE"),
     (["ignatius ephesians", "依格那丟致以弗所人書"],
      "Ignatius to Ephesians", "0104", "~110 CE"),
     (["ignatius magnesians", "依格那丟致馬格尼西亞人書"],
@@ -108,8 +112,10 @@ def _parse_chapters(page_html: str, chapter: int = None) -> list[dict]:
         h2_content = chunks[i]
         body = chunks[i + 1] if i + 1 < len(chunks) else ""
 
-        # Extract chapter number: "Chapter 1. Title" or just a number
-        ch_match = re.match(r'(?:Chapter\s+)?(\d+)\.?\s*(.*)', _clean(h2_content), re.IGNORECASE)
+        # Extract chapter/section number:
+        # "Chapter 1. Title", "Vision 1", "Commandment 1", "Similitude 1", or bare "1. Title"
+        ch_match = re.match(r'(?:Chapter|Vision|Commandment|Similitude)?\s*(\d+)\.?\s*(.*)',
+                            _clean(h2_content), re.IGNORECASE)
         if ch_match:
             results_raw.append((int(ch_match.group(1)), ch_match.group(2).strip(), body))
 
