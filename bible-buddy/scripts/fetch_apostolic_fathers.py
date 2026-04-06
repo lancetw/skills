@@ -1,8 +1,8 @@
 """Fetch Apostolic Fathers texts from newadvent.org.
 
-Early Church / Apostolic Fathers (~50-200 CE): Didache, 1 Clement,
+Early Church / Apostolic Fathers (~50-200 CE): Didache, 1-2 Clement,
 Epistle of Barnabas, Shepherd of Hermas, Ignatius (7 letters),
-Polycarp, Martyrdom of Polycarp, Epistle to Diognetus.
+Polycarp, Martyrdom of Polycarp, Epistle to Diognetus, Fragments of Papias.
 
 Usage:
     python fetch_apostolic_fathers.py <work> [chapter]
@@ -59,6 +59,10 @@ WORKS = [
      "Martyrdom of Polycarp", "0102", "~155 CE"),
     (["diognetus", "致丟格那妥書"],
      "Epistle to Diognetus", "0101", "~130-200 CE"),
+    (["2 clement", "克萊孟二書", "second clement"],
+     "2 Clement", "1011", "~100-140 CE"),
+    (["papias", "帕皮亞殘篇", "fragments of papias"],
+     "Fragments of Papias", "0125", "~60-130 CE"),
 ]
 
 
@@ -95,6 +99,21 @@ def _clean(text: str) -> str:
     return text
 
 
+def _roman_to_int(s: str) -> int | None:
+    """Convert Roman numeral to integer. Returns None if not a valid Roman numeral."""
+    s = s.strip().upper()
+    vals = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100}
+    if not s or not all(c in vals for c in s):
+        return None
+    total = 0
+    for i, c in enumerate(s):
+        if i + 1 < len(s) and vals[c] < vals[s[i + 1]]:
+            total -= vals[c]
+        else:
+            total += vals[c]
+    return total
+
+
 def _parse_chapters(page_html: str, chapter: int = None) -> list[dict]:
     """Parse <h2 id/class="chapterN">Title</h2> + <p>text</p> structure."""
     results = []
@@ -111,13 +130,21 @@ def _parse_chapters(page_html: str, chapter: int = None) -> list[dict]:
     for i in range(1, len(chunks), 2):
         h2_content = chunks[i]
         body = chunks[i + 1] if i + 1 < len(chunks) else ""
+        clean_h2 = _clean(h2_content)
 
         # Extract chapter/section number:
         # "Chapter 1. Title", "Vision 1", "Commandment 1", "Similitude 1", or bare "1. Title"
         ch_match = re.match(r'(?:Chapter|Vision|Commandment|Similitude)?\s*(\d+)\.?\s*(.*)',
-                            _clean(h2_content), re.IGNORECASE)
+                            clean_h2, re.IGNORECASE)
         if ch_match:
             results_raw.append((int(ch_match.group(1)), ch_match.group(2).strip(), body))
+        else:
+            # Try Roman numerals (e.g. "I", "II", "III" — used by Papias fragments)
+            roman_match = re.match(r'^([IVXLC]+)\s*$', clean_h2.strip())
+            if roman_match:
+                num = _roman_to_int(roman_match.group(1))
+                if num:
+                    results_raw.append((num, f"Fragment {num}", body))
 
     for ch_num, ch_title, ch_body in results_raw:
 
