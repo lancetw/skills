@@ -95,20 +95,24 @@ Do NOT rely on memory for scripture text. Always fetch from online sources using
 
 | Script | Command | Returns |
 |--------|---------|---------|
-| **OT 希伯來原文** | `uv run scripts/fetch_sefaria.py <book> <chapter> [start] [end]` | Sefaria API: Hebrew + English (OT only) |
-| **NT 希臘原文** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] fhlwh` | 信望愛: 新約原文 |
-| **NT 希臘原文 (備用)** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses> SBLGNT` | Bible Gateway: SBLGNT 學術希臘文 |
-| **中文 RCUV** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses>` | Bible Gateway: 和合本修訂版 |
-| **新漢語譯本** | `uv run scripts/fetch_ccv.py <book> <chapter> [start] [end]` | OT via API, NT via session |
-| **呂振中/其他** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] [version]` | 信望愛 API: 88 versions |
+| **OT Hebrew** | `uv run scripts/fetch_sefaria.py <book> <chapter> [start] [end]` | Sefaria API: Hebrew + English (OT only) |
+| **NT Greek** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] fhlwh` | FHL: NT Greek original |
+| **NT Greek (backup)** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses> SBLGNT` | Bible Gateway: SBLGNT academic Greek |
+| **Chinese RCUV** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses>` | Bible Gateway: RCUV (和合本修訂版) |
+| **Chinese Sigao** | `uv run scripts/fetch_sigao.py <book> <chapter> [start] [end]` | ccreadbible.org: Catholic Sigao Bible (73 books incl. deuterocanon) |
+| **Chinese CCV** | `uv run scripts/fetch_ccv.py <book> <chapter> [start] [end]` | OT via API, NT via session |
+| **Chinese LCC/other** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] [version]` | FHL API: 88 versions |
+| **Deuterocanon/Pseudepigrapha English** | `uv run scripts/fetch_pseudepigrapha.py <book> [chapter] [start] [end]` | pseudepigrapha.com: R.H. Charles translation |
 
 All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book names.
 
 **Key notes:**
-- `fetch_biblegateway.py` default: `RCU17TS` (RCUV繁體). Add `CNVT` for 新譯本.
-- `fetch_fhl.py` default: `rcuv`. Requests for `unv`(舊和合本) auto-redirect to `rcuv`. Use `lcc` for 呂振中, `lxx` for 七十士, `bhs` for 馬索拉原文, `fhlwh` for 新約希臘原文. Run `--list-versions` for all 88 versions.
-- **OT 原文用 Sefaria (`fetch_sefaria.py`)**，NT 原文用 FHL `fhlwh` 或 Bible Gateway `SBLGNT`。Sefaria 不收錄新約。
-- `fetch_ccv.py`: OT partially available (創世記~約書亞記, 路得記, 約拿書). NT fully available. Reports clearly when a book is not yet online.
+- `fetch_biblegateway.py` default: `RCU17TS` (RCUV Traditional Chinese). Add `CNVT` for CNV.
+- `fetch_fhl.py` default: `rcuv`. Requests for `unv` (CUV) auto-redirect to `rcuv`. Use `lcc` for LCC, `lxx` for Septuagint, `bhs` for Masoretic Hebrew, `fhlwh` for NT Greek. Run `--list-versions` for all 88 versions.
+- **OT original text** via Sefaria (`fetch_sefaria.py`). **NT original text** via FHL `fhlwh` or Bible Gateway `SBLGNT`. Sefaria does not cover NT.
+- `fetch_ccv.py`: OT partially available (Genesis–Joshua, Ruth, Jonah). NT fully available. Reports clearly when a book is not yet online.
+- **Deuterocanon routing:** Tobit, Judith, Sirach, Wisdom, Baruch, 1-2 Maccabees are NOT in FHL/Sefaria/BibleGateway. Use `fetch_sigao.py` (Chinese) + `fetch_pseudepigrapha.py` (English) in parallel.
+- **Pseudepigrapha:** 1 Enoch, Jubilees, 2 Baruch, etc. — only available via `fetch_pseudepigrapha.py` (English). Run with `list` to see all available texts.
 - **Always fetch the broader context**, not just the single verse asked about. For Isaiah 7:14, fetch 7:10-17.
 
 ### Step 3: Verify Before Presenting
@@ -271,7 +275,7 @@ Many users assume certain church practices come from the Bible. **Always Grep th
 
 **Primary authority:** Tanakh — Torah (Genesis–Deuteronomy), Nevi'im (Joshua–Malachi), Ketuvim (Psalms–Chronicles).
 
-**Second Temple literature** (contextual, not authoritative): Dead Sea Scrolls (1QS, 1QM, 11QT), 1 Enoch, Jubilees, Sirach, Psalms of Solomon, Testament of the Twelve Patriarchs, 4 Ezra, 2 Baruch.
+**Second Temple literature** (contextual, not authoritative): Dead Sea Scrolls (1QS, 1QM, 11QT), 1 Enoch, Jubilees, Sirach, Psalms of Solomon, Testament of the Twelve Patriarchs, 4 Ezra, 2 Baruch. Fetch via `fetch_pseudepigrapha.py` (English). For deuterocanonical books (Sirach, Wisdom, Baruch, Tobit, Judith, Maccabees), also fetch Chinese via `fetch_sigao.py`.
 
 **New Testament** — read as first-century Jewish documents, not through later creedal theology. Strip away later Christian layers and reconstruct first-century Jewish meaning.
 
@@ -281,10 +285,13 @@ Many users assume certain church practices come from the Bible. **Always Grep th
 
 | Priority | Translation | Source | Notes |
 |----------|------------|--------|-------|
-| 1 (Primary) | 和合本修訂版 (RCUV, 2010) | Bible Gateway `RCU17TS` / FHL `rcuv` | Default Chinese text |
+| 1 (Primary) | 和合本修訂版 (RCUV, 2010) | Bible Gateway `RCU17TS` / FHL `rcuv` | Default Chinese text (66 books) |
 | 2 | 新漢語譯本 (CCV) | `fetch_ccv.py` | Direct from original languages; OT partial, NT full |
 | 3 | 呂振中譯本 | FHL `lcc` | Most literal; closest to original languages |
+| 4 | 思高譯本 (Sigao) | `fetch_sigao.py` | Catholic; only Chinese source covering deuterocanon (73 books) |
 | Avoid | 舊和合本 (CUV, 1919) | — | Archaic language, more translation biases |
+
+**Deuterocanon routing:** For deuterocanonical books (Tobit, Judith, Sirach, Wisdom, Baruch, 1-2 Maccabees), Chinese MUST use `fetch_sigao.py` — no other Chinese source covers them. Also fetch English via `fetch_pseudepigrapha.py` (R.H. Charles) for cross-reference.
 
 **When any Chinese translation reflects theological bias** (e.g., almah→童女), point it out and explain the Hebrew original.
 
@@ -292,7 +299,7 @@ Many users assume certain church practices come from the Bible. **Always Grep th
 
 ### Systematic Theology as a Framework Problem
 
-Systematic theology (系統神學) is not a first-century method. It organizes Bible verses into topical categories (神論、基督論、救恩論、聖靈論、末世論) and builds unified doctrinal systems. This approach itself creates distortions:
+Systematic theology is not a first-century method. It organizes Bible verses into topical categories (Theology Proper, Christology, Soteriology, Pneumatology, Eschatology) and builds unified doctrinal systems. This approach itself creates distortions:
 
 - **It pulls verses out of context** — Romans 3:23 in a "Sin" chapter loses its argument about Jewish-Gentile equality
 - **It assumes the Bible speaks with one voice** — First-century Jews held multiple perspectives in tension (Pharisees vs. Sadducees vs. Qumran)
