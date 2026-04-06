@@ -95,10 +95,10 @@ Do NOT rely on memory for scripture text. Always fetch from online sources using
 
 | Script | Command | Returns |
 |--------|---------|---------|
-| **OT Hebrew + Extra-canonical** | `uv run scripts/fetch_sefaria.py <book> <chapter> [start] [end]` | Sefaria API: Hebrew + English. Covers Tanakh, Josephus, Philo, Jubilees, Ben Sira, Tobit, Judith, 1-2 Maccabees, Wisdom, Susanna. Run `list-extra` for full catalog. |
+| **OT Hebrew + Extra-canonical + Rabbinic** | `uv run scripts/fetch_sefaria.py <book> <chapter> [start] [end]` | Sefaria API: Hebrew + English. Covers Tanakh, Josephus, Philo, apocrypha, Testaments of 12 Patriarchs. Also passthrough to Mishnah, Talmud, Tosefta, Midrash (use Sefaria ref format directly). Run `list-extra` for catalog. |
 | **NT Greek** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] fhlwh` | FHL: NT Greek original |
 | **NT Greek (backup)** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses> SBLGNT` | Bible Gateway: SBLGNT academic Greek |
-| **Chinese RCUV / English NRSVUE** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses> [version]` | Bible Gateway: RCUV (default) or NRSVUE. Auto-switches to NRSVUE for deuterocanon (Baruch, 1-2 Esdras, 3-4 Maccabees, Bel and the Dragon, Letter of Jeremiah, Prayer of Azariah). |
+| **Chinese RCUV / English NRSVUE** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses> [version]` | Bible Gateway: RCUV (default) or NRSVUE. Auto-switches to NRSVUE for all 17 deuterocanonical books (Tobit, Judith, Sirach, Wisdom, Baruch, 1-2 Maccabees, 1-2 Esdras, 3-4 Maccabees, Susanna, Bel and the Dragon, Letter of Jeremiah, Prayer of Azariah, Prayer of Manasseh, Psalm 151). |
 | **Chinese Sigao** | `uv run scripts/fetch_sigao.py <book> <chapter> [start] [end]` | ccreadbible.org: Catholic Sigao Bible (73 books incl. deuterocanon) |
 | **Chinese CCV** | `uv run scripts/fetch_ccv.py <book> <chapter> [start] [end]` | OT via API, NT via session |
 | **Chinese LCC/other** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] [version]` | FHL API: 88 versions |
@@ -107,11 +107,11 @@ Do NOT rely on memory for scripture text. Always fetch from online sources using
 All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book names.
 
 **Key notes:**
-- `fetch_biblegateway.py` default: `RCU17TS` (RCUV Traditional Chinese). Add `CNVT` for CNV, `NRSVUE` for English NRSVUE. Auto-switches to NRSVUE for deuterocanonical books (Baruch, 1-2 Esdras, 3-4 Maccabees, Bel and the Dragon, Letter of Jeremiah, Prayer of Azariah).
+- `fetch_biblegateway.py` default: `RCU17TS` (RCUV Traditional Chinese). Add `CNVT` for CNV, `NRSVUE` for English NRSVUE. Auto-switches to NRSVUE for all 17 deuterocanonical books.
 - `fetch_fhl.py` default: `rcuv`. Requests for `unv` (CUV) auto-redirect to `rcuv`. Use `lcc` for LCC, `lxx` for Septuagint, `bhs` for Masoretic Hebrew, `fhlwh` for NT Greek. Run `--list-versions` for all 88 versions.
 - **OT original text** via Sefaria (`fetch_sefaria.py`). **NT original text** via FHL `fhlwh` or Bible Gateway `SBLGNT`. Sefaria does not cover NT.
 - `fetch_ccv.py`: OT partially available (Genesis–Joshua, Ruth, Jonah). NT fully available. Reports clearly when a book is not yet online.
-- **Extra-canonical routing (Sefaria first):** `fetch_sefaria.py` now covers Josephus, Philo, and major apocrypha (Jubilees, Ben Sira, Tobit, Judith, 1-2 Maccabees, Wisdom, Susanna, Letter of Aristeas). Use it as the primary source for these texts. Run `list-extra` to see all available titles.
+- **Extra-canonical routing (Sefaria first):** `fetch_sefaria.py` covers Josephus, Philo (20+ works), apocrypha (Jubilees, Ben Sira, Tobit, Judith, 1-2 Maccabees, Wisdom, Susanna, Testaments of 12 Patriarchs, Psalm 151/154, Maccabees I Kahana critical edition), and via passthrough: Mishnah, Talmud, Tosefta, Midrash Rabbah (use Sefaria ref format, e.g., `"Mishnah Avot" 6 2`). Run `list-extra` for the full catalog.
 - **Pseudepigrapha fallback:** For texts NOT on Sefaria or Bible Gateway (1/2 Enoch, 2/3 Baruch, Apocalypse of Abraham, Testament of Abraham, Book of Jasher, Ascension of Isaiah, etc.), use `fetch_pseudepigrapha.py`. Run with `list` to see available texts.
 - **Deuterocanon Chinese:** For Chinese translation of deuterocanonical books, always use `fetch_sigao.py` — no other Chinese source covers them.
 - **Always fetch the broader context**, not just the single verse asked about. For Isaiah 7:14, fetch 7:10-17.
@@ -227,7 +227,7 @@ Every denomination claims to represent what Jesus meant. This skill bypasses all
 3. Dead Sea Scrolls — textual variants, community practices
 4. Josephus — Jewish War, Antiquities (~93 CE). Fetch via `fetch_sefaria.py "Josephus Antiquities" <book> <chapter>`
 5. Philo of Alexandria — Hellenistic Jewish thought. Fetch via `fetch_sefaria.py "Philo <work>" <chapter>`
-6. Early oral traditions — Hillel, Shammai (pre-70 CE layer; note later compilation ~200 CE)
+6. Early oral traditions — Hillel, Shammai (pre-70 CE layer; note later compilation ~200 CE). Fetch via `fetch_sefaria.py "Mishnah <tractate>" <chapter> <verse>`
 7. Ancient Near East parallels — Mesopotamian, Egyptian, Ugaritic texts
 
 Always cite with dates. A fourth-century Church Father is not evidence for first-century meaning.
@@ -294,9 +294,9 @@ Many users assume certain church practices come from the Bible. **Always Grep th
 
 **Deuterocanon lookup order:**
 1. **Chinese** → `fetch_sigao.py` (only Chinese source for deuterocanon)
-2. **English (NRSVUE 2021)** → `fetch_biblegateway.py` with `NRSVUE` (auto-detected for: Baruch, 1-2 Esdras, 3-4 Maccabees, Bel and the Dragon, Letter of Jeremiah, Prayer of Azariah)
-3. **Hebrew + English** → `fetch_sefaria.py` (for texts Sefaria covers: Tobit, Judith, Ben Sira, Wisdom, 1-2 Maccabees, Jubilees, Susanna)
-4. **Fallback** → `fetch_pseudepigrapha.py` (for texts not on Sefaria or BibleGateway)
+2. **English (NRSVUE 2021)** → `fetch_biblegateway.py` with `NRSVUE` (auto-detected for all 17 deuterocanonical books)
+3. **Hebrew + English** → `fetch_sefaria.py` (for texts Sefaria covers: Tobit, Judith, Ben Sira, Wisdom, 1-2 Maccabees, Jubilees, Susanna, Testaments, Psalm 151/154)
+4. **Fallback** → `fetch_pseudepigrapha.py` (for texts not on Sefaria or BibleGateway: 1/2 Enoch, 2/3 Baruch, Apocalypse of Abraham, etc.)
 
 **When any Chinese translation reflects theological bias** (e.g., almah→童女), point it out and explain the Hebrew original.
 
