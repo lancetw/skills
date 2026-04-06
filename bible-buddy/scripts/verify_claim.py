@@ -18,7 +18,9 @@ Examples:
 """
 
 import json
+import re
 import sys
+import unicodedata
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 import urllib.parse
@@ -60,11 +62,9 @@ def verify(book: str, chapter: int, verse: int, word: str) -> dict:
         return {"verified": False, "error": "No Hebrew text found", "ref": ref}
 
     # Clean HTML tags from Sefaria text
-    import re
     hebrew_text = re.sub(r'<[^>]+>', '', hebrew_text)
 
     # Strip cantillation marks for fuzzy matching
-    import unicodedata
     def strip_accents(s):
         """Remove cantillation marks but keep vowel points."""
         result = []

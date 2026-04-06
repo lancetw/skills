@@ -19,6 +19,7 @@ Examples:
 """
 
 import json
+import re
 import sys
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -282,8 +283,7 @@ def format_output(result: dict) -> str:
 
     if isinstance(he, list):
         for i, verse in enumerate(he, 1):
-            # Strip HTML tags
-            clean = verse.replace("<b>", "").replace("</b>", "").replace("<i>", "").replace("</i>", "") if isinstance(verse, str) else str(verse)
+            clean = re.sub(r'<[^>]+>', '', verse) if isinstance(verse, str) else str(verse)
             lines.append(f"  [{i}] {clean}")
     elif isinstance(he, str):
         lines.append(f"  {he}")
@@ -295,7 +295,7 @@ def format_output(result: dict) -> str:
         lines.append("English:")
         if isinstance(en, list):
             for i, verse in enumerate(en, 1):
-                clean = verse.replace("<b>", "").replace("</b>", "").replace("<i>", "").replace("</i>", "") if isinstance(verse, str) else str(verse)
+                clean = re.sub(r'<[^>]+>', '', verse) if isinstance(verse, str) else str(verse)
                 lines.append(f"  [{i}] {clean}")
         elif isinstance(en, str):
             lines.append(f"  {en}")

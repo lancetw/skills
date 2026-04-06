@@ -134,6 +134,89 @@
         {"text": "Ends with AskUserQuestion or text fallback with 4 options", "type": "flow"},
         {"text": "Fourth option is 'Did You Know?' with a fact NOT about Romans", "type": "flow"}
       ]
+    },
+    {
+      "id": 11,
+      "name": "dss-community-rule-query",
+      "prompt": "死海古卷的社群規章 (1QS) 跟耶穌的教導有什麼關係？",
+      "expected_output": "Should fetch 1QS via fetch_dss.py, present key parallels between Qumran community practices and Yeshua's teachings (purity, communal meals, eschatology), note differences (Qumran exclusivism vs. Yeshua's inclusivism)",
+      "files": [],
+      "assertions": [
+        {"text": "Fetches text from fetch_dss.py using 1QS or 社群規章", "type": "flow"},
+        {"text": "Identifies parallels between Qumran and Yeshua's teachings (e.g., communal meals, purity, eschatological urgency)", "type": "content"},
+        {"text": "Notes key differences (Qumran's exclusivism and separatism vs. Yeshua's engagement with sinners)", "type": "precision"},
+        {"text": "Does NOT claim Yeshua was an Essene or that he copied from Qumran", "type": "precision"}
+      ]
+    },
+    {
+      "id": 12,
+      "name": "lxx-isaiah-7-14-comparison",
+      "prompt": "請比較以賽亞書 7:14 的希伯來原文和七十士譯本的差異",
+      "expected_output": "Should fetch Hebrew via Sefaria and Greek via fetch_lxx.py. Compare almah (Hebrew) vs. parthenos (LXX Greek). Discuss the translators' choice and its theological implications.",
+      "files": [],
+      "assertions": [
+        {"text": "Fetches Hebrew text from Sefaria for Isaiah 7:14", "type": "flow"},
+        {"text": "Fetches LXX Greek from fetch_lxx.py for Isaiah 7:14", "type": "flow"},
+        {"text": "Identifies almah→parthenos as the key translation shift", "type": "content"},
+        {"text": "Explains that LXX translators chose parthenos (which CAN mean virgin but also young woman) from almah (which does NOT specifically mean virgin)", "type": "precision"},
+        {"text": "Notes this LXX choice influenced Matthew 1:23 and Chinese 童女 translation", "type": "content"}
+      ]
+    },
+    {
+      "id": 13,
+      "name": "rabbinic-hillel-golden-rule",
+      "prompt": "希勒爾的金律跟耶穌的金律有什麼關係？",
+      "expected_output": "Should fetch Talmud Shabbat 31a via fetch_rabbinic.py. Compare Hillel's negative formulation with Yeshua's positive formulation (Matt 7:12). Show this as intra-Jewish dialogue, not Christianity vs. Judaism.",
+      "files": [],
+      "assertions": [
+        {"text": "Fetches Talmud Bavli Shabbat 31a via fetch_rabbinic.py", "type": "flow"},
+        {"text": "Presents Hillel's negative formulation: what is hateful to you, do not do to your neighbor", "type": "content"},
+        {"text": "Compares with Yeshua's positive formulation (Matt 7:12) as a development within Jewish tradition", "type": "content"},
+        {"text": "Frames this as intra-Jewish dialogue, not Christianity correcting Judaism", "type": "precision"},
+        {"text": "References Leviticus 19:18 as the shared Torah foundation for both", "type": "content"}
+      ]
+    },
+    {
+      "id": 14,
+      "name": "translation-comparison-mode",
+      "prompt": "比較不同中文譯本對詩篇 23:1 的翻譯",
+      "expected_output": "Should use mode 4 (譯本比較). Fetch RCUV, CCV (or note unavailability), 呂振中 via FHL, and Sigao. Compare each with Hebrew original. Flag any biases.",
+      "files": [],
+      "assertions": [
+        {"text": "Fetches at least 3 different Chinese translations (RCUV, 呂振中, and one more)", "type": "flow"},
+        {"text": "Shows Hebrew original text with transliteration", "type": "content"},
+        {"text": "Compares how each translation renders key terms (YHWH as shepherd, ro'i)", "type": "content"},
+        {"text": "Notes translation differences or biases where present", "type": "precision"},
+        {"text": "Auto-detects intent (translation comparison) without needing to ask via AskUserQuestion", "type": "flow"}
+      ]
+    },
+    {
+      "id": 15,
+      "name": "topical-study-hesed",
+      "prompt": "希伯來文 hesed 的主題研究",
+      "expected_output": "Should use mode 3 (主題研究). Present hesed's full semantic range, key passages across Tanakh, first-century covenantal meaning, contrast with common mistranslations.",
+      "files": [],
+      "assertions": [
+        {"text": "Defines hesed as covenantal loyalty (not generic mercy/loving-kindness)", "type": "content"},
+        {"text": "Cites multiple Tanakh passages where hesed appears (e.g., Exodus 34:6, Hosea, Psalms, Ruth)", "type": "content"},
+        {"text": "References hebrew-key-terms.md verified entry for hesed", "type": "flow"},
+        {"text": "Distinguishes hesed from Greek agape and from modern Chinese translations", "type": "precision"},
+        {"text": "Presents the covenantal (berit) framework as essential context", "type": "content"}
+      ]
+    },
+    {
+      "id": 16,
+      "name": "pseudepigrapha-1-enoch-son-of-man",
+      "prompt": "以諾一書的人子跟福音書的人子有什麼關係？",
+      "expected_output": "Should fetch 1 Enoch 46-48 via fetch_pseudepigrapha.py. Compare the Enochic Son of Man (Parables of Enoch) with Yeshua's self-designation and Daniel 7:13 bar enash.",
+      "files": [],
+      "assertions": [
+        {"text": "Fetches 1 Enoch text (chapters 46-48 or nearby) via fetch_pseudepigrapha.py", "type": "flow"},
+        {"text": "Identifies the Son of Man figure in the Parables of Enoch (1 Enoch 37-71)", "type": "content"},
+        {"text": "Connects to Daniel 7:13 bar enash as the shared source tradition", "type": "content"},
+        {"text": "Notes scholarly debate about dating of the Parables (no Parables fragments found at Qumran)", "type": "precision"},
+        {"text": "Does NOT collapse the Enochic and Gospel Son of Man into identical figures — shows development within Second Temple Judaism", "type": "precision"}
+      ]
     }
   ]
 }
