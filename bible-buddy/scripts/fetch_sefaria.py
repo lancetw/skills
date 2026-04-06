@@ -161,7 +161,7 @@ def _lookup_extra(name: str):
     return None
 
 
-def fetch(book: str, chapter: int, start_verse: int = None, end_verse: int = None) -> dict:
+def fetch(book: str, chapter: int | str, start_verse: int = None, end_verse: int = None) -> dict:
     info = lookup(book)
     extra = None
 
@@ -338,8 +338,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Handle multi-word book names (e.g., I Chronicles 21 1 → book="I Chronicles")
+    # Also handle Talmud daf format (e.g., Berakhot 2a)
     args = sys.argv[1:]
-    chapter_idx = next((i for i, a in enumerate(args) if a.isdigit()), None)
+    # Find first arg that looks numeric (integer or daf like "2a")
+    chapter_idx = next(
+        (i for i, a in enumerate(args) if a[0].isdigit()),
+        None,
+    )
     if chapter_idx is not None and chapter_idx > 0:
         book = " ".join(args[:chapter_idx])
         nums = args[chapter_idx:]
@@ -347,9 +352,10 @@ if __name__ == "__main__":
         book = args[0]
         nums = args[1:]
 
-    chapter = int(nums[0])
-    start_v = int(nums[1]) if len(nums) > 1 else None
-    end_v = int(nums[2]) if len(nums) > 2 else None
+    # Chapter: integer for biblical, string for daf (e.g. "2a")
+    chapter = int(nums[0]) if nums[0].isdigit() else nums[0]
+    start_v = int(nums[1]) if len(nums) > 1 and nums[1].isdigit() else None
+    end_v = int(nums[2]) if len(nums) > 2 and nums[2].isdigit() else None
 
     result = fetch(book, chapter, start_v, end_v)
     print(format_output(result))
