@@ -104,6 +104,7 @@ Do NOT rely on memory for scripture text. Always fetch from online sources using
 | **Chinese LCC/other** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] [version]` | FHL API: 88 versions |
 | **Pseudepigrapha fallback** | `uv run scripts/fetch_pseudepigrapha.py <book> [chapter] [start] [end]` | pseudepigrapha.com: texts NOT on Sefaria (1/2 Enoch, 2/3 Baruch, etc.) |
 | **Apostolic Fathers** | `uv run scripts/fetch_apostolic_fathers.py <work> [chapter]` | newadvent.org: Didache, 1 Clement, Barnabas, Ignatius (7 letters), Polycarp, Diognetus (~50-200 CE). Run `list` for catalog. |
+| **Dead Sea Scrolls** | `uv run scripts/fetch_dss.py <scroll> [fragment] [start_line] [end_line]` | ETCBC/dss (Abegg transcription, CC-BY-NC): 1001 scrolls, 500K words. By scroll: `1QS`, `社群規章`. By biblical book: `biblical Isaiah 1 1 5`. Run `list` or `list-biblical` for catalog. |
 
 All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book names.
 
@@ -115,6 +116,7 @@ All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book 
 - **Extra-canonical routing (Sefaria first):** `fetch_sefaria.py` covers Josephus, Philo (20+ works), apocrypha (Jubilees, Ben Sira, Tobit, Judith, 1-2 Maccabees, Wisdom, Susanna, Testaments of 12 Patriarchs, Psalm 151/154, Maccabees I Kahana critical edition), and via passthrough: Mishnah, Talmud, Tosefta, Midrash Rabbah (use Sefaria ref format, e.g., `"Mishnah Avot" 6 2`). Run `list-extra` for the full catalog.
 - **Pseudepigrapha fallback:** For texts NOT on Sefaria or Bible Gateway (1/2 Enoch, 2/3 Baruch, Apocalypse of Abraham, Testament of Abraham, Book of Jasher, Ascension of Isaiah, etc.), use `fetch_pseudepigrapha.py`. Run with `list` to see available texts.
 - **Deuterocanon Chinese:** For Chinese translation of deuterocanonical books, always use `fetch_sigao.py` — no other Chinese source covers them.
+- **Dead Sea Scrolls:** `fetch_dss.py` covers all 1001 scrolls (266 biblical, 735 non-biblical) from Abegg's transcription via ETCBC/dss. Two modes: by scroll (`1QS`, `大以賽亞卷軸`) or by biblical book (`biblical Isaiah 1`). Text-critical marks: `#` uncertain, `[...]` lacuna, `(^ x ^)` supralinear, `ε` vacat. Run `list` for all scrolls, `info <scroll>` for metadata.
 - **Always fetch the broader context**, not just the single verse asked about. For Isaiah 7:14, fetch 7:10-17.
 
 ### Step 3: Verify Before Presenting
@@ -225,7 +227,7 @@ Every denomination claims to represent what Jesus meant. This skill bypasses all
 ### Evidence Hierarchy
 1. Hebrew text itself — morphology, syntax, intertextual connections
 2. Archaeological evidence — inscriptions, material culture, coins, seals
-3. Dead Sea Scrolls — textual variants, community practices
+3. Dead Sea Scrolls — textual variants, community practices. Fetch via `fetch_dss.py 1QS` (by scroll) or `fetch_dss.py biblical Isaiah 1` (by book)
 4. Josephus — Jewish War, Antiquities (~93 CE). Fetch via `fetch_sefaria.py "Josephus Antiquities" <book> <chapter>`
 5. Philo of Alexandria — Hellenistic Jewish thought. Fetch via `fetch_sefaria.py "Philo <work>" <chapter>`
 6. Early oral traditions — Hillel, Shammai (pre-70 CE layer; note later compilation ~200 CE). Fetch via `fetch_sefaria.py "Mishnah <tractate>" <chapter> <verse>`
@@ -278,7 +280,7 @@ Many users assume certain church practices come from the Bible. **Always Grep th
 
 **Primary authority:** Tanakh — Torah (Genesis–Deuteronomy), Nevi'im (Joshua–Malachi), Ketuvim (Psalms–Chronicles).
 
-**Second Temple literature** (contextual, not authoritative): Dead Sea Scrolls (1QS, 1QM, 11QT), 1 Enoch, Jubilees, Sirach, Psalms of Solomon, Testament of the Twelve Patriarchs, 4 Ezra, 2 Baruch, Josephus, Philo. Fetch via `fetch_sefaria.py` first (Jubilees, Ben Sira, Tobit, Judith, Maccabees, Josephus, Philo all available). For texts not on Sefaria (1/2 Enoch, 2/3 Baruch, etc.), fall back to `fetch_pseudepigrapha.py`. For Chinese deuterocanon, use `fetch_sigao.py`.
+**Second Temple literature** (contextual, not authoritative): Dead Sea Scrolls (1QS, 1QM, 11QT), 1 Enoch, Jubilees, Sirach, Psalms of Solomon, Testament of the Twelve Patriarchs, 4 Ezra, 2 Baruch, Josephus, Philo. **DSS:** Use `fetch_dss.py` for all Dead Sea Scrolls — 1001 scrolls including biblical and non-biblical texts. Supports both scroll-based (`1QS`) and biblical book-based (`biblical Isaiah 1`) queries. Fetch via `fetch_sefaria.py` first for other Second Temple texts (Jubilees, Ben Sira, Tobit, Judith, Maccabees, Josephus, Philo all available). For texts not on Sefaria (1/2 Enoch, 2/3 Baruch, etc.), fall back to `fetch_pseudepigrapha.py`. For Chinese deuterocanon, use `fetch_sigao.py`.
 
 **New Testament** — read as first-century Jewish documents, not through later creedal theology. Strip away later Christian layers and reconstruct first-century Jewish meaning.
 
