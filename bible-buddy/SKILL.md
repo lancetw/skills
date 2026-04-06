@@ -174,11 +174,10 @@ Apply the principles from the **Hermeneutic Framework** section below. Core lens
 
 ### Step 5: Save and Display (Single Generation)
 
-**Generate content only ONCE using a temp-file pattern:**
+**Generate content only ONCE — write directly to the final destination:**
 
-1. **Write → temp file** (`/tmp/bible_buddy_output.md`): Write the complete study document via Write tool. This is the only time content tokens are generated. Include all sections, full Hebrew text, translations, Insight blocks, and verification table.
-2. **Bash `cp`** → copy temp file to final destination path (instant, no token generation).
-3. **Read → final file**: Use Read tool to display the full content on screen. Content is read from disk — no token regeneration.
+1. **Write → final file**: Write the complete study document directly to the auto-save path. This is the only time content tokens are generated. Include all sections, full Hebrew text, translations, Insight blocks, and verification table.
+2. **Read → final file**: Use Read tool to display the full content on screen. Content is read from disk — no token regeneration.
 
 This ensures full content is both saved and displayed, with tokens generated exactly once.
 
