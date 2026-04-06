@@ -107,6 +107,8 @@ Do NOT rely on memory for scripture text. Always fetch from online sources using
 | **Dead Sea Scrolls** | `uv run scripts/fetch_dss.py <scroll> [fragment] [start_line] [end_line]` | ETCBC/dss (Abegg transcription, CC-BY-NC): 1001 scrolls, 500K words. By scroll: `1QS`, `社群規章`. By biblical book: `biblical Isaiah 1 1 5`. Run `list` or `list-biblical` for catalog. |
 | **LXX Greek (Septuagint)** | `uv run scripts/fetch_lxx.py <book> <chapter> [start] [end]` | CenterBLC/LXX (Rahlfs 1935): 57 books, Greek text + glosses + morphology. Incl. Psalms of Solomon, Daniel OG/Th, Susanna OG/Th. Run `list` for catalog. |
 | **Latin Vulgate** | `uv run scripts/fetch_vulgate.py <book> <chapter> [start] [end]` | sacredbible.org: Clementine Vulgate (Hetzenauer 1914), 73 books (full Catholic canon incl. deuterocanon). Run `list` for catalog. |
+| **Hebrew Matthew** | `uv run scripts/fetch_hebrew_matthew.py <manuscript> <chapter> [start] [end]` | Two manuscripts: `shem-tov` (Even Bohan, c.1380) and `du-tillet` (Heb. MSS 132, Paris, 1553). Run `list` for catalog. |
+| **Rabbinic Literature** | `uv run scripts/fetch_rabbinic.py <corpus> <tractate> <chapter\|daf> [start] [end]` | Sefaria API: Mishnah (63 tractates), Talmud Bavli (37 tractates, daf format e.g. `2a`), Tosefta (63 tractates). All with Hebrew + English. Run `list` for catalog. |
 
 All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book names.
 
@@ -120,6 +122,8 @@ All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book 
 - **Deuterocanon Chinese:** For Chinese translation of deuterocanonical books, always use `fetch_sigao.py` — no other Chinese source covers them.
 - **Dead Sea Scrolls:** `fetch_dss.py` covers all 1001 scrolls (266 biblical, 735 non-biblical) from Abegg's transcription via ETCBC/dss. Two modes: by scroll (`1QS`, `大以賽亞卷軸`) or by biblical book (`biblical Isaiah 1`). Text-critical marks: `#` uncertain, `[...]` lacuna, `(^ x ^)` supralinear, `ε` vacat. Run `list` for all scrolls, `info <scroll>` for metadata.
 - **LXX Greek (Septuagint):** `fetch_lxx.py` covers Rahlfs 1935 critical edition via CenterBLC/LXX (Text-Fabric). 57 books including Psalms of Solomon (`所羅門詩篇`), deuterocanon, Daniel/Susanna/Bel dual versions (OG + Theodotion). Shows Greek text + English glosses + part-of-speech for short passages. Use `-OG`/`-Th` suffix for version selection. Data cached in `~/.cache/bible-buddy/CenterBLC-LXX/`.
+- **Hebrew Matthew:** `fetch_hebrew_matthew.py` provides two medieval Hebrew manuscripts of Matthew. Shem-Tov (שם טוב, from Even Bohan c.1380) has full nikkud and notably lacks the Trinitarian baptismal formula at 28:19-20. Du Tillet (Paris Heb. MSS 132, 1553) is closer to Greek tradition. These are secondary witnesses useful for textual comparison, not primary sources.
+- **Rabbinic Literature:** `fetch_rabbinic.py` provides direct access to Mishnah, Talmud Bavli, and Tosefta with 63 tractate names in English + Chinese. Talmud uses daf pagination (e.g. `talmud Berakhot 2a`). Mishnah and Tosefta use chapter:halakhah (e.g. `mishnah 祝禱篇 1 1 3`). Preferred over `fetch_sefaria.py` passthrough for rabbinic texts.
 - **Always fetch the broader context**, not just the single verse asked about. For Isaiah 7:14, fetch 7:10-17.
 
 ### Step 3: Verify Before Presenting
@@ -239,7 +243,7 @@ Every denomination claims to represent what Jesus meant. This skill bypasses all
 3. Dead Sea Scrolls — textual variants, community practices. Fetch via `fetch_dss.py 1QS` (by scroll) or `fetch_dss.py biblical Isaiah 1` (by book)
 4. Josephus — Jewish War, Antiquities (~93 CE). Fetch via `fetch_sefaria.py "Josephus Antiquities" <book> <chapter>`
 5. Philo of Alexandria — Hellenistic Jewish thought. Fetch via `fetch_sefaria.py "Philo <work>" <chapter>`
-6. Early oral traditions — Hillel, Shammai (pre-70 CE layer; note later compilation ~200 CE). Fetch via `fetch_sefaria.py "Mishnah <tractate>" <chapter> <verse>`
+6. Early oral traditions — Hillel, Shammai (pre-70 CE layer; note later compilation ~200 CE). Fetch via `fetch_rabbinic.py mishnah <tractate> <chapter> [halakhah]` or `fetch_rabbinic.py talmud <tractate> <daf>`
 7. Ancient Near East parallels — Mesopotamian, Egyptian, Ugaritic texts
 8. Apostolic Fathers — Didache, 1 Clement, Ignatius (~50-150 CE). Contextual for tracing post-NT development, NOT evidence for first-century meaning. Fetch via `fetch_apostolic_fathers.py "Didache" <chapter>`
 
