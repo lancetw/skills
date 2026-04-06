@@ -105,7 +105,7 @@ Do NOT rely on memory for scripture text. Always fetch from online sources using
 | **Pseudepigrapha fallback** | `uv run scripts/fetch_pseudepigrapha.py <book> [chapter] [start] [end]` | pseudepigrapha.com: texts NOT on Sefaria (1/2 Enoch, 2/3 Baruch, etc.) |
 | **Apostolic Fathers** | `uv run scripts/fetch_apostolic_fathers.py <work> [chapter]` | newadvent.org: Didache, 1 Clement, Barnabas, Ignatius (7 letters), Polycarp, Diognetus (~50-200 CE). Run `list` for catalog. |
 | **Dead Sea Scrolls** | `uv run scripts/fetch_dss.py <scroll> [fragment] [start_line] [end_line]` | ETCBC/dss (Abegg transcription, CC-BY-NC): 1001 scrolls, 500K words. By scroll: `1QS`, `社群規章`. By biblical book: `biblical Isaiah 1 1 5`. Run `list` or `list-biblical` for catalog. |
-| **LXX Greek (Septuagint)** | `uv run scripts/fetch_lxx.py <book> <chapter> [start] [end]` | Swete's LXX (MIT): Full Septuagint Greek incl. deuterocanon, Psalms of Solomon, Daniel OG/Th, Susanna OG/Th. Run `list` for catalog. |
+| **LXX Greek (Septuagint)** | `uv run scripts/fetch_lxx.py <book> <chapter> [start] [end]` | CenterBLC/LXX (Rahlfs 1935): 57 books, Greek text + glosses + morphology. Incl. Psalms of Solomon, Daniel OG/Th, Susanna OG/Th. Run `list` for catalog. |
 
 All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book names.
 
@@ -118,7 +118,7 @@ All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book 
 - **Pseudepigrapha fallback:** For texts NOT on Sefaria or Bible Gateway (1/2 Enoch, 2/3 Baruch, Apocalypse of Abraham, Testament of Abraham, Book of Jasher, Ascension of Isaiah, etc.), use `fetch_pseudepigrapha.py`. Run with `list` to see available texts.
 - **Deuterocanon Chinese:** For Chinese translation of deuterocanonical books, always use `fetch_sigao.py` — no other Chinese source covers them.
 - **Dead Sea Scrolls:** `fetch_dss.py` covers all 1001 scrolls (266 biblical, 735 non-biblical) from Abegg's transcription via ETCBC/dss. Two modes: by scroll (`1QS`, `大以賽亞卷軸`) or by biblical book (`biblical Isaiah 1`). Text-critical marks: `#` uncertain, `[...]` lacuna, `(^ x ^)` supralinear, `ε` vacat. Run `list` for all scrolls, `info <scroll>` for metadata.
-- **LXX Greek (Septuagint):** `fetch_lxx.py` covers full LXX from Swete's edition (MIT license). 59 books including Psalms of Solomon (`所羅門詩篇`), deuterocanon, and Daniel/Susanna/Bel dual versions (OG + Theodotion). Use `-OG`/`-Th` suffix for version selection (e.g. `Daniel-OG`, `Daniel-Th`). Files cached locally in `~/.cache/bible-buddy/lxx-swete/`.
+- **LXX Greek (Septuagint):** `fetch_lxx.py` covers Rahlfs 1935 critical edition via CenterBLC/LXX (Text-Fabric). 57 books including Psalms of Solomon (`所羅門詩篇`), deuterocanon, Daniel/Susanna/Bel dual versions (OG + Theodotion). Shows Greek text + English glosses + part-of-speech for short passages. Use `-OG`/`-Th` suffix for version selection. Data cached in `~/.cache/bible-buddy/CenterBLC-LXX/`.
 - **Always fetch the broader context**, not just the single verse asked about. For Isaiah 7:14, fetch 7:10-17.
 
 ### Step 3: Verify Before Presenting
