@@ -123,14 +123,17 @@ def _parse_verses(page_html: str, start_verse: int = None,
     """
     verses = []
 
-    # Find all <sup>N</sup> followed by text within <td>
-    # Pattern: <td ...><sup>N</sup>text</td>
+    # Find all <sup>N</sup> or <sup>N-M</sup> followed by text within <td>
+    # Pattern: <td ...><sup>N</sup>text</td> or <td ...><sup>N-M</sup>text</td>
     for m in re.finditer(
-        r'<td[^>]*>\s*<sup>(\d+)</sup>(.*?)</td>',
+        r'<td[^>]*>\s*<sup>(\d+(?:-\d+)?)</sup>(.*?)</td>',
         page_html, re.DOTALL
     ):
-        v_num = int(m.group(1))
+        v_label = m.group(1)
         v_text = m.group(2)
+
+        # For merged verses like "1-3", use the first number
+        v_num = int(v_label.split("-")[0])
 
         if start_verse and v_num < start_verse:
             continue
@@ -143,7 +146,7 @@ def _parse_verses(page_html: str, start_verse: int = None,
         v_text = re.sub(r'\s+', ' ', v_text).strip()
 
         if v_text:
-            verses.append({"verse": str(v_num), "text": v_text})
+            verses.append({"verse": v_label, "text": v_text})
 
     return verses
 
