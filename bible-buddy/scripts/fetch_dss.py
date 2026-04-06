@@ -202,40 +202,57 @@ def cmd_info(A, scroll_id: str):
     L = A.api.L
 
     scroll_id = _resolve_scroll(scroll_id)
+    s, scroll_id = _find_scroll_node(A, scroll_id)
 
+    if s is None:
+        print(f"Error: scroll '{scroll_id}' not found.", file=sys.stderr)
+        sys.exit(1)
+
+    frags = L.d(s, otype='fragment')
+    words = L.d(s, otype='word')
+    lines = L.d(s, otype='line')
+    book = F.book.v(words[0]) if words else None
+
+    print(f"=== {scroll_id} ===")
+    print(f"Fragments: {len(frags)}")
+    print(f"Lines: {len(lines)}")
+    print(f"Words: {len(words)}")
+    if book and book != 'NA':
+        # Get chapter range
+        chapters = set()
+        for w in words:
+            ch = F.chapter.v(w)
+            if ch:
+                chapters.add(int(ch))
+        if chapters:
+            print(f"Biblical: {book} (chapters {min(chapters)}-{max(chapters)})")
+    else:
+        print(f"Type: Non-Biblical")
+
+    print(f"\nFragments:")
+    for frag in frags:
+        fname = F.fragment.v(frag)
+        flines = L.d(frag, otype='line')
+        fwords = L.d(frag, otype='word')
+        print(f"  Fragment {fname}: {len(flines)} lines, {len(fwords)} words")
+
+
+def _find_scroll_node(A, scroll_id: str):
+    """Find scroll node by ID, with case-insensitive fallback.
+
+    Returns (node, canonical_name) or (None, None).
+    """
+    F = A.api.F
+    # Exact match first
     for s in F.otype.s('scroll'):
         if F.scroll.v(s) == scroll_id:
-            frags = L.d(s, otype='fragment')
-            words = L.d(s, otype='word')
-            lines = L.d(s, otype='line')
-            book = F.book.v(words[0]) if words else None
-
-            print(f"=== {scroll_id} ===")
-            print(f"Fragments: {len(frags)}")
-            print(f"Lines: {len(lines)}")
-            print(f"Words: {len(words)}")
-            if book and book != 'NA':
-                # Get chapter range
-                chapters = set()
-                for w in words:
-                    ch = F.chapter.v(w)
-                    if ch:
-                        chapters.add(int(ch))
-                if chapters:
-                    print(f"Biblical: {book} (chapters {min(chapters)}-{max(chapters)})")
-            else:
-                print(f"Type: Non-Biblical")
-
-            print(f"\nFragments:")
-            for frag in frags:
-                fname = F.fragment.v(frag)
-                flines = L.d(frag, otype='line')
-                fwords = L.d(frag, otype='word')
-                print(f"  Fragment {fname}: {len(flines)} lines, {len(fwords)} words")
-            return
-
-    print(f"Error: scroll '{scroll_id}' not found.", file=sys.stderr)
-    sys.exit(1)
+            return s, scroll_id
+    # Case-insensitive fallback
+    low = scroll_id.lower()
+    for s in F.otype.s('scroll'):
+        if F.scroll.v(s).lower() == low:
+            return s, F.scroll.v(s)
+    return None, None
 
 
 def cmd_fetch_scroll(A, scroll_id: str, frag_filter=None, start_line=None, end_line=None):
@@ -244,58 +261,57 @@ def cmd_fetch_scroll(A, scroll_id: str, frag_filter=None, start_line=None, end_l
     L = A.api.L
 
     scroll_id = _resolve_scroll(scroll_id)
+    s, scroll_id = _find_scroll_node(A, scroll_id)
 
-    for s in F.otype.s('scroll'):
-        if F.scroll.v(s) == scroll_id:
-            frags = L.d(s, otype='fragment')
-            words_total = L.d(s, otype='word')
-            book = F.book.v(words_total[0]) if words_total else None
-            is_biblical = book and book != 'NA'
+    if s is None:
+        print(f"Error: scroll '{scroll_id}' not found.", file=sys.stderr)
+        _suggest_scroll(A, scroll_id)
+        sys.exit(1)
 
-            print(f"=== {scroll_id} ===")
+    frags = L.d(s, otype='fragment')
+    words_total = L.d(s, otype='word')
+    book = F.book.v(words_total[0]) if words_total else None
+    is_biblical = book and book != 'NA'
+
+    print(f"=== {scroll_id} ===")
+    if is_biblical:
+        print(f"Biblical: {book}")
+    print()
+
+    for frag in frags:
+        fname = F.fragment.v(frag)
+        if frag_filter is not None and str(fname) != str(frag_filter):
+            continue
+
+        line_nodes = L.d(frag, otype='line')
+
+        print(f"── Fragment {fname} ──")
+        for ln in line_nodes:
+            line_label = F.line.v(ln)
+
+            # Line filter
+            if start_line is not None:
+                try:
+                    ln_num = int(line_label)
+                    if ln_num < int(start_line):
+                        continue
+                    if end_line is not None and ln_num > int(end_line):
+                        continue
+                except ValueError:
+                    pass
+
+            word_nodes = L.d(ln, otype='word')
+            text = ' '.join(F.full.v(w) for w in word_nodes)
+
             if is_biblical:
-                print(f"Biblical: {book}")
-            print()
-
-            for frag in frags:
-                fname = F.fragment.v(frag)
-                if frag_filter is not None and str(fname) != str(frag_filter):
-                    continue
-
-                line_nodes = L.d(frag, otype='line')
-
-                print(f"── Fragment {fname} ──")
-                for ln in line_nodes:
-                    line_label = F.line.v(ln)
-
-                    # Line filter
-                    if start_line is not None:
-                        try:
-                            ln_num = int(line_label)
-                            if ln_num < int(start_line):
-                                continue
-                            if end_line is not None and ln_num > int(end_line):
-                                continue
-                        except ValueError:
-                            pass
-
-                    word_nodes = L.d(ln, otype='word')
-                    text = ' '.join(F.full.v(w) for w in word_nodes)
-
-                    if is_biblical:
-                        # Add chapter:verse reference
-                        ch = F.chapter.v(word_nodes[0]) if word_nodes else None
-                        vs = F.verse.v(word_nodes[0]) if word_nodes else None
-                        ref = f"{book} {ch}:{vs}" if ch and vs else ""
-                        print(f"  [{ref:<12}] L{line_label:<4} {text}")
-                    else:
-                        print(f"  L{line_label:<4} {text}")
-                print()
-            return
-
-    print(f"Error: scroll '{scroll_id}' not found.", file=sys.stderr)
-    _suggest_scroll(A, scroll_id)
-    sys.exit(1)
+                # Add chapter:verse reference
+                ch = F.chapter.v(word_nodes[0]) if word_nodes else None
+                vs = F.verse.v(word_nodes[0]) if word_nodes else None
+                ref = f"{book} {ch}:{vs}" if ch and vs else ""
+                print(f"  [{ref:<12}] L{line_label:<4} {text}")
+            else:
+                print(f"  L{line_label:<4} {text}")
+        print()
 
 
 def cmd_fetch_biblical(A, book_name: str, chapter=None, start_verse=None, end_verse=None):
@@ -418,6 +434,11 @@ def main():
     if cmd in ("-h", "--help", "help"):
         print(__doc__)
         sys.exit(0)
+
+    # Handle "biblical <book>" passed as a single quoted arg
+    if cmd.lower().startswith("biblical "):
+        args = [args[0].split(None, 1)[0]] + [args[0].split(None, 1)[1]] + args[1:]
+        cmd = args[0]
 
     A = _load_dss()
 
