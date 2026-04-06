@@ -6,7 +6,7 @@ dependencies = [
     "trafilatura",
     "patchright",
     "pygments>=2.18,<2.20",
-    "text-fabric>=13.1.0",
+    "text-fabric[github]>=13.1.0",
     "pymupdf4llm>=1.27.2.2",
 ]
 
