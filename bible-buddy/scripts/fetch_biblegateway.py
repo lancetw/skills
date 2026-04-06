@@ -32,21 +32,60 @@ VERSION_MAP = {
     "新譯本": "CNVT",
     "CUV": "CUV",
     "和合本": "CUV",
+    "NRSVUE": "NRSVUE",
+    "NRSV": "NRSVUE",
 }
 
 VERSION_NAMES = {
     "RCU17TS": "和合本修訂版 (RCUV, 2010)",
     "CNVT": "新譯本 (CNV)",
     "CUV": "舊和合本 (CUV, 1919)",
+    "NRSVUE": "NRSVUE (2021)",
 }
+
+# ── Deuterocanonical books (not in book_names.py) ────────────────────
+# (lookup_keys, display_name, bg_search_name)
+_DEUTERO_BOOKS = [
+    (["1 esdras", "以斯拉續篇上"],      "1 Esdras",           "1+Esdras"),
+    (["2 esdras", "以斯拉續篇下"],      "2 Esdras",           "2+Esdras"),
+    (["3 maccabees", "瑪加伯三書"],     "3 Maccabees",        "3+Maccabees"),
+    (["4 maccabees", "瑪加伯四書"],     "4 Maccabees",        "4+Maccabees"),
+    (["baruch", "巴路克"],              "Baruch",             "Baruch"),
+    (["bel and the dragon", "比勒與大龍"],"Bel and the Dragon","Bel+and+the+Dragon"),
+    (["letter of jeremiah", "耶利米書信"],"Letter of Jeremiah","Letter+of+Jeremiah"),
+    (["prayer of azariah", "亞撒利雅禱詞"],"Prayer of Azariah","Prayer+of+Azariah"),
+]
+
+def _lookup_deutero(name: str):
+    """Look up deuterocanonical book for Bible Gateway. Returns (display_name, bg_name) or None."""
+    key = name.lower().strip()
+    for keys, display, bg in _DEUTERO_BOOKS:
+        for k in keys:
+            if key == k or key in k or k in key:
+                return display, bg
+    # Also match Chinese name directly
+    for keys, display, bg in _DEUTERO_BOOKS:
+        for k in keys:
+            if name.strip() == k:
+                return display, bg
+    return None
 
 
 def fetch(book: str, ref: str, version: str = "RCU17TS") -> dict:
     info = lookup(book)
+    deutero = None
     if not info:
-        return {"error": f"Unknown book: {book}"}
+        # Try deuterocanonical lookup
+        deutero = _lookup_deutero(book)
+        if not deutero:
+            return {"error": f"Unknown book: {book}"}
+        chinese_name, bg_name = deutero
+        # Deuterocanonical books default to NRSVUE (not available in Chinese versions)
+        if version == "RCU17TS":
+            version = "NRSVUE"
+    else:
+        chinese_name, _, _, bg_name = info
 
-    chinese_name, _, _, bg_name = info
     version_code = VERSION_MAP.get(version, version)
 
     # Build URL
