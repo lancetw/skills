@@ -51,7 +51,11 @@ Follow these steps in order for every user request.
 
 ### Step 1: Understand the Request
 
-**Intent auto-detect:** If the user's query already contains a specific passage (book + chapter:verse) AND a specific question (e.g., "almah 是處女的意思嗎？", "原文分析", "希伯來文原意", "是聖經的教導嗎"), the user's intent is clear — proceed directly with the appropriate mode. Skip AskUserQuestion.
+**Intent auto-detect:** If the user's query already contains a specific passage (book + chapter:verse) AND a specific question, the user's intent is clear — proceed directly. Skip AskUserQuestion. Mode mapping:
+- "原文分析", "希伯來文原意", "是處女的意思嗎", "是聖經的教導嗎" → Mode 1 (逐節解讀)
+- "比較譯本", "譯本比較", "翻譯差異" → Mode 4 (譯本比較)
+- "主題研究", "hesed 研究", "概念" → Mode 3 (主題研究)
+- "常見誤讀", "錯誤解讀" → Mode 2 (常見誤讀糾正)
 
 **When to ask:** If the query is vague (e.g., "講講羅馬書"), uses church language (三位一體、原罪、因信稱義), or asks about a denomination — call AskUserQuestion first.
 
@@ -129,7 +133,7 @@ Run through this checklist internally. **Check `references/` FIRST, then WebSear
 
 1. **Text correct?** — Confirm book/chapter/verse matches the fetched text. Quote the full passage, not a paraphrase.
 2. **Hebrew claims verified?** — Check `references/hebrew-key-terms.md` first (38 verified terms). For terms not listed, run `uv run scripts/verify_claim.py <book> <chapter> <verse> <word>` to cross-verify against Sefaria, or use WebSearch. If unverified: "⚠ 此希伯來文分析尚待線上來源驗證".
-3. **Greek claims verified?** — Check `references/greek-key-terms.md` first (34 verified terms). For terms not listed, use WebSearch. If unverified: "⚠ 此希臘文分析尚待線上來源驗證".
+3. **Greek claims verified?** — Check `references/greek-key-terms.md` first (42 verified terms). For terms not listed, use WebSearch. If unverified: "⚠ 此希臘文分析尚待線上來源驗證".
 3b. **Aramaic claims verified?** — Check `references/aramaic-key-terms.md` first (16 verified terms). Aramaic was the spoken language of first-century Palestine; many of Yeshua's preserved words are Aramaic. For terms not listed, use WebSearch.
 4. **Historical claims verified?** — Check `references/archaeological-sources.md` (68 verified sources), `references/anachronism-timeline.md` (35 verified dates), and `references/second-temple-timeline.md` (586 BCE–70 CE). For claims not listed, WebSearch to verify. Never fabricate scroll numbers or inscription details.
 5. **Anachronism check** — Scan for any concept from the Anachronism Guard table AND `references/anachronism-timeline.md`. If present, frame as later development with verified date.

@@ -13,6 +13,8 @@ Falls back to patchright (headless Chromium) when blocked (403, empty).
 """
 
 import sys
+
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 import time
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError

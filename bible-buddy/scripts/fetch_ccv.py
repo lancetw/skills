@@ -103,13 +103,13 @@ def _fetch_ot(osis, chinese_name, chapter, start_v, end_v, ref):
             if text:
                 verses.append({"verse": str(num), "text": text})
 
-        if not verses and raw:
+        if not verses:
             return {
                 "source": "chinesebible.org.hk",
                 "reference": ref,
                 "version": "新漢語譯本 (CCV)",
                 "verses": [],
-                "note": f"⚠ {chinese_name}的新漢語譯本尚未上線（翻譯進行中）。",
+                "note": f"⚠ {chinese_name}的新漢語譯本尚未上線（翻譯進行中）。CCV 舊約目前僅收錄創世記至約書亞記、路得記、約拿書。",
             }
 
         return {
