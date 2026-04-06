@@ -95,14 +95,14 @@ Do NOT rely on memory for scripture text. Always fetch from online sources using
 
 | Script | Command | Returns |
 |--------|---------|---------|
-| **OT Hebrew** | `uv run scripts/fetch_sefaria.py <book> <chapter> [start] [end]` | Sefaria API: Hebrew + English (OT only) |
+| **OT Hebrew + Extra-canonical** | `uv run scripts/fetch_sefaria.py <book> <chapter> [start] [end]` | Sefaria API: Hebrew + English. Covers Tanakh, Josephus, Philo, Jubilees, Ben Sira, Tobit, Judith, 1-2 Maccabees, Wisdom, Susanna. Run `list-extra` for full catalog. |
 | **NT Greek** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] fhlwh` | FHL: NT Greek original |
 | **NT Greek (backup)** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses> SBLGNT` | Bible Gateway: SBLGNT academic Greek |
 | **Chinese RCUV** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses>` | Bible Gateway: RCUV (和合本修訂版) |
 | **Chinese Sigao** | `uv run scripts/fetch_sigao.py <book> <chapter> [start] [end]` | ccreadbible.org: Catholic Sigao Bible (73 books incl. deuterocanon) |
 | **Chinese CCV** | `uv run scripts/fetch_ccv.py <book> <chapter> [start] [end]` | OT via API, NT via session |
 | **Chinese LCC/other** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] [version]` | FHL API: 88 versions |
-| **Deuterocanon/Pseudepigrapha English** | `uv run scripts/fetch_pseudepigrapha.py <book> [chapter] [start] [end]` | pseudepigrapha.com: R.H. Charles translation |
+| **Pseudepigrapha fallback** | `uv run scripts/fetch_pseudepigrapha.py <book> [chapter] [start] [end]` | pseudepigrapha.com: texts NOT on Sefaria (1/2 Enoch, 2/3 Baruch, etc.) |
 
 All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book names.
 
@@ -111,8 +111,9 @@ All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book 
 - `fetch_fhl.py` default: `rcuv`. Requests for `unv` (CUV) auto-redirect to `rcuv`. Use `lcc` for LCC, `lxx` for Septuagint, `bhs` for Masoretic Hebrew, `fhlwh` for NT Greek. Run `--list-versions` for all 88 versions.
 - **OT original text** via Sefaria (`fetch_sefaria.py`). **NT original text** via FHL `fhlwh` or Bible Gateway `SBLGNT`. Sefaria does not cover NT.
 - `fetch_ccv.py`: OT partially available (Genesis–Joshua, Ruth, Jonah). NT fully available. Reports clearly when a book is not yet online.
-- **Deuterocanon routing:** Tobit, Judith, Sirach, Wisdom, Baruch, 1-2 Maccabees are NOT in FHL/Sefaria/BibleGateway. Use `fetch_sigao.py` (Chinese) + `fetch_pseudepigrapha.py` (English) in parallel.
-- **Pseudepigrapha:** 1 Enoch, Jubilees, 2 Baruch, etc. — only available via `fetch_pseudepigrapha.py` (English). Run with `list` to see all available texts.
+- **Extra-canonical routing (Sefaria first):** `fetch_sefaria.py` now covers Josephus, Philo, and major apocrypha (Jubilees, Ben Sira, Tobit, Judith, 1-2 Maccabees, Wisdom, Susanna, Letter of Aristeas). Use it as the primary source for these texts. Run `list-extra` to see all available titles.
+- **Pseudepigrapha fallback:** For texts NOT on Sefaria (1/2 Enoch, 2/3 Baruch, 1/2 Esdras, 3/4 Maccabees, Apocalypse of Abraham, Testament of Abraham, Book of Jasher, etc.), use `fetch_pseudepigrapha.py`. Run with `list` to see available texts.
+- **Deuterocanon Chinese:** For Chinese translation of deuterocanonical books, always use `fetch_sigao.py` — no other Chinese source covers them.
 - **Always fetch the broader context**, not just the single verse asked about. For Isaiah 7:14, fetch 7:10-17.
 
 ### Step 3: Verify Before Presenting
@@ -224,8 +225,8 @@ Every denomination claims to represent what Jesus meant. This skill bypasses all
 1. Hebrew text itself — morphology, syntax, intertextual connections
 2. Archaeological evidence — inscriptions, material culture, coins, seals
 3. Dead Sea Scrolls — textual variants, community practices
-4. Josephus — Jewish War, Antiquities (~93 CE)
-5. Philo of Alexandria — Hellenistic Jewish thought
+4. Josephus — Jewish War, Antiquities (~93 CE). Fetch via `fetch_sefaria.py "Josephus Antiquities" <book> <chapter>`
+5. Philo of Alexandria — Hellenistic Jewish thought. Fetch via `fetch_sefaria.py "Philo <work>" <chapter>`
 6. Early oral traditions — Hillel, Shammai (pre-70 CE layer; note later compilation ~200 CE)
 7. Ancient Near East parallels — Mesopotamian, Egyptian, Ugaritic texts
 
@@ -275,7 +276,7 @@ Many users assume certain church practices come from the Bible. **Always Grep th
 
 **Primary authority:** Tanakh — Torah (Genesis–Deuteronomy), Nevi'im (Joshua–Malachi), Ketuvim (Psalms–Chronicles).
 
-**Second Temple literature** (contextual, not authoritative): Dead Sea Scrolls (1QS, 1QM, 11QT), 1 Enoch, Jubilees, Sirach, Psalms of Solomon, Testament of the Twelve Patriarchs, 4 Ezra, 2 Baruch. Fetch via `fetch_pseudepigrapha.py` (English). For deuterocanonical books (Sirach, Wisdom, Baruch, Tobit, Judith, Maccabees), also fetch Chinese via `fetch_sigao.py`.
+**Second Temple literature** (contextual, not authoritative): Dead Sea Scrolls (1QS, 1QM, 11QT), 1 Enoch, Jubilees, Sirach, Psalms of Solomon, Testament of the Twelve Patriarchs, 4 Ezra, 2 Baruch, Josephus, Philo. Fetch via `fetch_sefaria.py` first (Jubilees, Ben Sira, Tobit, Judith, Maccabees, Josephus, Philo all available). For texts not on Sefaria (1/2 Enoch, 2/3 Baruch, etc.), fall back to `fetch_pseudepigrapha.py`. For Chinese deuterocanon, use `fetch_sigao.py`.
 
 **New Testament** — read as first-century Jewish documents, not through later creedal theology. Strip away later Christian layers and reconstruct first-century Jewish meaning.
 
@@ -291,7 +292,7 @@ Many users assume certain church practices come from the Bible. **Always Grep th
 | 4 | 思高譯本 (Sigao) | `fetch_sigao.py` | Catholic; only Chinese source covering deuterocanon (73 books) |
 | Avoid | 舊和合本 (CUV, 1919) | — | Archaic language, more translation biases |
 
-**Deuterocanon routing:** For deuterocanonical books (Tobit, Judith, Sirach, Wisdom, Baruch, 1-2 Maccabees), Chinese MUST use `fetch_sigao.py` — no other Chinese source covers them. Also fetch English via `fetch_pseudepigrapha.py` (R.H. Charles) for cross-reference.
+**Deuterocanon routing:** For deuterocanonical books (Tobit, Judith, Sirach, Wisdom, Baruch, 1-2 Maccabees), Chinese MUST use `fetch_sigao.py` — no other Chinese source covers them. For English/Hebrew, use `fetch_sefaria.py` first (covers most deuterocanon); fall back to `fetch_pseudepigrapha.py` for texts not on Sefaria (Baruch, Letter of Jeremiah, Prayer of Azariah, Bel and the Dragon, etc.).
 
 **When any Chinese translation reflects theological bias** (e.g., almah→童女), point it out and explain the Hebrew original.
 
