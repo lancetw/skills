@@ -1,0 +1,6 @@
+{
+  "eval_id": 2,
+  "eval_name": "denomination-claims-review",
+  "prompt": "/bible-fact-check denomination-claims.md",
+  "assertions": []
+}

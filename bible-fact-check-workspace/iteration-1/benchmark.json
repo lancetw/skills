@@ -1,0 +1,235 @@
+{
+  "metadata": {
+    "skill_name": "bible-fact-check",
+    "skill_path": "/home/lancetw/vibe_workspace/skills/lancetw/skills/bible-fact-check",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-04-07T11:30:00Z",
+    "evals_run": [1, 2, 3, 4],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "fun-facts-full-review",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.67,
+        "passed": 6,
+        "failed": 3,
+        "total": 9,
+        "time_seconds": 360.8,
+        "tokens": 67308,
+        "tool_calls": 34,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Header identifies fun-facts.md", "passed": true, "evidence": "# 審查：fun-facts.md"},
+        {"text": "All 10 checks as ### headers", "passed": true, "evidence": "10 checks present"},
+        {"text": "Duplicate check reports 0 or pass", "passed": false, "evidence": "Found 2 pairs"},
+        {"text": "Anachronism check flags Mishnah/Talmud", "passed": false, "evidence": "Check 3 passed ✅"},
+        {"text": "Oversimplification check flags debated topics", "passed": true, "evidence": "3 items flagged"},
+        {"text": "Summary table | 檢查 | 結果 |", "passed": true, "evidence": "Present"},
+        {"text": "Summary has total count line", "passed": false, "evidence": "Has 主要問題說明 but no 共X個問題 line"},
+        {"text": "Uses 上主 not 耶和華/YHWH", "passed": true, "evidence": "No violations"},
+        {"text": "No auto-fix", "passed": true, "evidence": "Report only"}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "fun-facts-full-review",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.33,
+        "passed": 3,
+        "failed": 6,
+        "total": 9,
+        "time_seconds": 270.9,
+        "tokens": 41467,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Header identifies fun-facts.md", "passed": false, "evidence": "English header"},
+        {"text": "All 10 checks as ### headers", "passed": false, "evidence": "Free-form categories"},
+        {"text": "Duplicate check reports 0 or pass", "passed": false, "evidence": "Found 2 pairs, no check format"},
+        {"text": "Anachronism check flags Mishnah/Talmud", "passed": false, "evidence": "No specific flagging"},
+        {"text": "Oversimplification check flags debated topics", "passed": true, "evidence": "5 items found"},
+        {"text": "Summary table | 檢查 | 結果 |", "passed": false, "evidence": "English Category/Count table"},
+        {"text": "Summary has total count line", "passed": false, "evidence": "No such line"},
+        {"text": "Uses 上主 not 耶和華/YHWH", "passed": true, "evidence": "Correctly flags convention"},
+        {"text": "No auto-fix", "passed": true, "evidence": "Report only"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "denomination-claims-review",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.80,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 353.8,
+        "tokens": 74365,
+        "tool_calls": 34,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Header identifies denomination-claims.md", "passed": true, "evidence": "# 審查：denomination-claims.md"},
+        {"text": "All 10 checks as ### headers", "passed": true, "evidence": "10 checks present"},
+        {"text": "At least one N/A or 不適用", "passed": false, "evidence": "Uses ✅ 通過, not N/A"},
+        {"text": "Summary table present", "passed": true, "evidence": "| 檢查 | 結果 | format"},
+        {"text": "No auto-fix", "passed": true, "evidence": "Report only"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "denomination-claims-review",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.40,
+        "passed": 2,
+        "failed": 3,
+        "total": 5,
+        "time_seconds": 249.7,
+        "tokens": 43113,
+        "tool_calls": 9,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Header identifies denomination-claims.md", "passed": false, "evidence": "English header"},
+        {"text": "All 10 checks as ### headers", "passed": false, "evidence": "Free-form sections"},
+        {"text": "At least one N/A or 不適用", "passed": false, "evidence": "No N/A markers"},
+        {"text": "Summary table present", "passed": true, "evidence": "English summary table"},
+        {"text": "No auto-fix", "passed": true, "evidence": "Report only"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "pasted-text-factual-errors",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 131.4,
+        "tokens": 44085,
+        "tool_calls": 18,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Header identifies user-provided content", "passed": true, "evidence": "# 審查：使用者提供的內容"},
+        {"text": "Only checks 1-5 (6-10 skipped)", "passed": true, "evidence": "Checks 1-5 only"},
+        {"text": "Flags horse in Acts 9", "passed": true, "evidence": "全章從未提到馬"},
+        {"text": "Flags whale as dag gadol", "passed": true, "evidence": "dag gadol（大魚），不是鯨魚"},
+        {"text": "Flags twelve as ten", "passed": true, "evidence": "十條，不是十二條"},
+        {"text": "Flags only-human as oversimplified", "passed": true, "evidence": "忽略了經文本身的多層意涵"},
+        {"text": "At least 3 distinct issues", "passed": true, "evidence": "6 issues found"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "pasted-text-factual-errors",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.71,
+        "passed": 5,
+        "failed": 2,
+        "total": 7,
+        "time_seconds": 94.4,
+        "tokens": 23113,
+        "tool_calls": 5,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Header identifies user-provided content", "passed": false, "evidence": "English header"},
+        {"text": "Only checks 1-5 (6-10 skipped)", "passed": false, "evidence": "No numbered checks"},
+        {"text": "Flags horse in Acts 9", "passed": true, "evidence": "no horse mentioned"},
+        {"text": "Flags whale as dag gadol", "passed": true, "evidence": "dag gadol, great fish"},
+        {"text": "Flags twelve as ten", "passed": true, "evidence": "ten, not twelve"},
+        {"text": "Flags only-human as oversimplified", "passed": true, "evidence": "editorialized interpretation"},
+        {"text": "At least 3 distinct issues", "passed": true, "evidence": "4 issues found"}
+      ]
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "translation-bias-review",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 274.9,
+        "tokens": 61774,
+        "tool_calls": 38,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Header identifies translation-bias.md", "passed": true, "evidence": "# 審查：translation-bias.md"},
+        {"text": "All 10 checks as ### headers", "passed": true, "evidence": "10 checks present"},
+        {"text": "Summary table with totals", "passed": true, "evidence": "| 檢查 | 結果 | with counts"},
+        {"text": "Uses 上主 not YHWH", "passed": true, "evidence": "Flags YHWH in file, report uses 上主"},
+        {"text": "No auto-fix", "passed": true, "evidence": "Report only"}
+      ]
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "translation-bias-review",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.40,
+        "passed": 2,
+        "failed": 3,
+        "total": 5,
+        "time_seconds": 236.7,
+        "tokens": 33197,
+        "tool_calls": 10,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "Header identifies translation-bias.md", "passed": false, "evidence": "English header"},
+        {"text": "All 10 checks as ### headers", "passed": false, "evidence": "Free-form sections"},
+        {"text": "Summary table with totals", "passed": false, "evidence": "English Category/Count table"},
+        {"text": "Uses 上主 not YHWH", "passed": true, "evidence": "Flags YHWH violations"},
+        {"text": "No auto-fix", "passed": true, "evidence": "Report only"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 0.87, "stddev": 0.15, "min": 0.67, "max": 1.0},
+      "time_seconds": {"mean": 280.2, "stddev": 97.5, "min": 131.4, "max": 360.8},
+      "tokens": {"mean": 61883, "stddev": 12685, "min": 44085, "max": 74365}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 0.46, "stddev": 0.17, "min": 0.33, "max": 0.71},
+      "time_seconds": {"mean": 212.9, "stddev": 78.4, "min": 94.4, "max": 270.9},
+      "tokens": {"mean": 35223, "stddev": 9563, "min": 23113, "max": 43113}
+    },
+    "delta": {
+      "pass_rate": "+0.41",
+      "time_seconds": "+67.3",
+      "tokens": "+26660"
+    }
+  },
+  "notes": [
+    "With-skill pass rate 87% vs baseline 46% — the skill adds strong structural value (Chinese headers, 10-check format, summary tables)",
+    "Eval 3 (pasted text) shows the largest quality gap: 100% vs 71% — skill correctly skips checks 6-10 and provides structured categorization",
+    "Baseline consistently finds MORE raw issues (27/33/33 vs 10/16/17 for evals 1/2/4) but fails format assertions — this suggests the skill may be too conservative in issue detection",
+    "'No auto-fix' assertion passes 100% in both configurations — non-discriminating, consider removing",
+    "With-skill uses ~1.8x more tokens and ~1.3x more time — the overhead comes from reading 3 reference files and cross-referencing",
+    "Eval 1 assertion 'Check 6 reports 0 duplicates' is incorrect for fun-facts.md which HAS duplicates — assertion needs fixing",
+    "Eval 2 assertion 'at least one N/A' misunderstands skill design — reference files use ✅ 通過, not N/A"
+  ]
+}

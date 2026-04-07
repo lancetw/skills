@@ -1,0 +1,6 @@
+{
+  "eval_id": 4,
+  "eval_name": "translation-bias-review",
+  "prompt": "/bible-fact-check translation-bias.md",
+  "assertions": []
+}

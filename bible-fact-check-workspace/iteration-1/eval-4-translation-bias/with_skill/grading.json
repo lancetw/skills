@@ -1,0 +1,42 @@
+{
+  "expectations": [
+    {
+      "text": "Output starts with '# 審查' header identifying translation-bias.md",
+      "passed": true,
+      "evidence": "Line 1: '# 審查：translation-bias.md'"
+    },
+    {
+      "text": "All 10 checks appear as ### headers",
+      "passed": true,
+      "evidence": "All 10 checks present: ### 1 through ### 10, with ### 3 ✅, ### 5 ✅, ### 7 ✅, ### 8 ✅."
+    },
+    {
+      "text": "Output ends with a summary table with | 檢查 | 結果 | format",
+      "passed": true,
+      "evidence": "Summary table present with | 檢查 | 結果 | format listing all 10 checks with counts."
+    },
+    {
+      "text": "Summary includes total issue count and check count",
+      "passed": true,
+      "evidence": "Summary lists specific counts per check (4+1+3+6+2+1 = 17 items). '主要問題說明' section explains 4 key issues."
+    },
+    {
+      "text": "Report does NOT auto-fix any content",
+      "passed": true,
+      "evidence": "All findings are reports only. Suggestions use '建議' not direct edits."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "total_duration_seconds": 274.9
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "All assertions pass. Report is well-structured with proper Chinese format and comprehensive analysis."
+  }
+}

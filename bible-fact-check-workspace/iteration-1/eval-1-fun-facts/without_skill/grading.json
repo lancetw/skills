@@ -1,0 +1,62 @@
+{
+  "expectations": [
+    {
+      "text": "Output starts with '# 審查：fun-facts.md' or similar header identifying the file",
+      "passed": false,
+      "evidence": "Header is '# Fun-Facts Review Report' — English, no '審查' format."
+    },
+    {
+      "text": "All 10 checks appear as ### headers numbered 1 through 10",
+      "passed": false,
+      "evidence": "Uses free-form categories (Factual Errors, Verse Reference Errors, etc.) not numbered 1-10 checks."
+    },
+    {
+      "text": "Check 6 (重複) reports 0 duplicates or pass",
+      "passed": false,
+      "evidence": "Found 2 duplicate pairs (L87/140, L89/90) under '## 5. Duplicates'. Not structured as Check 6."
+    },
+    {
+      "text": "Check 3 (年代錯置) flags at least one entry using Mishnah or Talmud definitively for NT-era texts",
+      "passed": false,
+      "evidence": "Has '## 3. Anachronisms' section but only discusses Acts 2:44 communism comparison. No Mishnah/Talmud flagging."
+    },
+    {
+      "text": "Check 4 (過度簡化) flags at least one entry using definitive language on debated topics",
+      "passed": true,
+      "evidence": "Section '## 4. Oversimplification' flags 5 items including pistis reduction (L7), 1 Cor 14:34-35 (L75), original sin (L60), Jesus's language (L85)."
+    },
+    {
+      "text": "Output ends with a summary table using | 檢查 | 結果 | format",
+      "passed": false,
+      "evidence": "Summary uses | Category | Count | format in English, not | 檢查 | 結果 |."
+    },
+    {
+      "text": "Summary includes '共 X 個問題，跨 Y 項檢查' line",
+      "passed": false,
+      "evidence": "Summary has 'Overall assessment' paragraph in English, no '共 X 個問題' line."
+    },
+    {
+      "text": "Report uses 上主 (not 耶和華 or YHWH) when referring to the divine name",
+      "passed": true,
+      "evidence": "Section 8 explicitly flags 耶和華見證人 in line 63 and confirms all other lines use 上主."
+    },
+    {
+      "text": "Report does NOT auto-fix or rewrite any entries — only reports issues",
+      "passed": true,
+      "evidence": "All findings are reports only, no auto-fixes."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 6,
+    "total": 9,
+    "pass_rate": 0.33
+  },
+  "timing": {
+    "total_duration_seconds": 270.9
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Baseline correctly found content issues but lacked the structured 10-check format the assertions test for."
+  }
+}
