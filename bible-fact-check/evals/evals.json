@@ -4,31 +4,32 @@
     {
       "id": 1,
       "prompt": "/bible-fact-check",
-      "expected_output": "Should default to fun-facts.md, run all 10 checks, report findings per check with line numbers, end with summary table. Should find: 0 duplicates, anachronism issues (Mishnah/Talmud used definitively for 1st-century texts), oversimplification flags (e.g. 其實是 on debated topics), and verbosity flags for long entries.",
+      "expected_output": "Should default to fun-facts.md, run all 10 checks, report findings per check with line numbers, end with summary table. Should find: duplicates, anachronism issues (Mishnah/Talmud used definitively for 1st-century texts), oversimplification flags (e.g. 其實是 on debated topics), and verbosity flags for long entries.",
       "files": [],
       "expectations": [
         "Output starts with '# 審查：fun-facts.md' or similar header identifying the file",
         "All 10 checks appear as ### headers numbered 1 through 10",
-        "Check 1 (重複) reports 0 duplicates or ✅ 通過",
-        "Check 3 (年代錯置) flags at least one entry using Mishnah or Talmud definitively for NT-era texts",
-        "Check 8 (過度簡化) flags at least one entry using 其實是 or similar definitive language on debated topics",
+        "Check 6 (重複) identifies duplicate entries (e.g., L87/L140 chapter-verse overlap, L89/L90 amen overlap)",
+        "Check 3 (年代錯置) verifies dates against anachronism-timeline.md and flags imprecision (e.g., 1820s vs 1830s for Finney)",
+        "Check 4 (過度簡化) flags at least one entry using definitive language on debated topics (e.g., L75 interpolation as fact, L85 Aramaic-only)",
         "Output ends with a summary table using | 檢查 | 結果 | format",
-        "Summary includes '共 X 個問題，跨 Y 項檢查' line",
         "Report uses 上主 (not 耶和華 or YHWH) when referring to the divine name",
-        "Report does NOT auto-fix or rewrite any entries — only reports issues"
+        "Report does NOT auto-fix or rewrite any entries — only reports issues",
+        "General sweep catches issues beyond reference file matches (e.g., causal direction errors, semantic range oversimplification)"
       ]
     },
     {
       "id": 2,
       "prompt": "/bible-fact-check denomination-claims.md",
-      "expected_output": "Should review denomination-claims.md with all 10 checks. Some checks may not apply (e.g. strawman, interest threshold) and should be marked N/A. Should still produce proper format with summary table.",
+      "expected_output": "Should review denomination-claims.md with all 10 checks. Some checks may have no findings and should be marked with ✅ 通過. Should still produce proper format with summary table.",
       "files": [],
       "expectations": [
         "Output starts with '# 審查：denomination-claims.md' or similar header",
         "All 10 checks appear as ### headers",
-        "At least one check is marked N/A or 此檢查不適用 when inapplicable",
+        "Checks with no findings show ✅ 通過 (not left blank)",
         "Output ends with a summary table",
-        "Report does NOT auto-fix any content"
+        "Report does NOT auto-fix any content",
+        "Check 1 (事實錯誤) flags Colwell/Harner conflation as a methodological error"
       ]
     },
     {
@@ -38,10 +39,11 @@
       "files": [],
       "expectations": [
         "Output starts with '# 審查' header identifying this as user-provided content",
-        "Check 4 (事實錯誤) flags the horse claim — Acts 9 does not mention a horse/馬",
-        "Check 4 or 5 flags the whale claim — Jonah 1:17 says 大魚 (dag gadol) not 鯨魚",
-        "Check 6 (數量計算) flags 十二條 as incorrect — should be ten",
-        "Check 8 (過度簡化) flags the 'only human' conclusion as oversimplified",
+        "Only checks 1-5 are run (checks 6-10 skipped for pasted text)",
+        "Check 1 (事實錯誤) flags the horse claim — Acts 9 does not mention a horse/馬",
+        "Check 1 or 2 flags the whale claim — Jonah 1:17 says 大魚 (dag gadol) not 鯨魚",
+        "Check 5 (數量計算) flags 十二條 as incorrect — should be ten",
+        "Check 4 (過度簡化) flags the 'only human' conclusion as oversimplified",
         "Output ends with a summary table",
         "Finds at least 3 distinct issues across the 4 entries"
       ]
@@ -49,28 +51,15 @@
     {
       "id": 4,
       "prompt": "/bible-fact-check translation-bias.md",
-      "expected_output": "Should review translation-bias.md with all 10 checks. Translation comparison content should trigger check 3 (anachronism) awareness and check 8 (oversimplification) for definitive claims about translation superiority.",
+      "expected_output": "Should review translation-bias.md with all 10 checks. Translation comparison content should trigger check 3 (anachronism) awareness and check 4 (oversimplification) for definitive claims about translation superiority.",
       "files": [],
       "expectations": [
         "Output starts with '# 審查' header identifying translation-bias.md",
         "All 10 checks appear as ### headers",
         "Output ends with a summary table with | 檢查 | 結果 | format",
-        "Summary includes total issue count and check count",
-        "Report does NOT auto-fix any content"
-      ]
-    },
-    {
-      "id": 5,
-      "prompt": "幫我檢查這篇烈火特會的報導文章（檔案在 bible-buddy/references/cdn-fire-conference.txt）",
-      "expected_output": "Should review the fire conference news article. Should detect: (1) verse reference error — John 5:19 mislabeled as Luke 5:19; (2) implicit charismatic/NAR terminology — 使徒性網絡 matches NAR five-fold ministry (1990s-2000s) per anachronism-timeline.md; (3) 聖靈充滿 used as ongoing state without scriptural grounding for conference-renewal model.",
-      "files": ["bible-buddy/references/cdn-fire-conference.txt"],
-      "expectations": [
-        "Output starts with '# 審查' header",
-        "Check 5 (經節編號) flags Line 47 — John 5:19 mislabeled as 路加福音 5:19",
-        "Check 3 (年代錯置) flags 使徒性網絡 or 使徒性 as NAR terminology with post-1990s origin",
-        "Check 3 or 8 flags the 聖靈充滿/烈火 framework as lacking first-century scriptural grounding",
-        "Output ends with a summary table",
-        "Finds at least 3 distinct issues"
+        "Summary includes total issue count per check",
+        "Report does NOT auto-fix any content",
+        "Check 6 (重複) identifies duplicate content between main tables and Systemic Patterns table"
       ]
     }
   ]

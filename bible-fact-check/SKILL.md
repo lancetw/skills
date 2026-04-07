@@ -69,14 +69,25 @@ URLs and pasted text (do not print N/A lines for them).
 
 ### 1. 事實錯誤檢查 (Factual Errors)
 
+Reference files are the minimum, not the ceiling. Also apply your own biblical,
+historical, and linguistic knowledge to verify ALL factual claims — including
+date precision (e.g., "1820 年代" vs "1830 年代"), causal direction (did A cause
+B or vice versa?), and scholarly attribution accuracy.
+
 Verify:
-- Historical dates (cross-reference `anachronism-timeline.md` for known dates)
+- Historical dates (cross-reference `anachronism-timeline.md` for known dates,
+  AND verify precision — if timeline says "1820s-1830s" but content says only
+  "1820 年代", flag the imprecision)
 - Person attributions (who did what in which Bible chapter)
 - Word meanings: if a Hebrew/Greek term appears in `commonly-misread-passages.md`'s
-  "Key Hebrew/Greek Term" column, verify the content uses it correctly
+  "Key Hebrew/Greek Term" column, verify the content uses it correctly. Also check
+  semantic range — flag claims that reduce a word to a single meaning when it has
+  a broader range (e.g., pistis ≠ only "faithfulness")
 - Scholarly claims (hapax legomenon, manuscript evidence, etc.)
 - If the content's interpretation of a passage contradicts the "Actual First-Century
   Jewish Context" column in `commonly-misread-passages.md`, flag it
+- Causal claims: verify the direction is correct (e.g., if a Chinese translation
+  was published in 1919, it cannot have "caused" an 1844 doctrine)
 - Theological teachings without any scripture citation: if the content makes a
   theological claim (about God, the Spirit, salvation, church practice) without
   citing scripture, flag as "ungrounded teaching" (無經文根據的教導)
@@ -91,6 +102,12 @@ Cross-reference `anachronism-timeline.md` for every doctrine, practice, or conce
 mentioned. If a doctrine has a known origin date (e.g., altar call = 1830s,
 TULIP = 1618-1619, spiritual covering = 1970s), verify the content uses the
 correct date and does not project it back to the first century.
+
+Also check date **precision** and **conflation**: if the timeline distinguishes
+between a doctrine (e.g., Dort's five points, 1618-1619) and a later label
+(e.g., TULIP acronym, 20th century), flag content that conflates them.
+If the timeline gives a range (e.g., "1820s-1830s"), flag content that uses
+only one end of the range without qualification.
 
 Also detect **implicit** anachronistic terminology even when no verse is cited.
 Scan the content for terms that match any doctrine/practice in
@@ -179,6 +196,22 @@ Use `commonly-misread-passages.md` as a relevance guide: passages listed there
 with test cases from folk-religion, marketplace-theology, or charismatic-theology
 are highly relevant to Taiwan. Passages tied only to foreign contexts (e.g.,
 Hindu theology, Vajrayana) are less relevant unless Taiwan has that community.
+
+### General Sweep (after completing all 10 checks)
+
+Re-read the entire content one more time with fresh eyes. Use your own biblical,
+historical, and linguistic knowledge to catch anything the 10 structured checks
+missed. Common things to look for:
+- Pre-existing antecedents that the content ignores (e.g., "Augustine invented
+  original sin" ignores 4 Ezra, 2 Baruch)
+- Conflation of related but distinct concepts (e.g., Colwell's rule vs Harner's
+  qualitative argument)
+- Translation history gaps (e.g., claiming CUV 1919 originated a connection
+  when Morrison 1823 already used it)
+- Counter-examples the content doesn't address (e.g., Joel 1:8 for betulah)
+
+Report any additional findings under a separate `### 補充：通則檢查` section
+before the summary. If nothing additional is found, omit this section.
 
 ## Output Format
 
