@@ -1,0 +1,42 @@
+{
+  "expectations": [
+    {
+      "text": "Output starts with '# 審查：denomination-claims.md' or similar header",
+      "passed": false,
+      "evidence": "Header is '# Review: denomination-claims.md' — English, no '審查' format."
+    },
+    {
+      "text": "All 10 checks appear as ### headers",
+      "passed": false,
+      "evidence": "Uses free-form categories (Divine Name, Factual Errors, Verse Reference, etc.) — 10 sections but not the 10-check structure."
+    },
+    {
+      "text": "At least one check is marked N/A or 此檢查不適用 when inapplicable",
+      "passed": false,
+      "evidence": "No N/A markers. Uses free-form structure without numbered checks."
+    },
+    {
+      "text": "Output ends with a summary table",
+      "passed": true,
+      "evidence": "Has '## Summary of Issues Found' with | Category | Count | table."
+    },
+    {
+      "text": "Report does NOT auto-fix any content",
+      "passed": true,
+      "evidence": "Ends with 'Priority Recommendations (Do Not Auto-Fix)' — explicitly report-only."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 3,
+    "total": 5,
+    "pass_rate": 0.40
+  },
+  "timing": {
+    "total_duration_seconds": 249.7
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Baseline found more raw issues (33+) but lacked the structured 10-check format."
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "expectations": [
+    {
+      "text": "Output starts with '# 審查' header identifying this as user-provided content",
+      "passed": false,
+      "evidence": "Header is '# Biblical Fun-Facts Review Report' — English, no '審查' or user-provided identification."
+    },
+    {
+      "text": "Only checks 1-5 run (checks 6-10 skipped for pasted text)",
+      "passed": false,
+      "evidence": "No numbered checks at all. Uses free-form per-claim structure (## Claim 1 through ## Claim 4)."
+    },
+    {
+      "text": "Check 1 (事實錯誤) flags the horse claim — Acts 9 does not mention a horse",
+      "passed": true,
+      "evidence": "Claim 1: 'nowhere in Acts 9, Acts 22, or Acts 26 — the three accounts of the Damascus road event — is a horse mentioned.'"
+    },
+    {
+      "text": "Flags the whale claim — Jonah 1:17 says 大魚 (dag gadol) not 鯨魚",
+      "passed": true,
+      "evidence": "Claim 2: 'The Hebrew text of Jonah 1:17 uses דָּג גָּדוֹל (dag gadol), meaning \"great fish,\" not \"whale.\"'"
+    },
+    {
+      "text": "Check 5 (數量計算) flags 十二條 as incorrect — should be ten",
+      "passed": true,
+      "evidence": "Claim 3: 'The Ten Commandments number ten, not twelve.'"
+    },
+    {
+      "text": "Check 4 (過度簡化) flags the 'only human' conclusion as oversimplified",
+      "passed": true,
+      "evidence": "Claim 4: 'This is an editorialized interpretation presented as if it were a biblical fact.'"
+    },
+    {
+      "text": "Finds at least 3 distinct issues across the 4 entries",
+      "passed": true,
+      "evidence": "Found 4 distinct issues, one per claim: horse, whale, twelve, oversimplification."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 2,
+    "total": 7,
+    "pass_rate": 0.71
+  },
+  "timing": {
+    "total_duration_seconds": 94.4
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Baseline found all content issues but lacked the structured format (Chinese headers, numbered checks, skipped 6-10)."
+  }
+}

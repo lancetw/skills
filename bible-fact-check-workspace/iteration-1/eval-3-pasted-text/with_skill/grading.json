@@ -1,0 +1,52 @@
+{
+  "expectations": [
+    {
+      "text": "Output starts with '# 審查' header identifying this as user-provided content",
+      "passed": true,
+      "evidence": "Line 1: '# 審查：使用者提供的內容'"
+    },
+    {
+      "text": "Only checks 1-5 run (checks 6-10 skipped for pasted text)",
+      "passed": true,
+      "evidence": "Report contains ### 1 through ### 5 only. No checks 6-10 present. Correct per skill rules for pasted text."
+    },
+    {
+      "text": "Check 1 (事實錯誤) flags the horse claim — Acts 9 does not mention a horse",
+      "passed": true,
+      "evidence": "Check 1 item 1: '使徒行傳 9:4 原文是「他就仆倒在地」（epesen epi ten gen），全章從未提到馬。'"
+    },
+    {
+      "text": "Flags the whale claim — Jonah 1:17 says 大魚 (dag gadol) not 鯨魚",
+      "passed": true,
+      "evidence": "Check 1 item 2: '約拿書 1:17 用的是 dag gadol（大魚），不是鯨魚。'"
+    },
+    {
+      "text": "Check 5 (數量計算) flags 十二條 as incorrect — should be ten",
+      "passed": true,
+      "evidence": "Check 5 item 1: '數量錯誤。十誡是十條，不是十二條。' Also flagged in Check 1."
+    },
+    {
+      "text": "Check 4 (過度簡化) flags the 'only human' conclusion as oversimplified",
+      "passed": true,
+      "evidence": "Check 4 item 1: '將此段簡化為「證明他只是普通人」忽略了經文本身的多層意涵。' Also flagged in Check 1 as ungrounded teaching."
+    },
+    {
+      "text": "Finds at least 3 distinct issues across the 4 entries",
+      "passed": true,
+      "evidence": "Found 6 distinct issues: horse (factual), whale (factual), ten not twelve (factual+counting), only human (factual+oversimplification), textual criticism note, simile vs literal."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "total_duration_seconds": 131.4
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "All assertions pass. The with-skill run correctly structured the report, skipped checks 6-10, and caught all expected issues with proper Chinese formatting."
+  }
+}

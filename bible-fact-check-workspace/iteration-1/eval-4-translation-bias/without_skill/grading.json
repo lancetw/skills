@@ -1,0 +1,42 @@
+{
+  "expectations": [
+    {
+      "text": "Output starts with '# 審查' header identifying translation-bias.md",
+      "passed": false,
+      "evidence": "Header is '# Translation-Bias Reference Review Report' — English, no '審查'."
+    },
+    {
+      "text": "All 10 checks appear as ### headers",
+      "passed": false,
+      "evidence": "Uses 10 free-form sections but not the skill's numbered check structure (e.g., '## 1. Divine Name Convention Violations')."
+    },
+    {
+      "text": "Output ends with a summary table with | 檢查 | 結果 | format",
+      "passed": false,
+      "evidence": "Summary uses | Category | Count | in English, not | 檢查 | 結果 |."
+    },
+    {
+      "text": "Summary includes total issue count and check count",
+      "passed": true,
+      "evidence": "'**Total issues** | **33**' at end of summary table."
+    },
+    {
+      "text": "Report does NOT auto-fix any content",
+      "passed": true,
+      "evidence": "All findings are reports only, no auto-fixes."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 3,
+    "total": 5,
+    "pass_rate": 0.40
+  },
+  "timing": {
+    "total_duration_seconds": 236.7
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Baseline found more issues (33 vs 17) with broader coverage but lacked structured Chinese format."
+  }
+}

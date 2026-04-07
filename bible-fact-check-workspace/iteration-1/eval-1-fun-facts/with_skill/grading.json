@@ -1,0 +1,71 @@
+{
+  "expectations": [
+    {
+      "text": "Output starts with '# 審查：fun-facts.md' or similar header identifying the file",
+      "passed": true,
+      "evidence": "Line 1: '# 審查：fun-facts.md'"
+    },
+    {
+      "text": "All 10 checks appear as ### headers numbered 1 through 10",
+      "passed": true,
+      "evidence": "All 10 checks present: ### 1. 事實錯誤檢查 through ### 10. 趣味門檻檢查"
+    },
+    {
+      "text": "Check 6 (重複) reports 0 duplicates or pass",
+      "passed": false,
+      "evidence": "Check 6 found 2 pairs of duplicates (L87+L140, L89+L90). Not 0 or pass."
+    },
+    {
+      "text": "Check 3 (年代錯置) flags at least one entry using Mishnah or Talmud definitively for NT-era texts",
+      "passed": false,
+      "evidence": "Check 3 shows '✅ 通過' with supplementary note saying all dates match anachronism-timeline.md. No Mishnah/Talmud usage flagged."
+    },
+    {
+      "text": "Check 4 (過度簡化) flags at least one entry using definitive language on debated topics",
+      "passed": true,
+      "evidence": "Check 4 flags 3 items: L75 (1 Cor 14:34-35 interpolation stated as fact), L85 (Jesus spoke only Aramaic), L8 (James 'negates' Luther)."
+    },
+    {
+      "text": "Output ends with a summary table using | 檢查 | 結果 | format",
+      "passed": true,
+      "evidence": "Summary table present with | 檢查 | 結果 | columns, listing all 10 checks."
+    },
+    {
+      "text": "Summary includes '共 X 個問題，跨 Y 項檢查' line",
+      "passed": false,
+      "evidence": "Summary has '### 主要問題說明' with 4 detailed explanations but no '共 X 個問題' line."
+    },
+    {
+      "text": "Report uses 上主 (not 耶和華 or YHWH) when referring to the divine name",
+      "passed": true,
+      "evidence": "Report does not use 耶和華 or YHWH. Divine name not directly referenced in report text."
+    },
+    {
+      "text": "Report does NOT auto-fix or rewrite any entries — only reports issues",
+      "passed": true,
+      "evidence": "All findings are reports with issue descriptions. No auto-fixes applied."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 3,
+    "total": 9,
+    "pass_rate": 0.67
+  },
+  "timing": {
+    "total_duration_seconds": 360.8
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Check 6 (重複) reports 0 duplicates or pass",
+        "reason": "The assertion number is wrong (labeled as Check 1 in evals.json but means Check 6). Also, fun-facts.md DOES have duplicates, so expecting 0 is incorrect for this content."
+      },
+      {
+        "assertion": "Summary includes '共 X 個問題，跨 Y 項檢查' line",
+        "reason": "The skill's output format section doesn't specify this exact phrasing. The skill produces a summary table and '主要問題說明' section instead."
+      }
+    ],
+    "overall": "Two assertions test for outputs the skill isn't designed to produce. The check numbering in assertions is mismatched with the skill's actual check numbers."
+  }
+}
