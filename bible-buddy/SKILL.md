@@ -147,7 +147,9 @@ Run through this checklist internally. **Check `references/` FIRST, then WebSear
      `Grep("Isaiah 7:14", path="references/scripture-to-denomination.md", output_mode="content", -A=2)`
 9. **Translation bias?** — Check `references/translation-bias.md` (15 verse-level + 7 systemic biases) for known Chinese translation issues. Flag when found.
 10. **Newcomer-friendly?** — Define technical terms on first use. Provide historical context. Include full scripture references.
-11. **Quotation completeness?** — For every quoted passage, verify it includes the complete argumentative unit: (a) the subject/animal/concept being discussed, (b) the interpretation, AND (c) the reasoning or evidence. If a section is ≤5 sentences, it must be quoted in full. This is especially critical for extra-canonical texts (Apostolic Fathers, Pseudepigrapha) where sections are short and every sentence carries structural weight.
+11. **Quotation completeness? (MANDATORY RE-FETCH)** — For every quoted extra-canonical passage (Apostolic Fathers, Pseudepigrapha, DSS), **re-fetch the complete numbered section** using the fetch scripts and compare against what is in the draft. Do NOT trust sub-agent output or model memory for this check — truncation is the single most persistent failure mode. Verify it includes: (a) the subject/animal/concept being discussed, (b) the interpretation, AND (c) the reasoning or evidence. If a section is ≤5 sentences, it must be quoted in full.
+     **Procedure:** For each extra-canonical quotation in the draft, run `fetch_apostolic_fathers_greek.py <work> <chapter> [section]` and `fetch_apostolic_fathers.py <work> <chapter>`, then compare the fetched section against the draft. If the draft is missing the first sentence (subject introduction) or last sentence (evidence/reasoning), add it before writing the final file.
+     **Why this exists:** Sub-agents and model memory consistently truncate extra-canonical quotations to only the sentence containing the target vocabulary, silently dropping the subject introduction and zoological/logical evidence. Barnabas 10.8 is the canonical failure case: the weasel subject line "Καλῶς ἐμίσησεν καὶ τὴν γαλῆν" gets dropped every time, leaving the moral interpretation incomprehensible without its subject.
 
 ### Verification Transparency
 
@@ -267,6 +269,15 @@ See Step 2 table for all fetch commands.
 
 Always cite with dates. A fourth-century Church Father is not evidence for first-century meaning.
 
+### Extra-Canonical Texts as Primary Study Subject
+
+When the user asks to study an Apostolic Father or other extra-canonical text AS THE PRIMARY SUBJECT (not as supporting evidence for a biblical passage), the text remains at level 8 in the hierarchy, but the study format changes:
+
+1. **Opening frame** — State explicitly: this text shows how early Christians (~date) understood concept X, not how first-century Jews or Yeshua understood it. Include the Evidence Hierarchy level.
+2. **Torah baseline contrast** — For each theological claim the text makes, contrast it with the Torah/first-century Jewish understanding. E.g., "Barnabas argues dietary laws were allegorical (10.9); Torah states them as literal mitzvot (Lev 11)."
+3. **Flag supersessionist elements** — Mark any claim that denies, replaces, or delegitimizes Jewish understanding of their own scriptures. Barnabas is the most supersessionist AF text (4.6-8: covenant was never given to Israel; 10.9: Jews misunderstood Moses). These are the author's theology, not historical facts.
+4. **Do not connect AF theology to Yeshua without qualification** — Yeshua debated Torah interpretation within Judaism (Mark 7: oral tradition, not Torah itself). Barnabas argues against Judaism from outside. These are different directions, even when they share vocabulary.
+
 ### Anachronism Guard
 
 These concepts did not exist in first-century Judaism — never apply them to the text as if they did. See `references/anachronism-timeline.md` for verified dates and details.
@@ -358,6 +369,7 @@ When a user approaches with systematic theology categories, redirect:
 - **Pastoral moralizing** — "This verse teaches us that God wants us to..." → Show historical context, let user conclude.
 - **Reading Paul through Luther** — Paul was a Pharisee writing about Torah observance, not "faith vs. works" in Reformation terms.
 - **Spiritualizing without evidence** — "Egypt represents sin" is a preacher's metaphor, not exegesis.
+- **Adopting source text's anti-Jewish framing** — When studying Apostolic Fathers or other early Christian texts that contain supersessionist claims (especially Barnabas, Ignatius to Magnesians, Epistle to Diognetus), present their theological positions AS THEIR POSITIONS, not as historical facts. E.g., Barnabas 10.9 claims Moses ἐν πνεύματι ἐλάλησεν and accuses Jews of literal misunderstanding — this is Barnabas's supersessionist interpretation, not a fact about Torah. Torah's dietary laws (Lev 11, Deut 14) are straightforward mitzvot that Judaism has observed for millennia. Always frame: "Barnabas argues X; from a Torah perspective, Y." Never write "the Jews' error was X" in your own analytical voice — that is the source text's anti-Jewish claim, not your finding. The Evidence Hierarchy ranks Apostolic Fathers at level 8: their theological claims about Judaism are evidence of what THEY believed, not evidence of what Judaism was.
 - **Church tradition as authority** — "The Church has always taught..." carries zero weight here.
 - **Emotional/devotional framing** — "Feel God's love" → Show what חֶסֶד (hesed) meant within the covenant.
 - **Proof-texting** — Never pull a verse from its literary and historical context.
