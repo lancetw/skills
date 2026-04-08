@@ -2,8 +2,8 @@
 
 Source: OpenGreekAndLatin/First1KGreek (GitHub) — Kirsopp Lake editions (1912/1917).
 Covers: Didache, 1-2 Clement, Barnabas, Hermas, Ignatius (7 letters),
-        Polycarp, Martyrdom of Polycarp, Epistle to Diognetus.
-Note: Fragments of Papias not available in First1KGreek.
+        Polycarp, Martyrdom of Polycarp, Epistle to Diognetus,
+        Fragments of Papias (extracted from Eusebius HE).
 
 Usage:
     python fetch_apostolic_fathers_greek.py <work> [chapter] [section]
@@ -188,6 +188,21 @@ WORKS = [
         "date": "~100-160 CE",
         "structure": "hermas",
         "book_range": (18, 27),
+    },
+    # ── Papias: extracted from Eusebius HE ──────────────────────────
+    {
+        "keys": ["papias", "帕皮亞殘篇", "fragments of papias"],
+        "name": "Fragments of Papias (Greek)",
+        "tlg": "tlg2018/tlg002",
+        "xml": "tlg2018.tlg002.1st1K-grc1.xml",
+        "date": "~60-130 CE",
+        "structure": "papias",
+        # (book_n, chapter_n, label)
+        "fragments": [
+            (3, 39, "HE 3.39 — Main Papias fragments"),
+            (2, 15, "HE 2.15 — Papias on Mark's Gospel"),
+            (3, 36, "HE 3.36 — Papias among writers"),
+        ],
     },
 ]
 
@@ -387,6 +402,58 @@ def _parse_hermas(root, book_start: int, book_end: int,
     return results
 
 
+def _parse_papias(root, fragments: list, frag_num=None) -> list[dict]:
+    """Extract Papias fragments from Eusebius HE by book.chapter refs."""
+    body = root.find(".//tei:text/tei:body", NS)
+    top = body.find("tei:div", NS)
+    all_books = top.findall("tei:div", NS)
+
+    # Index books by n
+    book_map = {}
+    for book in all_books:
+        bn = _safe_int(book.get("n"))
+        if bn is not None:
+            book_map[bn] = book
+
+    results = []
+    for idx, (book_n, ch_n, label) in enumerate(fragments, 1):
+        if frag_num is not None and idx != frag_num:
+            continue
+
+        book = book_map.get(book_n)
+        if book is None:
+            continue
+
+        for ch in book.findall("tei:div", NS):
+            if _safe_int(ch.get("n")) != ch_n:
+                continue
+
+            # HE chapters use <p> tags directly (no section subdivisions)
+            paras = ch.findall("tei:p", NS)
+            if paras:
+                para_texts = []
+                for pi, p in enumerate(paras, 1):
+                    text = _clean(_extract_text(p))
+                    if text:
+                        para_texts.append(f"[{pi}] {text}")
+                if para_texts:
+                    results.append({
+                        "chapter": idx,
+                        "label": label,
+                        "text": "\n".join(para_texts),
+                    })
+            else:
+                text = _clean(_extract_text(ch))
+                if text:
+                    results.append({
+                        "chapter": idx,
+                        "label": label,
+                        "text": text,
+                    })
+
+    return results
+
+
 # ── Public API ──────────────────────────────────────────────────────
 
 def fetch(work: str, arg1: int = None, arg2: int = None) -> dict:
@@ -395,6 +462,7 @@ def fetch(work: str, arg1: int = None, arg2: int = None) -> dict:
     Flat works:    fetch("didache", chapter, section)
     Ignatius:      fetch("ignatius ephesians", chapter, section)
     Hermas:        fetch("hermas visions", division_num, chapter)
+    Papias:        fetch("papias", fragment_num)
     """
     info = _lookup(work)
     if not info:
@@ -415,6 +483,8 @@ def fetch(work: str, arg1: int = None, arg2: int = None) -> dict:
         entries = _parse_hermas(root, start, end, arg1, arg2)
     elif structure == "ignatius":
         entries = _parse_ignatius(root, info["epistle_n"], arg1, arg2)
+    elif structure == "papias":
+        entries = _parse_papias(root, info["fragments"], arg1)
     else:
         entries = _parse_flat(root, arg1, arg2)
 
@@ -449,7 +519,9 @@ def format_output(result: dict) -> str:
     ]
 
     for entry in result.get("entries", []):
-        if "division" in entry:
+        if "label" in entry:
+            lines.append(f"  --- Fragment {entry['chapter']}: {entry['label']} ---")
+        elif "division" in entry:
             lines.append(f"  --- {entry['division']}.{entry['chapter']} ---")
         else:
             lines.append(f"  --- Chapter {entry['chapter']} ---")
@@ -485,7 +557,10 @@ def list_works() -> str:
         "  Mandates 1-12    key: hermas mandates / 黑馬牧人書：誡命",
         "  Similitudes 1-10 key: hermas similitudes / 黑馬牧人書：比喻",
         "",
-        "Not available: Fragments of Papias (not in First1KGreek)",
+        "Fragments of Papias (from Eusebius HE) — ~60-130 CE:",
+        "  Fragment 1: HE 3.39  key: papias / 帕皮亞殘篇",
+        "  Fragment 2: HE 2.15",
+        "  Fragment 3: HE 3.36",
         "",
         "Usage:",
         '  fetch_apostolic_fathers_greek.py didache 1',
@@ -493,6 +568,8 @@ def list_works() -> str:
         '  fetch_apostolic_fathers_greek.py "ignatius ephesians" 1',
         '  fetch_apostolic_fathers_greek.py "hermas mandates" 12 3',
         '  fetch_apostolic_fathers_greek.py barnabas 5 3',
+        '  fetch_apostolic_fathers_greek.py papias',
+        '  fetch_apostolic_fathers_greek.py papias 1',
     ]
     return "\n".join(lines)
 
