@@ -147,6 +147,7 @@ Run through this checklist internally. **Check `references/` FIRST, then WebSear
      `Grep("Isaiah 7:14", path="references/scripture-to-denomination.md", output_mode="content", -A=2)`
 9. **Translation bias?** — Check `references/translation-bias.md` (15 verse-level + 7 systemic biases) for known Chinese translation issues. Flag when found.
 10. **Newcomer-friendly?** — Define technical terms on first use. Provide historical context. Include full scripture references.
+11. **Quotation completeness?** — For every quoted passage, verify it includes the complete argumentative unit: (a) the subject/animal/concept being discussed, (b) the interpretation, AND (c) the reasoning or evidence. If a section is ≤5 sentences, it must be quoted in full. This is especially critical for extra-canonical texts (Apostolic Fathers, Pseudepigrapha) where sections are short and every sentence carries structural weight.
 
 ### Verification Transparency
 
@@ -365,6 +366,7 @@ When a user approaches with systematic theology categories, redirect:
 - **Categorical separation of integrated Torah concepts** — Western systematic theology splits "atonement" (soteriology) from "purification" (purity/ritual) into separate domains. Torah does not: כִּפֶּר (kipper) and טָהֵר (taher) appear together in Lev 16:30. When researching ANY Torah-rooted theme (purity, atonement, sacrifice, holiness), search across ALL related categories — these are facets of one system, not separate filing cabinets. This bias caused the skill to miss Barnabas 7 (Yom Kippur scapegoat) when searching for "purity" passages.
 - **Vocabulary search instead of concept search** — When researching a theme, do not just grep for explicit keyword matches (e.g., καθαρός for "purity"). Trace the full conceptual network: state words (καθαρός/ἀκάθαρτος), action words (μιαίνω/ἁγνίζω), AND causal mechanism words (ἐπιθυμία πονηρά = evil desire that PRODUCES impurity). A chapter may contain no purity vocabulary yet be central to the purity system — e.g., Hermas Mandate 12 uses ἐπιθυμία πονηρά (the cause of defilement) without ever saying καθαρός or μιαίνω. Method: after initial keyword search, ask "what CAUSES the state I'm researching? what RESULTS from it?" and search for those terms too.
 - **Interpretive overreach** — Jumping from a correct grammatical observation to a theological conclusion as if the grammar settles the debate. E.g., "hen is neuter, therefore they are not one in essence" — the grammar constrains but doesn't determine the theology.
+- **Truncated quotation of argumentative units** — When quoting a passage, include the COMPLETE argumentative unit: subject introduction + interpretation + evidence/reasoning. Extra-canonical texts (Apostolic Fathers, Pseudepigrapha, DSS) have short numbered sections — quote the full section, not just the sentence containing the target vocabulary. E.g., Barnabas 10.8 has three parts: (1) "He rightly hated the weasel (τὴν γαλῆν)" — names the subject, (2) "you shall not be like those who commit iniquity with their mouth through uncleanness (ἀκαθαρσίαν)" — the moral interpretation, (3) "for this animal conceives through its mouth (τῷ στόματι κύει)" — the zoological reasoning. Quoting only part (2) because it contains ἀκαθαρσία strips the passage of its subject and evidence, making it incomprehensible. Rule: if a section is ≤5 sentences, quote it in full.
 - **Fabricated translations of proper nouns** — Never invent Chinese transliterations for foreign names, book titles, or movie titles. Use the established Traditional Chinese name (e.g., 辛德勒的名單, not a made-up transliteration). If unsure of the official Chinese name, use the original language name instead (e.g., "Schindler's List"). WebSearch to verify if needed.
 
 When users ask in church language (e.g., "What does this mean for my walk with God?"), gently redirect to first-century context, then note that modern application is a separate step.
@@ -401,12 +403,13 @@ Read these on-demand when needed (not all at once). Files >300 lines have a tabl
 
 ## Full Scripture Citation Rules
 
-Partial quotation is a primary tool of theological manipulation. Showing full text protects the reader.
+Partial quotation is a primary tool of theological manipulation. Showing full text protects the reader. **These rules apply to ALL texts — biblical, extra-canonical, and Apostolic Fathers alike.**
 
 - **Analyzing a passage**: Quote the complete passage. For Isaiah 7:14, quote at minimum 7:10-17.
 - **Supporting passages**: Full reference (Book Chapter:Verse) and quote the key verse.
 - **Comparing translations**: Show Hebrew, literal translation, and note where common translations diverge.
 - **Commonly decontextualized passages**: Show surrounding verses. Jeremiah 29:11 → quote 29:10-14 (addressed to exiled Judah as a nation).
+- **Extra-canonical texts**: Quote the complete numbered section. Apostolic Fathers sections are typically 1-5 sentences — short enough to quote in full. Never extract only the sentence containing the target vocabulary; always include the subject being discussed and the author's reasoning.
 
 ---
 
