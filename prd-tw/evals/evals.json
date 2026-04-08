@@ -1,0 +1,44 @@
+{
+  "skill_name": "prd-tw",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我們的 Cyto-Copilot Academy 教育平台目前只能瀏覽案例。我想加上：學生可以自己在圖上畫 Gate 做分析、老師可以把分析存成教材、老師能組合案例變成課程讓學生報名、要有考試功能自動評分、考完可以發證書、還要支援多國語言、加上付費機制讓老師可以賣課、還有影音教材功能讓老師錄影講解。幫我寫需求文件。",
+      "expected_output": "應該先問釐清問題，將需求分類為 P0/P1/P2，標記金流整合和媒體處理等高複雜度項目，限制核心需求在 5 項以內或加範圍警示，最終產出有優先序和依賴關係的繁體中文需求文件。",
+      "files": [],
+      "assertions": [
+        {"id": "has-priority-levels", "description": "Document contains priority classification (P0/P1/P2 or equivalent ranking)", "type": "content_check"},
+        {"id": "scope-limit-or-warning", "description": "Document warns about scope being too large or splits into phases", "type": "content_check"},
+        {"id": "complexity-flags", "description": "High-complexity requirements (payment, video) are flagged with warnings", "type": "content_check"},
+        {"id": "dependency-mapping", "description": "Document shows dependency relationships between requirements", "type": "content_check"},
+        {"id": "has-scope-summary", "description": "Document starts with a scope summary table", "type": "content_check"},
+        {"id": "taiwan-chinese", "description": "Uses Taiwan terminology (使用者, 檔案, 資料)", "type": "content_check"}
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我要做一個內部用的 Lab 管理系統。要有：儀器預約排程、試劑庫存管理、實驗紀錄電子化、品管報告自動產生、人員訓練紀錄追蹤、跟 LIMS 介接、儀器維護保養提醒、還要有 dashboard 可以看各種統計。先幫我寫需求文件。",
+      "expected_output": "應該問清楚痛點和限制，將 8 項需求分級，標記 LIMS 介接為第三方整合高複雜度，建議分期，核心文件只展開 P0+P1。",
+      "files": [],
+      "assertions": [
+        {"id": "has-priority-levels", "description": "Document contains priority classification (P0/P1/P2 or equivalent ranking)", "type": "content_check"},
+        {"id": "lims-complexity-flag", "description": "LIMS integration flagged as high-complexity or third-party integration", "type": "content_check"},
+        {"id": "phased-delivery", "description": "Document suggests phased delivery or MVP approach", "type": "content_check"},
+        {"id": "p2-roadmap-section", "description": "Document has a future/roadmap section for lower-priority items", "type": "content_check"},
+        {"id": "taiwan-chinese", "description": "Uses Taiwan terminology (使用者, 檔案, 資料)", "type": "content_check"}
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "幫我寫一個上傳 FCS 檔案然後自動產生分析報告的功能需求",
+      "expected_output": "合理範圍的單一功能需求，不需要過度收斂，直接產出完整需求文件。",
+      "files": [],
+      "assertions": [
+        {"id": "no-over-scoping", "description": "Does NOT unnecessarily split a simple single-feature request into phases", "type": "content_check"},
+        {"id": "has-user-workflow", "description": "Document includes a user workflow", "type": "content_check"},
+        {"id": "has-success-criteria", "description": "Document includes measurable success criteria", "type": "content_check"},
+        {"id": "taiwan-chinese", "description": "Uses Taiwan terminology (使用者, 檔案, 資料)", "type": "content_check"}
+      ]
+    }
+  ]
+}
