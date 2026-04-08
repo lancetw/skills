@@ -200,6 +200,18 @@ This rule overrides the Explanatory output style default of "not in the codebase
 
 **Always include:** Hebrew with transliteration, source citations with dates, text vs. interpretation distinction.
 
+**Extra-canonical English quotation rule:** When quoting English translations of texts that have no standard Chinese version (Apostolic Fathers, Pseudepigrapha, Dead Sea Scrolls, Josephus, Philo, etc.), ALWAYS provide a Traditional Chinese (台灣繁體中文) translation immediately after the English block quote. Format:
+
+```markdown
+**英文譯文（Roberts-Donaldson）：**
+> "Put away from you all wicked desire..."
+
+**中文翻譯：**
+> 「除去你一切邪惡的慾望……」
+```
+
+This ensures the study document is fully accessible to Chinese-reading users. The Chinese translation is the skill's own rendering — mark it as `（本研究翻譯）` to distinguish from published translations. For canonical scripture, continue using fetched Chinese translations (RCUV, CCV, Sigao, etc.) instead.
+
 **Required sections** (order flexible, may be woven in):
 - **翻譯偏差** — Compare RCUV, CNVT, 呂振中. No bias → "本段中文翻譯未見明顯偏差。"
 - **觀察 vs. 解讀** — Separate grammatical/historical facts from theological interpretations.
@@ -348,6 +360,8 @@ When a user approaches with systematic theology categories, redirect:
 - **Proof-texting** — Never pull a verse from its literary and historical context.
 - **Harmonizing at the expense of honesty** — If texts present different perspectives, say so.
 - **Semantic narrowing** — Presenting one meaning of a Hebrew/Greek word as THE meaning when the word has a range. Always show the lexical range and let context determine the best fit.
+- **Categorical separation of integrated Torah concepts** — Western systematic theology splits "atonement" (soteriology) from "purification" (purity/ritual) into separate domains. Torah does not: כִּפֶּר (kipper) and טָהֵר (taher) appear together in Lev 16:30. When researching ANY Torah-rooted theme (purity, atonement, sacrifice, holiness), search across ALL related categories — these are facets of one system, not separate filing cabinets. This bias caused the skill to miss Barnabas 7 (Yom Kippur scapegoat) when searching for "purity" passages.
+- **Vocabulary search instead of concept search** — When researching a theme, do not just grep for explicit keyword matches (e.g., καθαρός for "purity"). Trace the full conceptual network: state words (καθαρός/ἀκάθαρτος), action words (μιαίνω/ἁγνίζω), AND causal mechanism words (ἐπιθυμία πονηρά = evil desire that PRODUCES impurity). A chapter may contain no purity vocabulary yet be central to the purity system — e.g., Hermas Mandate 12 uses ἐπιθυμία πονηρά (the cause of defilement) without ever saying καθαρός or μιαίνω. Method: after initial keyword search, ask "what CAUSES the state I'm researching? what RESULTS from it?" and search for those terms too.
 - **Interpretive overreach** — Jumping from a correct grammatical observation to a theological conclusion as if the grammar settles the debate. E.g., "hen is neuter, therefore they are not one in essence" — the grammar constrains but doesn't determine the theology.
 - **Fabricated translations of proper nouns** — Never invent Chinese transliterations for foreign names, book titles, or movie titles. Use the established Traditional Chinese name (e.g., 辛德勒的名單, not a made-up transliteration). If unsure of the official Chinese name, use the original language name instead (e.g., "Schindler's List"). WebSearch to verify if needed.
 
@@ -361,7 +375,7 @@ Read these on-demand when needed (not all at once). Files >300 lines have a tabl
 
 | File | Lines | When to read |
 |------|-------|-------------|
-| `hebrew-key-terms.md` | 46 | Verifying Hebrew word claims (38 terms) |
+| `hebrew-key-terms.md` | 48 | Verifying Hebrew word claims (40 terms, incl. kipper/taher purity-atonement pair) |
 | `greek-key-terms.md` | 42 | Verifying Greek word claims (34 terms) |
 | `aramaic-key-terms.md` | 16 | Verifying Aramaic word claims (16 terms: Abba, Talitha qumi, Maranatha, bar enash, raz, pesher, etc.) |
 | `anachronism-timeline.md` | 43 | Checking doctrine origin dates (35 entries) |
