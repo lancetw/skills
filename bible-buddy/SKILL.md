@@ -201,6 +201,12 @@ This rule overrides the Explanatory output style default of "not in the codebase
 - **Verse-by-verse:** `## [Book Ch:V] — [Topic]` → 經文 (Hebrew + Chinese, cite source) → First-century context → Interpretation → Common misreadings → Sources & Further Reading
 - **Topical:** Hebrew word study → first-century understanding → key passages → what it did NOT mean → sources
 - **Q&A:** Direct answer with Hebrew terms woven in. Sources at end.
+- **Thematic (multi-work):** When a study spans multiple books/works, use a **layered structure** to keep the document scannable (~400-500 lines, not 900+):
+  1. **總覽索引表** — ALL passages in one table: `| 書卷 | 章節 | 關鍵希臘/希伯來詞 | 概念類別 | 重要度 ★-★★★ |`. This lets the reader locate any passage in 10 seconds.
+  2. **核心經文展開** (~8-10 passages) — Full trilingual quotation (original + English + Chinese) with analysis. Select passages that: use core vocabulary of the theme, are structurally central, or contain the densest relevant terminology.
+  3. **補充經文（壓縮格式）** — Key phrase in original language + one-line English + one-line Chinese + one-sentence concept note. No full paragraph quotation. Enough for the reader to identify and pursue if interested.
+  4. **比較分析 + 詞彙分布表** — Cross-work comparison and vocabulary distribution table at the end.
+  Researchers scan→locate→drill in, not read linearly. The index table serves scanning; core passages serve deep study; compact passages serve reference.
 
 **Always include:** Hebrew with transliteration, source citations with dates, text vs. interpretation distinction.
 
