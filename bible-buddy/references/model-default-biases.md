@@ -59,6 +59,22 @@ The table entry reads:
 
 **Problem:** "Substitutionary atonement" as a systematic doctrine was developed by Anselm (11th c.) and Calvin (16th c.). The New Testament contains atonement imagery (Passover lamb, Isaiah 53 servant, Day of Atonement) but does not present a unified "substitutionary atonement" theory. The baseline presents a 16th-century theological construct as if it is the NT's own framework.
 
+#### Test Case: `purity-apostolic-fathers` (Barnabas 7, Leviticus 16)
+
+**What happened:** When asked to compile "purity and impurity" passages from Apostolic Fathers, the model searched for chapters explicitly labeled as purification rituals (Barnabas 8: red heifer, Barnabas 10: clean/unclean animals) but skipped Barnabas 7 (Yom Kippur scapegoat) because it was mentally categorized as "atonement," not "purification."
+
+**Problem:** This reflects the Western systematic theology habit of separating "soteriology" (atonement, salvation) from "ritual purity" (clean/unclean) as distinct theological domains. In Torah, these are inseparable: Leviticus 16:30 uses כִּפֶּר (kipper, atone) and טָהֵר (taher, purify) in the SAME verse for the SAME ritual. The scapegoat removes both sin-guilt AND communal impurity — it is simultaneously an atonement AND a purification mechanism.
+
+**First-century perspective:** A Second Temple Jew would not have separate mental filing cabinets for "atonement passages" and "purity passages." The Temple sacrificial system was one integrated system where sacrifice, purification, and holiness were facets of the same covenantal process. Any search for "purity" that excludes Yom Kippur (Lev 16), sin offerings (Lev 4-5), or guilt offerings (Lev 5-6) is using a post-Reformation categorical grid, not a first-century Jewish one.
+
+#### Test Case: `purity-apostolic-fathers-2` (Hermas Mandate 12)
+
+**What happened:** Same purity research session. The model found Mandate 4 (ἁγνεία), Mandate 5 (καθαρός), Similitude 5 (μιαίνω), and other chapters using explicit purity vocabulary. But it missed Mandate 12 (ἐπιθυμία πονηρά / evil desire), which contains NO purity keywords yet describes the **causal mechanism** of defilement in the Hermas system.
+
+**Problem:** This is a **methodology bias**, not a categorical bias. The model searched for purity by grepping for state words (καθαρός, ἀκάθαρτος) and action words (μιαίνω, ἁγνίζω), but did not trace the conceptual network upstream to the cause layer. In Hermas, the conceptual network is: ἐπιθυμία πονηρά (cause) → μιαίνω τὴν σάρκα (action) → ἀκάθαρτος (state). Mandate 12 sits at the cause layer — it explains WHY defilement happens — making it structurally central to the purity system despite lacking purity vocabulary.
+
+**Methodological fix:** After initial keyword search for a theme, always ask: "What CAUSES this state? What RESULTS from it?" Then search for the causal and consequential vocabulary too. For purity: desire (ἐπιθυμία), anger (ὀξυχολία), doubt (διψυχία) are all upstream causes that produce impurity downstream.
+
 #### Test Case: `catholic-theology` (Luke 1:28)
 
 **What the baseline said:**
