@@ -195,6 +195,8 @@ This ensures full content is both saved and displayed, with tokens generated exa
 > ─────────────────────────────────────────────────
 ```
 
+**Line break fix for VS Code preview:** Every line inside an Insight blockquote (both decorative lines and content lines) MUST end with two trailing spaces (markdown hard line break). For numbered points, use `①②③` instead of `1. 2. 3.` to avoid triggering markdown ordered list parsing.
+
 This rule overrides the Explanatory output style default of "not in the codebase."
 
 **Formats:**
