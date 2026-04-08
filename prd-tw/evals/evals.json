@@ -39,6 +39,47 @@
         {"id": "has-success-criteria", "description": "Document includes measurable success criteria", "type": "content_check"},
         {"id": "taiwan-chinese", "description": "Uses Taiwan terminology (使用者, 檔案, 資料)", "type": "content_check"}
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "我想做一個用 AI 自動幫流式細胞分析新手出題、批改、給建議的家教系統。\n(Phase Zero answers: 現狀掌握→「不知道耶，我不太清楚現在系統有什麼」, 客戶訊號→「應該會有人要吧」, 資源現況→「還沒，先寫需求再說」, 驗證狀態→「還沒跟人聊過」)",
+      "expected_output": "應該判定為 0-1 項通過（全部回答模糊），硬擋不寫任何文件，只產出驗證行動清單。絕對不能產出完整的需求文件或概念探索文件。",
+      "files": [],
+      "assertions": [
+        {"id": "hard-gate-no-document", "description": "Does NOT produce a full requirements document or concept exploration document", "type": "content_check"},
+        {"id": "produces-action-list", "description": "Produces a validation action list (驗證行動清單) with concrete next steps", "type": "content_check"},
+        {"id": "no-user-workflow", "description": "Does NOT include user workflow, dependency mapping, or success criteria sections", "type": "content_check"},
+        {"id": "no-priority-levels", "description": "Does NOT include P0/P1/P2 priority classification", "type": "content_check"},
+        {"id": "taiwan-chinese", "description": "Uses Taiwan terminology (使用者, 檔案, 資料)", "type": "content_check"}
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "我們想在現有的 Cyto-Copilot 平台上加一個讓使用者可以分享自己分析結果的社群功能。\n(Phase Zero answers: 現狀掌握→「有，Cyto-Copilot 目前可以做 FCS 上傳和基本分析」, 客戶訊號→「我自己覺得應該做，使用者應該會想要」, 資源現況→「有，後端團隊 3 個人可以做」, 驗證狀態→「還沒問過使用者」)",
+      "expected_output": "應該判定為 2-3 項通過但缺客戶訊號，產出概念備忘錄而非正式需求文件。概念備忘錄不應包含使用者工作流程、依賴關係、成功標準等正式文件才有的內容。",
+      "files": [],
+      "assertions": [
+        {"id": "produces-concept-memo", "description": "Produces a concept memo (概念備忘錄) not a full requirements document", "type": "content_check"},
+        {"id": "shows-prerequisite-status", "description": "Shows a table of prerequisite pass/fail status with explanations", "type": "content_check"},
+        {"id": "no-user-workflow", "description": "Does NOT include detailed user workflow or dependency mapping", "type": "content_check"},
+        {"id": "has-validation-steps", "description": "Includes specific validation steps for the missing prerequisites", "type": "content_check"},
+        {"id": "not-actionable-by-engineering", "description": "Document explicitly states engineering should NOT start development based on this", "type": "content_check"},
+        {"id": "taiwan-chinese", "description": "Uses Taiwan terminology (使用者, 檔案, 資料)", "type": "content_check"}
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "我們 Cyto-Copilot 要加上以下功能：AI 自動判讀所有類型的流式細胞儀檔案、即時多人協作分析、支援所有儀器廠牌的自動補償、內建影音教學系統讓老師錄課程、付費訂閱機制、跟全球主要 LIMS 系統都能串接、還有自動產生符合 CAP 認證標準的報告。我們團隊有 2 個後端工程師，希望 3 個月內上線。\n(Phase Zero answers: 現狀掌握→「有，目前只能上傳 FCS 看散點圖」, 客戶訊號→「有客戶問過能不能做更多分析」, 資源現況→「2 個後端工程師」, 驗證狀態→「有跟幾個客戶聊過，他們說想要更多功能」)",
+      "expected_output": "通過 Phase Zero（4 題都有具體回答），但在可行性現實檢查時應該硬擋——7 項需求多數為🔴大型，粗估遠超 2 人 3 個月的產能（>3 倍）。應降級為概念備忘錄，不產出正式需求文件。同時應標記「AI 自動判讀所有類型」為魔法思維、「串接全球主要 LIMS」為不切實際。",
+      "files": [],
+      "assertions": [
+        {"id": "feasibility-hard-stop", "description": "Refuses to write a full requirements document due to resource/scope mismatch exceeding 3x", "type": "content_check"},
+        {"id": "produces-concept-memo", "description": "Downgrades to concept memo (概念備忘錄) instead of full requirements document", "type": "content_check"},
+        {"id": "flags-magic-thinking", "description": "Flags 'AI 自動判讀所有類型' as vague/magic thinking requiring clarification", "type": "content_check"},
+        {"id": "flags-unrealistic-scope", "description": "Explicitly states the scope is unrealistic for a 2-person team in 3 months", "type": "content_check"},
+        {"id": "shows-effort-calculation", "description": "Shows a rough calculation comparing total estimated effort vs available resources", "type": "content_check"},
+        {"id": "taiwan-chinese", "description": "Uses Taiwan terminology (使用者, 檔案, 資料)", "type": "content_check"}
+      ]
     }
   ]
 }
