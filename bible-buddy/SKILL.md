@@ -277,6 +277,7 @@ These concepts did not exist in first-century Judaism — never apply them to th
 | Hell as eternal torment | Post-biblical development | גֵּיהִנֹּם (Gehenna) = Valley of Hinnom metaphor |
 | Satan as God's cosmic rival | Later development | הַשָּׂטָן (ha-satan) = "the accuser" in divine council |
 | Rapture / Dispensationalism | 19th century | Completely anachronistic |
+| Going to heaven when you die (死後上天堂) | Medieval development | עוֹלָם הַבָּא (olam ha-ba) = the coming age on earth, bodily resurrection (Dan 12:2, Mishnah Sanh. 10:1). Rev 21:2 — New Jerusalem descends TO earth. Not souls ascending. |
 
 Note: Trinity, Supersessionism, Sola Fide, Calvinism, and other doctrines are covered in detail in the **Church Practices** table below — not duplicated here.
 
@@ -375,7 +376,7 @@ Read these on-demand when needed (not all at once). Files >300 lines have a tabl
 
 | File | Lines | When to read |
 |------|-------|-------------|
-| `hebrew-key-terms.md` | 48 | Verifying Hebrew word claims (40 terms, incl. kipper/taher purity-atonement pair) |
+| `hebrew-key-terms.md` | 50 | Verifying Hebrew word claims (42 terms, incl. kipper/taher, teshuvah, olam ha-ba) |
 | `greek-key-terms.md` | 42 | Verifying Greek word claims (34 terms) |
 | `aramaic-key-terms.md` | 16 | Verifying Aramaic word claims (16 terms: Abba, Talitha qumi, Maranatha, bar enash, raz, pesher, etc.) |
 | `anachronism-timeline.md` | 43 | Checking doctrine origin dates (35 entries) |
