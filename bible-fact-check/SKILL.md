@@ -26,39 +26,50 @@ URLs and pasted text (do not print N/A lines for them).
    → reads the specified file
 3. **URL** — e.g., `/review-bible-buddy https://example.com/article`
    → Do NOT use WebFetch — many news sites block it with 403.
-   Run `uv run --project ~/.claude/skills/bible-buddy ~/.claude/skills/bible-buddy/scripts/fetch_url.py "<URL>"` to extract article text.
+   Run `uv run --project {BIBLE_BUDDY} {BIBLE_BUDDY}/scripts/fetch_url.py "<URL>"` to extract article text.
    The script auto-falls back to patchright (headless Chromium) when urllib gets 403.
 4. **Pasted text** — user pastes content directly in the conversation
    → review the pasted text
 5. **No argument** — use AskUserQuestion to ask the user whether they want to
    paste a URL or input text. Do NOT default to any file.
 
+## Path Resolution
+
+Resolve `{BIBLE_BUDDY}` before anything else. Check in order:
+
+1. **Project-level**: `.claude/skills/bible-buddy/` (relative to repo root)
+2. **User-level**: `~/.claude/skills/bible-buddy/`
+
+Use the first path where `references/` directory exists.
+If neither exists, **stop immediately** and tell the user:
+「bible-fact-check 需要 bible-buddy skill。請先安裝：
+  - 專案層級：`npx skills add lancetw/skills/bible-buddy --project`
+  - 使用者層級：`npx skills add lancetw/skills/bible-buddy`」
+
+All `{BIBLE_BUDDY}` references below use the resolved path.
+
 ## Prerequisites
 
-1. Verify `~/.claude/skills/bible-buddy/references/` exists.
-   If not found, **stop immediately** and tell the user:
-   「bible-fact-check 需要 bible-buddy skill。請先安裝：`npx skills add lancetw/skills/bible-buddy`」
-
-2. Run dependency setup (one-time):
+1. Run dependency setup (one-time):
    ```bash
-   cd ~/.claude/skills/bible-buddy && uv sync && uv run patchright install chromium
+   cd {BIBLE_BUDDY} && uv sync && uv run patchright install chromium
    ```
 
 ## How to Run
 
 1. Determine the input source
-2. **Verify bible-buddy is installed** (see Prerequisites above)
+2. **Resolve `{BIBLE_BUDDY}` path** (see Path Resolution above)
 3. Read / receive the content
    - For `fun-facts.md`: **Do NOT use Read** (exceeds 10K token limit). Use Grep:
-     `Grep("^- ", path="~/.claude/skills/bible-buddy/references/fun-facts.md", output_mode="content", head_limit=0)`
+     `Grep("^- ", path="{BIBLE_BUDDY}/references/fun-facts.md", output_mode="content", head_limit=0)`
      → returns all ~134 facts with line numbers in one call
 4. Load reference files as checking criteria (read on demand, not all at once):
-   - `~/.claude/skills/bible-buddy/references/anachronism-timeline.md` → Read entire file (small, 43 lines) → for checks 3, 4
-   - `~/.claude/skills/bible-buddy/references/commonly-misread-passages.md` → **Do NOT Read entire file** (44KB wide table). Two-step lookup:
-     1. Load index: `bash: grep '|' ~/.claude/skills/bible-buddy/references/commonly-misread-passages.md | awk -F'|' '{print $2}' | sed 's/^ *//;s/ *$//' | grep -v '^-' | grep -v '^Scripture'` → gives all 79 scripture references (~2KB)
-     2. For each relevant passage, Grep the full row: `Grep("Isaiah 7:14", path="~/.claude/skills/bible-buddy/references/commonly-misread-passages.md")`
+   - `{BIBLE_BUDDY}/references/anachronism-timeline.md` → Read entire file (small, 43 lines) → for checks 3, 4
+   - `{BIBLE_BUDDY}/references/commonly-misread-passages.md` → **Do NOT Read entire file** (44KB wide table). Two-step lookup:
+     1. Load index: `bash: grep '|' {BIBLE_BUDDY}/references/commonly-misread-passages.md | awk -F'|' '{print $2}' | sed 's/^ *//;s/ *$//' | grep -v '^-' | grep -v '^Scripture'` → gives all 79 scripture references (~2KB)
+     2. For each relevant passage, Grep the full row: `Grep("Isaiah 7:14", path="{BIBLE_BUDDY}/references/commonly-misread-passages.md")`
      → for checks 2, 4, 7, 8
-   - `~/.claude/skills/bible-buddy/references/yeshua-hermeneutics.md` → Read entire file (small, 122 lines) → for check 8
+   - `{BIBLE_BUDDY}/references/yeshua-hermeneutics.md` → Read entire file (small, 122 lines) → for check 8
 5. Run checks sequentially:
    - **URL or pasted text**: run checks 1-5 only
    - **fun-facts reference file**: run all 10 checks
@@ -216,7 +227,7 @@ before the summary. If nothing additional is found, omit this section.
 ## Output Format
 
 **Environment detection:**
-- **Claude Code** → `uv run --project ~/.claude/skills/bible-buddy ~/.claude/skills/bible-buddy/scripts/detect_desktop.py bible-fact-check` → save to returned path
+- **Claude Code** → `uv run --project {BIBLE_BUDDY} {BIBLE_BUDDY}/scripts/detect_desktop.py bible-fact-check` → save to returned path
 - **Cowork / Claude.ai web** → Do NOT save. Tell user: "你可以複製回應內容存檔，或在 Claude.ai 中使用 Artifact 功能下載。"
 
 Filename: `YYYYMMDD_HHmm_<slug>.md` (URL → domain+path slug, pasted → `pasted_text`; slug 一律用 `_` 分隔)
@@ -285,5 +296,5 @@ Reports should be easy to read for a Taiwan churchgoer, not just scholars:
 - When in doubt, flag it — the user will decide whether to act
 - Some checks may not apply to all content types (e.g., key-terms lists won't have
   strawman arguments). Skip with "N/A — 此檢查不適用於本內容"
-- Reference files: read ONLY the 3 files listed in Step 4 by exact path
-  under `~/.claude/skills/bible-buddy/references/`.
+- Reference files: read ONLY the 3 files listed in Step 4 under
+  `{BIBLE_BUDDY}/references/` (resolved path).
