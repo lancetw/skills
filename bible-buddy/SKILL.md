@@ -28,7 +28,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh && source "$HOME/.local/bin/env"
 Then proceed with setup:
 
 ```bash
-cd bible-buddy && uv sync && uv run patchright install chromium
+uv sync --directory bible-buddy && uv run --directory bible-buddy patchright install chromium
 ```
 
 ### Output Style Check
@@ -95,27 +95,27 @@ First, briefly acknowledge the denomination detected (e.g., "你問到靈恩派�
 
 ### Step 2: Fetch Scripture — Run Bundled Scripts
 
-Do NOT rely on memory for scripture text. Always fetch from online sources using the bundled scripts. Run with `uv run --project bible-buddy`.
+Do NOT rely on memory for scripture text. Always fetch from online sources using the bundled scripts. Run with `uv run --directory bible-buddy`.
 
 **Run these in parallel for every passage:**
 
 | Script | Command | Returns |
 |--------|---------|---------|
-| **OT Hebrew + Extra-canonical** | `uv run scripts/fetch_sefaria.py <book> <chapter> [start] [end]` | Sefaria API: Hebrew + English. Covers Tanakh, Josephus, Philo, apocrypha, Testaments of 12 Patriarchs. Run `list-extra` for catalog. |
-| **NT Greek** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] fhlwh` | FHL: NT Greek original |
-| **NT Greek (backup)** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses> SBLGNT` | Bible Gateway: SBLGNT academic Greek |
-| **Chinese RCUV / English NRSVUE** | `uv run scripts/fetch_biblegateway.py <book> <chapter>:<verses> [version]` | Bible Gateway: RCUV (default) or NRSVUE. Auto-switches to NRSVUE for all 17 deuterocanonical books (Tobit, Judith, Sirach, Wisdom, Baruch, 1-2 Maccabees, 1-2 Esdras, 3-4 Maccabees, Susanna, Bel and the Dragon, Letter of Jeremiah, Prayer of Azariah, Prayer of Manasseh, Psalm 151). |
-| **Chinese Sigao** | `uv run scripts/fetch_sigao.py <book> <chapter> [start] [end]` | ccreadbible.org: Catholic Sigao Bible (73 books incl. deuterocanon) |
-| **Chinese CCV** | `uv run scripts/fetch_ccv.py <book> <chapter> [start] [end]` | OT via API, NT via session |
-| **Chinese LCC/other** | `uv run scripts/fetch_fhl.py <book> <chapter> [start] [end] [version]` | FHL API: 88 versions |
-| **Pseudepigrapha fallback** | `uv run scripts/fetch_pseudepigrapha.py <book> [chapter] [start] [end]` | pseudepigrapha.com: texts NOT on Sefaria (1/2 Enoch, 2/3 Baruch, etc.) |
-| **Apostolic Fathers (English)** | `uv run scripts/fetch_apostolic_fathers.py <work> [chapter]` | newadvent.org (ANF): Didache, 1-2 Clement, Barnabas, Hermas, Ignatius (7), Polycarp, Diognetus, Papias (~50-200 CE). Run `list` for catalog. |
-| **Apostolic Fathers (Greek)** | `uv run scripts/fetch_apostolic_fathers_greek.py <work> [chapter] [section]` | First1KGreek (Kirsopp Lake 1912/1917): Same 11 works in Greek original. Hermas: `"hermas visions" 1`. Ignatius: `"ignatius romans" 4`. Papias: extracted from Eusebius HE. Run `list` for catalog. |
-| **Dead Sea Scrolls** | `uv run scripts/fetch_dss.py <scroll> [fragment] [start_line] [end_line]` | ETCBC/dss (Abegg transcription, CC-BY-NC): 1001 scrolls, 500K words. By scroll: `1QS`, `社群規章`. By biblical book: `biblical Isaiah 1 1 5`. Run `list` or `list-biblical` for catalog. |
-| **LXX Greek (Septuagint)** | `uv run scripts/fetch_lxx.py <book> <chapter> [start] [end]` | CenterBLC/LXX (Rahlfs 1935): 57 books, Greek text + glosses + morphology. Incl. Psalms of Solomon, Daniel OG/Th, Susanna OG/Th. Run `list` for catalog. |
-| **Latin Vulgate** | `uv run scripts/fetch_vulgate.py <book> <chapter> [start] [end]` | sacredbible.org: Clementine Vulgate (Hetzenauer 1914), 73 books (full Catholic canon incl. deuterocanon). Run `list` for catalog. |
-| **Hebrew Matthew** | `uv run scripts/fetch_hebrew_matthew.py <manuscript> <chapter> [start] [end]` | Two manuscripts: `shem-tov` (Even Bohan, c.1380) and `du-tillet` (Heb. MSS 132, Paris, 1553). Run `list` for catalog. |
-| **Rabbinic Literature** | `uv run scripts/fetch_rabbinic.py <corpus> <tractate> <chapter\|daf> [start] [end]` | Sefaria API: Mishnah (63 tractates), Talmud Bavli (37 tractates, daf format e.g. `2a`), Tosefta (63 tractates). All with Hebrew + English. Run `list` for catalog. |
+| **OT Hebrew + Extra-canonical** | `uv run --directory bible-buddy scripts/fetch_sefaria.py <book> <chapter> [start] [end]` | Sefaria API: Hebrew + English. Covers Tanakh, Josephus, Philo, apocrypha, Testaments of 12 Patriarchs. Run `list-extra` for catalog. |
+| **NT Greek** | `uv run --directory bible-buddy scripts/fetch_fhl.py <book> <chapter> [start] [end] fhlwh` | FHL: NT Greek original |
+| **NT Greek (backup)** | `uv run --directory bible-buddy scripts/fetch_biblegateway.py <book> <chapter>:<verses> SBLGNT` | Bible Gateway: SBLGNT academic Greek |
+| **Chinese RCUV / English NRSVUE** | `uv run --directory bible-buddy scripts/fetch_biblegateway.py <book> <chapter>:<verses> [version]` | Bible Gateway: RCUV (default) or NRSVUE. Auto-switches to NRSVUE for all 17 deuterocanonical books (Tobit, Judith, Sirach, Wisdom, Baruch, 1-2 Maccabees, 1-2 Esdras, 3-4 Maccabees, Susanna, Bel and the Dragon, Letter of Jeremiah, Prayer of Azariah, Prayer of Manasseh, Psalm 151). |
+| **Chinese Sigao** | `uv run --directory bible-buddy scripts/fetch_sigao.py <book> <chapter> [start] [end]` | ccreadbible.org: Catholic Sigao Bible (73 books incl. deuterocanon) |
+| **Chinese CCV** | `uv run --directory bible-buddy scripts/fetch_ccv.py <book> <chapter> [start] [end]` | OT via API, NT via session |
+| **Chinese LCC/other** | `uv run --directory bible-buddy scripts/fetch_fhl.py <book> <chapter> [start] [end] [version]` | FHL API: 88 versions |
+| **Pseudepigrapha fallback** | `uv run --directory bible-buddy scripts/fetch_pseudepigrapha.py <book> [chapter] [start] [end]` | pseudepigrapha.com: texts NOT on Sefaria (1/2 Enoch, 2/3 Baruch, etc.) |
+| **Apostolic Fathers (English)** | `uv run --directory bible-buddy scripts/fetch_apostolic_fathers.py <work> [chapter]` | newadvent.org (ANF): Didache, 1-2 Clement, Barnabas, Hermas, Ignatius (7), Polycarp, Diognetus, Papias (~50-200 CE). Run `list` for catalog. |
+| **Apostolic Fathers (Greek)** | `uv run --directory bible-buddy scripts/fetch_apostolic_fathers_greek.py <work> [chapter] [section]` | First1KGreek (Kirsopp Lake 1912/1917): Same 11 works in Greek original. Hermas: `"hermas visions" 1`. Ignatius: `"ignatius romans" 4`. Papias: extracted from Eusebius HE. Run `list` for catalog. |
+| **Dead Sea Scrolls** | `uv run --directory bible-buddy scripts/fetch_dss.py <scroll> [fragment] [start_line] [end_line]` | ETCBC/dss (Abegg transcription, CC-BY-NC): 1001 scrolls, 500K words. By scroll: `1QS`, `社群規章`. By biblical book: `biblical Isaiah 1 1 5`. Run `list` or `list-biblical` for catalog. |
+| **LXX Greek (Septuagint)** | `uv run --directory bible-buddy scripts/fetch_lxx.py <book> <chapter> [start] [end]` | CenterBLC/LXX (Rahlfs 1935): 57 books, Greek text + glosses + morphology. Incl. Psalms of Solomon, Daniel OG/Th, Susanna OG/Th. Run `list` for catalog. |
+| **Latin Vulgate** | `uv run --directory bible-buddy scripts/fetch_vulgate.py <book> <chapter> [start] [end]` | sacredbible.org: Clementine Vulgate (Hetzenauer 1914), 73 books (full Catholic canon incl. deuterocanon). Run `list` for catalog. |
+| **Hebrew Matthew** | `uv run --directory bible-buddy scripts/fetch_hebrew_matthew.py <manuscript> <chapter> [start] [end]` | Two manuscripts: `shem-tov` (Even Bohan, c.1380) and `du-tillet` (Heb. MSS 132, Paris, 1553). Run `list` for catalog. |
+| **Rabbinic Literature** | `uv run --directory bible-buddy scripts/fetch_rabbinic.py <corpus> <tractate> <chapter\|daf> [start] [end]` | Sefaria API: Mishnah (63 tractates), Talmud Bavli (37 tractates, daf format e.g. `2a`), Tosefta (63 tractates). All with Hebrew + English. Run `list` for catalog. |
 
 All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book names.
 
@@ -133,7 +133,7 @@ All scripts accept Chinese (以賽亞書), English (Isaiah), or OSIS (Isa) book 
 Run through this checklist internally. **Check `references/` FIRST, then WebSearch for anything not in references:**
 
 1. **Text correct?** — Confirm book/chapter/verse matches the fetched text. Quote the full passage, not a paraphrase.
-2. **Hebrew claims verified?** — Check `references/hebrew-key-terms.md` first (38 verified terms). For terms not listed, run `uv run scripts/verify_claim.py <book> <chapter> <verse> <word>` to cross-verify against Sefaria, or use WebSearch. If unverified: "⚠ 此希伯來文分析尚待線上來源驗證".
+2. **Hebrew claims verified?** — Check `references/hebrew-key-terms.md` first (38 verified terms). For terms not listed, run `uv run --directory bible-buddy scripts/verify_claim.py <book> <chapter> <verse> <word>` to cross-verify against Sefaria, or use WebSearch. If unverified: "⚠ 此希伯來文分析尚待線上來源驗證".
 3. **Greek claims verified?** — Check `references/greek-key-terms.md` first (42 verified terms). For terms not listed, use WebSearch. If unverified: "⚠ 此希臘文分析尚待線上來源驗證".
 3b. **Aramaic claims verified?** — Check `references/aramaic-key-terms.md` first (16 verified terms). Aramaic was the spoken language of first-century Palestine; many of Yeshua's preserved words are Aramaic. For terms not listed, use WebSearch.
 4. **Historical claims verified?** — Check `references/archaeological-sources.md` (68 verified sources), `references/anachronism-timeline.md` (35 verified dates), and `references/second-temple-timeline.md` (586 BCE–70 CE). For claims not listed, WebSearch to verify. Never fabricate scroll numbers or inscription details.
@@ -233,14 +233,14 @@ This ensures the study document is fully accessible to Chinese-reading users. Th
 - Follow-ups: `..._followup_{topic}.md` · Did You Know: `..._Did_You_Know_{topic}.md`
 
 **Environment detection:**
-- **Claude Code** → `uv run scripts/detect_desktop.py bible-buddy` → save to returned path
+- **Claude Code** → `uv run --directory bible-buddy scripts/detect_desktop.py bible-buddy` → save to returned path
 - **Cowork / Claude.ai web** → Do NOT save. Tell user: "你可以複製回應內容存檔，或在 Claude.ai 中使用 Artifact 功能下載。"
 
 **YAML frontmatter fields:** `created`, `date`, `reference`, `topic`, `study_type`, `sources`, `verified_claims`, `unverified_claims`
 
 ### Step 6: Follow Up — AskUserQuestion (MANDATORY)
 
-Run `uv run scripts/random_fact.py --exclude [當前書卷]`, then AskUserQuestion:
+Run `uv run --directory bible-buddy scripts/random_fact.py --exclude [當前書卷]`, then AskUserQuestion:
 - question: "想深入哪個方面？" · header: "延伸研讀"
 - options: 希伯來字詞深入, 考古證據, 相關經文, Did You Know? ([fact output])
 
@@ -419,7 +419,7 @@ Read these on-demand when needed (not all at once). Files >300 lines have a tabl
 
 | Script | Usage | When to use |
 |--------|-------|-------------|
-| `verify_claim.py` | `uv run scripts/verify_claim.py <book> <chapter> <verse> <word>` | Cross-verify a Hebrew word claim against Sefaria. E.g., confirm עַלְמָה in Isaiah 7:14. |
+| `verify_claim.py` | `uv run --directory bible-buddy scripts/verify_claim.py <book> <chapter> <verse> <word>` | Cross-verify a Hebrew word claim against Sefaria. E.g., confirm עַלְמָה in Isaiah 7:14. |
 
 ## Full Scripture Citation Rules
 

@@ -26,7 +26,7 @@ URLs and pasted text (do not print N/A lines for them).
    → reads the specified file
 3. **URL** — e.g., `/review-bible-buddy https://example.com/article`
    → Do NOT use WebFetch — many news sites block it with 403.
-   Run `uv run --project {BIBLE_BUDDY} {BIBLE_BUDDY}/scripts/fetch_url.py "<URL>"` to extract article text.
+   Run `uv run --directory {BIBLE_BUDDY} scripts/fetch_url.py "<URL>"` to extract article text.
    The script auto-falls back to patchright (headless Chromium) when urllib gets 403.
 4. **Pasted text** — user pastes content directly in the conversation
    → review the pasted text
@@ -52,7 +52,7 @@ All `{BIBLE_BUDDY}` references below use the resolved path.
 
 1. Run dependency setup (one-time):
    ```bash
-   cd {BIBLE_BUDDY} && uv sync && uv run patchright install chromium
+   uv sync --directory {BIBLE_BUDDY} && uv run --directory {BIBLE_BUDDY} patchright install chromium
    ```
 
 ## How to Run
@@ -227,7 +227,7 @@ before the summary. If nothing additional is found, omit this section.
 ## Output Format
 
 **Environment detection:**
-- **Claude Code** → `uv run --project {BIBLE_BUDDY} {BIBLE_BUDDY}/scripts/detect_desktop.py bible-fact-check` → save to returned path
+- **Claude Code** → `uv run --directory {BIBLE_BUDDY} scripts/detect_desktop.py bible-fact-check` → save to returned path
 - **Cowork / Claude.ai web** → Do NOT save. Tell user: "你可以複製回應內容存檔，或在 Claude.ai 中使用 Artifact 功能下載。"
 
 Filename: `YYYYMMDD_HHmm_<slug>.md` (URL → domain+path slug, pasted → `pasted_text`; slug 一律用 `_` 分隔)
