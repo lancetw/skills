@@ -36,11 +36,8 @@ Before running any commands, check if `uv` is installed:
 which uv
 ```
 
-If `uv` is not found, tell the user "正在安裝必要工具 uv…" and install it:
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh && source "$HOME/.local/bin/env"
-```
+If `uv` is not found, **stop** and tell the user:
+「bible-buddy 需要 uv 套件管理器。請參考 https://docs.astral.sh/uv/getting-started/installation/ 安裝後再試。」
 
 Then proceed with setup:
 
