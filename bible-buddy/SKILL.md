@@ -11,17 +11,13 @@ disable-model-invocation: true
 
 ## Path Resolution
 
-Resolve `{BIBLE_BUDDY}` before anything else. Check in order:
+Resolve `{BIBLE_BUDDY}` to this skill's own installation directory. Check in order:
 
 1. **Project-level**: `.claude/skills/bible-buddy/` (relative to repo root)
 2. **User-level**: `~/.claude/skills/bible-buddy/`
 3. **Development**: `bible-buddy/` (relative to CWD)
 
 Use the first path where `scripts/` directory exists.
-If none exists, **stop** and tell the user:
-「請先安裝 bible-buddy skill：
-  - 專案層級：`npx skills add lancetw/skills/bible-buddy --project`
-  - 使用者層級：`npx skills add lancetw/skills/bible-buddy`」
 
 All `{BIBLE_BUDDY}` references below use the resolved path.
 All `references/` and `scripts/` paths in this document are relative to `{BIBLE_BUDDY}`.
