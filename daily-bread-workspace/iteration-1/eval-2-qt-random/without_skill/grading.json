@@ -1,0 +1,29 @@
+{
+  "expectations": [
+    {
+      "text": "C1: scripture quotation present",
+      "passed": true,
+      "evidence": "Found > quotation"
+    },
+    {
+      "text": "C2: original language terms",
+      "passed": false,
+      "evidence": "No original language"
+    },
+    {
+      "text": "C3: follows template (4 sections)",
+      "passed": false,
+      "evidence": "Missing sections"
+    },
+    {
+      "text": "C4: ≥3 questions in 一起想想",
+      "passed": false,
+      "evidence": "Found 0 question marks in section"
+    },
+    {
+      "text": "C5: Traditional Chinese only",
+      "passed": true,
+      "evidence": "Clean Traditional Chinese"
+    }
+  ]
+}

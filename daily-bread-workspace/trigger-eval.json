@@ -1,0 +1,82 @@
+[
+  {
+    "query": "今天靈修詩篇 23 篇，我想安靜一下",
+    "should_trigger": true
+  },
+  {
+    "query": "QT",
+    "should_trigger": true
+  },
+  {
+    "query": "最近心裡很煩，帶我靈修一段經文好嗎",
+    "should_trigger": true
+  },
+  {
+    "query": "我想默想羅馬書 8:28-30 的意思，今天就讀這段",
+    "should_trigger": true
+  },
+  {
+    "query": "今天早上的 devotional 想讀舊約，幫我選一段",
+    "should_trigger": true
+  },
+  {
+    "query": "每日靈糧，今天讀什麼好？",
+    "should_trigger": true
+  },
+  {
+    "query": "quiet time — 我想從以賽亞書開始，給我一段適合靈修的經文",
+    "should_trigger": true
+  },
+  {
+    "query": "嗎哪時間到了，今天輪到哪段經文？",
+    "should_trigger": true
+  },
+  {
+    "query": "我想安靜在神面前，讀一段經文沉澱一下今天的心情",
+    "should_trigger": true
+  },
+  {
+    "query": "最近教會在推讀經計畫，我想每天花十分鐘靈修，今天先從創世記開始好了",
+    "should_trigger": true
+  },
+  {
+    "query": "以賽亞書 7:14 的 almah 到底是不是指童女？幫我做詳細的原文分析，列出所有希伯來文證據",
+    "should_trigger": false
+  },
+  {
+    "query": "幫我寫一篇主日學教材，主題是「耶穌的比喻」，要有教學大綱和活動設計",
+    "should_trigger": false
+  },
+  {
+    "query": "我在準備講章，題目是約翰福音 3:16，需要逐節解讀和希臘文分析",
+    "should_trigger": false
+  },
+  {
+    "query": "幫我把這篇基督教新聞 fact check 一下，看有沒有引用錯誤的經文 https://example.com/article",
+    "should_trigger": false
+  },
+  {
+    "query": "我要比較和合本、新譯本和呂振中的翻譯差異，列一個表格",
+    "should_trigger": false
+  },
+  {
+    "query": "寫一個 Python script 來 parse BibleGateway 的 API，抓取 RCUV 經文存成 JSON",
+    "should_trigger": false
+  },
+  {
+    "query": "教會小組要討論加爾文主義五要點，幫我準備正反兩方的論點整理",
+    "should_trigger": false
+  },
+  {
+    "query": "我在做學術報告，需要列出死海古卷和馬所拉文本之間的差異",
+    "should_trigger": false
+  },
+  {
+    "query": "幫我查一下「因信稱義」這個概念在路德和新觀點學派之間的爭議，要學術層級的分析",
+    "should_trigger": false
+  },
+  {
+    "query": "我想了解猶太教和基督教對彌賽亞概念的差異，寫一篇比較分析",
+    "should_trigger": false
+  }
+]
