@@ -12,7 +12,7 @@ Taiwan Traditional Chinese (繁體中文) skills for AI coding agents.
 | [weather-hint-tw](weather-hint-tw/SKILL.md) | Friendly weather reminders with outfit advice, auto IP detection |
 | [bible-buddy](bible-buddy/SKILL.md) | First-century Hebrew scripture interpretation from Yeshua's Jewish perspective |
 | [bible-fact-check](bible-fact-check/SKILL.md) | 10-point quality checklist for biblical content review |
-| [daily-bread](daily-bread/SKILL.md) | Daily devotional with first-century Jewish pedagogy for mainstream Christians (requires bible-buddy) |
+| [daily-bread](daily-bread/SKILL.md) | Daily devotional / QT guide with first-century Jewish pedagogy for mainstream Christians (requires bible-buddy) |
 
 See each skill's `SKILL.md` for details.
 
