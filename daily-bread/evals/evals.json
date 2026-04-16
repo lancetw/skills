@@ -1,0 +1,26 @@
+{
+  "skill_name": "daily-bread",
+  "evals": [
+    {
+      "id": 0,
+      "name": "psalm46-specific-passage",
+      "prompt": "今天靈修詩篇 46:10",
+      "expected_output": "A devotional on Psalm 46:10 that uses mashal (immersive scene of the war context), remez (hinting that harpu means 'stop fighting' not 'be still in meditation'), havruta (questions with no obvious right answer), and berakhah (short specific prayer). Should NOT read like a standard QT book.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "stress-topic-mode",
+      "prompt": "我最近壓力很大，有什麼經文可以靈修？",
+      "expected_output": "Should pick a suitable passage (not just Jeremiah 29:11 or Phil 4:13 as proof-texts), fetch original language, and produce a devotional that avoids naive individualization (anti-pattern #12). Should invite the reader into the original story, not rip a verse out of context as personal promise.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "qt-random-minimal",
+      "prompt": "QT",
+      "expected_output": "Should trigger the skill, randomly select a passage from commonly-misread-passages.md, fetch scripture, and produce a complete devotional following the full template (走進經文 / 你可能沒注意到的 / 一起想想 / 回應 / 原文小筆記).",
+      "files": []
+    }
+  ]
+}
