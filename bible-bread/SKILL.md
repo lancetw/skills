@@ -125,15 +125,19 @@ translation **in parallel**:
 
 **Old Testament** (run both in parallel):
 ```bash
-uv run --directory {BIBLE_BUDDY} scripts/fetch_sefaria.py "<book> <chapter>:<verses>"
-uv run --directory {BIBLE_BUDDY} scripts/fetch_biblegateway.py "<book> <chapter>:<verses>" --version RCUV
+uv run --directory {BIBLE_BUDDY} scripts/fetch_sefaria.py <book> <chapter> <start_verse> <end_verse>
+uv run --directory {BIBLE_BUDDY} scripts/fetch_biblegateway.py <book> <chapter>:<start>-<end> --version RCUV
 ```
+Example: `fetch_sefaria.py 以賽亞書 7 10 17` + `fetch_biblegateway.py 以賽亞書 7:10-17 --version RCUV`
 
 **New Testament** (run both in parallel):
 ```bash
-uv run --directory {BIBLE_BUDDY} scripts/fetch_fhl.py "<book> <chapter>:<verses>"
-uv run --directory {BIBLE_BUDDY} scripts/fetch_biblegateway.py "<book> <chapter>:<verses>" --version RCUV
+uv run --directory {BIBLE_BUDDY} scripts/fetch_fhl.py <book> <chapter> <start_verse> <end_verse>
+uv run --directory {BIBLE_BUDDY} scripts/fetch_biblegateway.py <book> <chapter>:<start>-<end> --version RCUV
 ```
+Example: `fetch_fhl.py 馬太福音 5 17 20` + `fetch_biblegateway.py 馬太福音 5:17-20 --version RCUV`
+
+**Note:** `fetch_sefaria.py` and `fetch_fhl.py` use space-separated positional args; `fetch_biblegateway.py` uses colon format.
 
 Keep the passage range to about 3–8 verses. Don't fetch an entire chapter — devotion
 requires focus.
