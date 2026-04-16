@@ -154,6 +154,7 @@ Before writing, check these resources on demand (don't load everything at once):
 4. **Historical context**: Read `{BIBLE_BUDDY}/references/second-temple-timeline.md` (67 lines)
 5. **Yeshua's interpretive methods** (when passage involves Yeshua's teaching): Read `{BIBLE_BUDDY}/references/yeshua-hermeneutics.md` (122 lines)
 6. **Fun facts**: Grep `{BIBLE_BUDDY}/references/fun-facts.md` for related observations
+7. **Character / profession / place check** (mandatory before writing): For EVERY named person, profession, and place in the passage (e.g., 約瑟/木匠/拿撒勒/抹大拉的馬利亞/法利賽人), grep all three: `fun-facts.md`, `greek-key-terms.md`, `hebrew-key-terms.md`. Translation tradition often narrows these (e.g., τέκτων ≠ 木匠; 抹大拉 ≠ 妓女; φαρισαῖος ≠ 偽善者). This catch-step prevents inherited-translation errors.
 
 ### Step 4: Write Devotional Content
 
@@ -352,6 +353,7 @@ Serve mainstream Christians' devotional needs with first-century Jewish rigor.
 10. ❌ Vague application ("Let us trust God more" — be specific)
 11. ❌ Revealing the pedagogy — never say "this is a mashal technique" or "using remez method" in the output. The reader should experience the method, not study it.
 12. ❌ Naive individualization — ripping a national/historical promise out of context and applying it to personal life (see church-practices.md #12). Instead, invite the reader *into* the original story: "Where are you in this exile? What is your Babylon?"
+13. ❌ Translation-tradition narrowing — inheriting English/Chinese translation defaults that have narrowed the original meaning. Examples: 木匠 for τέκτων (actually 工匠/建造者), 童女 for עלמה almah in 賽 7:14 (actually 少婦), 悔改 as emotional regret for μετάνοια/תשובה (actually 轉換方向). Before naming any profession, role, or concept, check Vocabulary Preferences and grep `fun-facts.md`, `greek-key-terms.md`, `hebrew-key-terms.md`.
 
 ### Vocabulary Preferences
 
@@ -362,6 +364,8 @@ Use these in devotional body text. RCUV quotations keep the original translation
 | 舊約 (Old Testament) | 希伯來聖經 (Hebrew Bible) | "Old" implies superseded |
 | 律法 (Law) | 妥拉 (Torah) | Torah means "teaching," not "law" |
 | 耶和華 (Jehovah) | 上主 or YHWH | "Jehovah" is a medieval mispronunciation |
+| 木匠 (carpenter) — for Joseph / Yeshua | 工匠／建造者 (τέκτων tekton) | tekton 泛指木、石、金屬工匠；加利利石材遠多於木材，拿撒勒 6 km 外的 Sepphoris 是希律·安提帕的大型石造工地 |
+| 童女 (virgin) — in 賽 7:14 引用時 | 少婦／年輕女子 (עלמה almah) | almah 指適婚年齡女子，不必然處女；LXX 譯 parthenos 才狹義化 |
 
 ### Length Control
 
