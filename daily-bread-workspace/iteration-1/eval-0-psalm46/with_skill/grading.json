@@ -1,0 +1,29 @@
+{
+  "expectations": [
+    {
+      "text": "A1: harpu insight (住手/停止戰鬥)",
+      "passed": true,
+      "evidence": "Found harpu/raphah reference"
+    },
+    {
+      "text": "A2: war context mentioned",
+      "passed": true,
+      "evidence": "War language found"
+    },
+    {
+      "text": "A3: follows template (4 sections)",
+      "passed": true,
+      "evidence": "All 4 sections present"
+    },
+    {
+      "text": "A4: no pedagogy labels leaked",
+      "passed": true,
+      "evidence": "Clean - no method names"
+    },
+    {
+      "text": "A5: prayer ≤ 5 lines",
+      "passed": true,
+      "evidence": "Prayer has 5 lines"
+    }
+  ]
+}

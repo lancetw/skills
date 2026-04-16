@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "skill_name": "daily-bread",
+    "skill_path": "/Users/lancetw/Documents/vibe_workspace/skills/lancetw/skills/daily-bread",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-04-16T13:52:00Z",
+    "evals_run": ["eval-0-psalm46", "eval-1-stress-topic", "eval-2-qt-random"],
+    "runs_per_configuration": 1
+  },
+  "configurations": [
+    {
+      "name": "with_skill",
+      "description": "Using daily-bread skill"
+    },
+    {
+      "name": "without_skill",
+      "description": "Baseline (no skill)"
+    }
+  ],
+  "runs": [
+    {
+      "eval_name": "eval-0-psalm46",
+      "with_skill": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "total": 5,
+        "time_seconds": 270.5,
+        "tokens": 48940
+      },
+      "without_skill": {
+        "pass_rate": 0.4,
+        "passed": 2,
+        "total": 5,
+        "time_seconds": 49.6,
+        "tokens": 13643
+      }
+    },
+    {
+      "eval_name": "eval-1-stress-topic",
+      "with_skill": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "total": 5,
+        "time_seconds": 265.9,
+        "tokens": 58236
+      },
+      "without_skill": {
+        "pass_rate": 0.6,
+        "passed": 3,
+        "total": 5,
+        "time_seconds": 38.4,
+        "tokens": 13141
+      }
+    },
+    {
+      "eval_name": "eval-2-qt-random",
+      "with_skill": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "total": 5,
+        "time_seconds": 296.4,
+        "tokens": 63605
+      },
+      "without_skill": {
+        "pass_rate": 0.4,
+        "passed": 2,
+        "total": 5,
+        "time_seconds": 35.1,
+        "tokens": 13043
+      }
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "mean_pass_rate": 0.87,
+      "mean_time_seconds": 277.6,
+      "mean_tokens": 56927
+    },
+    "without_skill": {
+      "mean_pass_rate": 0.47,
+      "mean_time_seconds": 41.0,
+      "mean_tokens": 13276
+    },
+    "delta": {
+      "pass_rate": "+0.40",
+      "time_seconds": "+236.6",
+      "tokens": "+43651"
+    }
+  },
+  "notes": [
+    "With-skill runs take ~5x longer due to scripture fetch scripts (Sefaria, BibleGateway, FHL APIs)",
+    "Pass rate delta of +0.40 driven primarily by template compliance (A3/B4/C3) and pedagogy concealment (A4)",
+    "Baseline knows raphah/harpu (A1 partial) but frames it in modern devotional context, not war context",
+    "With-skill eval-2 landed on Mark 16:17-18 manuscript controversy — extremely high-quality output that baseline could never produce"
+  ]
+}

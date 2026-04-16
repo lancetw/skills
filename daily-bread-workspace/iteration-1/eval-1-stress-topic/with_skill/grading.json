@@ -1,0 +1,29 @@
+{
+  "expectations": [
+    {
+      "text": "B1: avoids naive individualization",
+      "passed": true,
+      "evidence": "No naive personal-promise language"
+    },
+    {
+      "text": "B2: historical context present",
+      "passed": true,
+      "evidence": "Historical references found"
+    },
+    {
+      "text": "B3: original language terms",
+      "passed": false,
+      "evidence": "No original language"
+    },
+    {
+      "text": "B4: follows template (4 sections)",
+      "passed": true,
+      "evidence": "All 4 sections present"
+    },
+    {
+      "text": "B5: no churchy jargon",
+      "passed": true,
+      "evidence": "Clean language"
+    }
+  ]
+}
