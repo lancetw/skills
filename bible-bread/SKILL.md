@@ -165,6 +165,7 @@ All output is in Traditional Chinese (Taiwan). The template below shows the stru
 # 每日靈修：{書卷名} {章}:{節}
 
 > {RCUV Chinese text — full quotation of the selected range}
+> — {版本名稱}（如：和合本修訂版 RCUV）
 
 ## 走進經文
 
