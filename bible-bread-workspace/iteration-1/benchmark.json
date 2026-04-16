@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "skill_name": "daily-bread",
-    "skill_path": "/Users/lancetw/Documents/vibe_workspace/skills/lancetw/skills/daily-bread",
+    "skill_name": "bible-bread",
+    "skill_path": "/Users/lancetw/Documents/vibe_workspace/skills/lancetw/skills/bible-bread",
     "executor_model": "claude-opus-4-6",
     "analyzer_model": "claude-opus-4-6",
     "timestamp": "2026-04-16T13:52:00Z",
@@ -11,7 +11,7 @@
   "configurations": [
     {
       "name": "with_skill",
-      "description": "Using daily-bread skill"
+      "description": "Using bible-bread skill"
     },
     {
       "name": "without_skill",

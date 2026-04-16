@@ -1,5 +1,5 @@
 ---
-name: daily-bread
+name: bible-bread
 description: >
   Invoke for ANY personal Bible devotion or scripture meditation request. This is
   a daily quiet time (QT) guide — use it whenever the user wants spiritual
@@ -69,7 +69,7 @@ Resolve `{BIBLE_BUDDY}` before anything else. Check in order:
 Use the first path where `scripts/` directory exists.
 If neither exists, **stop immediately** and tell the user:
 
-「daily-bread 需要 bible-buddy skill。請先安裝：
+「bible-bread 需要 bible-buddy skill。請先安裝：
   - 專案層級：`npx skills add lancetw/skills/bible-buddy --project`
   - 使用者層級：`npx skills add lancetw/skills/bible-buddy`」
 
@@ -247,11 +247,11 @@ as revealed in the moment. Not laundry lists of requests or emotional performanc
 
 **Detect environment:**
 ```bash
-uv run --directory {BIBLE_BUDDY} scripts/detect_desktop.py daily-bread
+uv run --directory {BIBLE_BUDDY} scripts/detect_desktop.py bible-bread
 ```
 
 **Claude Code (desktop):**
-- Save to: `{Desktop}/daily-bread/YYYYMMDD_{book}_{chapter}.md`
+- Save to: `{Desktop}/bible-bread/YYYYMMDD_{book}_{chapter}.md`
 - Also display the full content in the conversation
 
 **Claude.ai (web):**

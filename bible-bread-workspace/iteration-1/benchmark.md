@@ -1,4 +1,4 @@
-# Skill Benchmark: daily-bread
+# Skill Benchmark: bible-bread
 
 **Model**: <model-name>
 **Date**: 2026-04-16T13:51:59Z
