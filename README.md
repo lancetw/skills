@@ -7,6 +7,7 @@ Taiwan Traditional Chinese (繁體中文) skills for AI coding agents.
 | Skill | Description |
 |-------|-------------|
 | [learn-tw](learn-tw/SKILL.md) | Generate personalized learning docs in Taiwan Traditional Chinese |
+| [markdown-to-html](markdown-to-html/SKILL.md) | Convert any Markdown file into a styled, readable 好讀版 HTML page for long-form Traditional Chinese reading |
 | [prd-tw](prd-tw/SKILL.md) | Help non-technical stakeholders write clear requirements documents in Taiwan Traditional Chinese |
 | [humanizer-zh-tw](humanizer-zh-tw/SKILL.md) | Remove AI-generated traces from Chinese text |
 | [weather-hint-tw](weather-hint-tw/SKILL.md) | Friendly weather reminders with outfit advice, auto IP detection |
