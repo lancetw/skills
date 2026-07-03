@@ -1,0 +1,18 @@
+[project]
+name = "markdown-to-html"
+version = "0.1.0"
+description = "Convert any Markdown file into a styled, readable Traditional Chinese HTML page (好讀版)"
+requires-python = ">=3.11"
+dependencies = [
+    "markdown>=3.5",
+]
+
+[dependency-groups]
+# playwright drives the real-browser scroll-spy test (tests/test_scrollspy_click.py);
+# the test skips itself where the browser binary is absent. Install it once with:
+#     uv run playwright install chromium
+dev = ["pytest>=8.0", "playwright>=1.40"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts"]
