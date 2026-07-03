@@ -1443,9 +1443,28 @@ _INSIGHT_BLOCK = re.compile(
     re.MULTILINE | re.DOTALL,
 )
 
+# A third form: the whole block wrapped in a Markdown blockquote (`> ★ Insight ─…`,
+# every line `> `-prefixed, trailing double spaces for hard breaks). The bible-*
+# skills mandate this form in their saved documents, so it is what their converter
+# input actually contains. Matched as a unit here, then the quote markers are
+# stripped so the block falls through to _INSIGHT_BLOCK like the plain form.
+_INSIGHT_BLOCKQUOTE = re.compile(
+    r"^>[ \t]*`?★[ \t]*Insight[ \t]*─{3,}[^\n]*\n"
+    r"(?:>[^\n]*\n)*?"
+    r">[ \t]*`?[ \t]*─{3,}[ \t]*`?[ \t]*$",
+    re.MULTILINE,
+)
+
 
 def _wrap_insights(md_text: str) -> str:
     """Rewrite ★ Insight box-drawing blocks into a styled callout div."""
+
+    def unquote(match: re.Match) -> str:
+        # Strip one `>` and at most one following space per line, preserving
+        # the rest (including the hard-break trailing spaces).
+        return re.sub(r"^>[ \t]?", "", match.group(0), flags=re.MULTILINE)
+
+    md_text = _INSIGHT_BLOCKQUOTE.sub(unquote, md_text)
 
     def repl(match: re.Match) -> str:
         inner = match.group(1).strip("\n")
