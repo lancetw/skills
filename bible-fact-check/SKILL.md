@@ -235,7 +235,10 @@ Filename: `YYYYMMDD_HHmm_<slug>.md` (URL → domain+path slug, pasted → `paste
 When reviewing a **URL or pasted text** (not a bible-buddy reference file):
 1. Detect Desktop path using the script above
 2. Write the full report to `<detected-path>/YYYYMMDD_HHmm_<slug>.md`
-3. Show only the summary table in the conversation, with the file path
+3. Generate the mobile-friendly HTML 好讀版 (deterministic transform; never hand-write the HTML): `uv run --directory {BIBLE_BUDDY} scripts/md_to_html.py <absolute path to saved .md>` — writes a sibling `.html`; relay the `file://` link the script prints
+4. Show only the summary table in the conversation, with both file paths
+
+In **Cowork / Claude.ai web** the report is not saved to the user's Desktop, but the 好讀版 still ships: write the report `.md` to a temporary working directory, run the converter, and deliver the resulting `.html` to the user (downloadable file / Artifact).
 
 When reviewing a **bible-buddy reference file**: output the full report in the conversation as before.
 

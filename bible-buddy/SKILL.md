@@ -246,6 +246,17 @@ This ensures the study document is fully accessible to Chinese-reading users. Th
 - **Claude Code** → `uv run --directory {BIBLE_BUDDY} scripts/detect_desktop.py bible-buddy` → save to returned path
 - **Cowork / Claude.ai web** → Do NOT save. Tell user: "你可以複製回應內容存檔，或在 Claude.ai 中使用 Artifact 功能下載。"
 
+**HTML 好讀版 (every environment):** After the `.md` is written, generate the mobile-friendly HTML with the bundled converter (a deterministic transform; never hand-write the HTML):
+
+```bash
+uv run --directory {BIBLE_BUDDY} scripts/md_to_html.py <absolute path to .md>
+```
+
+This writes a sibling `.html` with the same name, styled for comfortable phone reading (responsive layout, dark mode, ★ Insight callouts).
+
+- **Claude Code** → convert the auto-saved `.md`; relay the `file://` link the script prints alongside the `.md` path.
+- **Cowork / Claude.ai web** → the `.md` is not saved to the user's Desktop, but the 好讀版 still ships: write the `.md` to a temporary working directory, run the converter, and deliver the resulting `.html` to the user (downloadable file / Artifact).
+
 **YAML frontmatter fields:** `created`, `date`, `reference`, `topic`, `study_type`, `sources`, `verified_claims`, `unverified_claims`
 
 ### Step 6: Follow Up — AskUserQuestion (MANDATORY)

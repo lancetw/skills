@@ -30,6 +30,7 @@ name = "bible-buddy"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "markdown" },
     { name = "patchright" },
     { name = "pygments" },
     { name = "pymupdf4llm" },
@@ -39,6 +40,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "markdown", specifier = ">=3.5" },
     { name = "patchright" },
     { name = "pygments", specifier = ">=2.18,<2.20" },
     { name = "pymupdf4llm", specifier = ">=1.27.2.2" },

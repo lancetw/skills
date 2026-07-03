@@ -272,6 +272,11 @@ uv run --directory {BIBLE_BUDDY} scripts/detect_desktop.py bible-bread
 
 **Claude Code (desktop):**
 - Save to: `{Desktop}/bible-bread/YYYYMMDD_{book}_{chapter}.md`
+- **Also generate the mobile-friendly HTML 好讀版** — run bible-buddy's converter on the saved file (a deterministic transform; never hand-write the HTML):
+  ```bash
+  uv run --directory {BIBLE_BUDDY} scripts/md_to_html.py <absolute path to saved .md>
+  ```
+  This writes a sibling `.html` with the same name, styled for comfortable phone reading (responsive layout, dark mode, ★ Insight callouts). Relay the `file://` link the script prints so the user can open it directly.
 - Also display the full content in the conversation
 
 **★ Insight blocks MUST be written to the saved file** — bible-bread markdown output is a devotional document, not source code. All `★ Insight` educational content must be included in the saved file using blockquote format:
@@ -286,9 +291,10 @@ uv run --directory {BIBLE_BUDDY} scripts/detect_desktop.py bible-bread
 
 This rule overrides the Explanatory output style default of "not in the codebase."
 
-**Claude.ai (web):**
+**Claude.ai (web) / Cowork:**
 - Display the full content in the conversation
-- Remind the user they can copy/save
+- **The HTML 好讀版 still ships here** — write the devotional `.md` to a temporary working directory, run the same converter, and deliver the resulting `.html` to the user (downloadable file / Artifact)
+- Remind the user they can copy/save the markdown
 
 ### Step 6: Follow-Up Interaction
 

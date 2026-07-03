@@ -8,6 +8,7 @@ dependencies = [
     "pygments>=2.18,<2.20",
     "text-fabric[github]>=13.1.0",
     "pymupdf4llm>=1.27.2.2",
+    "markdown>=3.5",
 ]
 
 [tool.uv]
