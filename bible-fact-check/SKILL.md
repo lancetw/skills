@@ -48,6 +48,13 @@ If neither exists, **stop immediately** and tell the user:
 
 All `{BIBLE_BUDDY}` references below use the resolved path.
 
+Resolve `{MARKDOWN_TO_HTML}` (optional — for the HTML 好讀版). Check in order:
+
+1. **Project-level**: `.claude/skills/markdown-to-html/` (relative to repo root)
+2. **User-level**: `~/.claude/skills/markdown-to-html/`
+
+Use the first path where `scripts/md_to_html.py` exists. If none exists, the skill is not installed — skip the HTML step silently.
+
 ## Prerequisites
 
 1. Run dependency setup (one-time):
@@ -235,10 +242,10 @@ Filename: `YYYYMMDD_HHmm_<slug>.md` (URL → domain+path slug, pasted → `paste
 When reviewing a **URL or pasted text** (not a bible-buddy reference file):
 1. Detect Desktop path using the script above
 2. Write the full report to `<detected-path>/YYYYMMDD_HHmm_<slug>.md`
-3. Generate the mobile-friendly HTML 好讀版 (deterministic transform; never hand-write the HTML): `uv run --directory {BIBLE_BUDDY} scripts/md_to_html.py <absolute path to saved .md>` — writes a sibling `.html`; relay the `file://` link the script prints
+3. Generate the mobile-friendly HTML 好讀版 (optional — deterministic transform; never hand-write the HTML): if the `markdown-to-html` skill is installed, run `uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py <absolute path to saved .md>` — writes a sibling `.html`; relay the `file://` link the script prints. If it is not installed, **skip the HTML step silently**
 4. Show only the summary table in the conversation, with both file paths
 
-In **Cowork / Claude.ai web** the report is not saved to the user's Desktop, but the 好讀版 still ships: write the report `.md` to a temporary working directory, run the converter, and deliver the resulting `.html` to the user (downloadable file / Artifact).
+In **Cowork / Claude.ai web** the report is not saved to the user's Desktop, but the 好讀版 still ships (if `markdown-to-html` is installed): write the report `.md` to a temporary working directory, run the converter, and deliver the resulting `.html` to the user (downloadable file / Artifact); skip it silently if the skill is absent.
 
 When reviewing a **bible-buddy reference file**: output the full report in the conversation as before.
 
