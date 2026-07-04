@@ -85,6 +85,13 @@ If neither exists, **stop immediately** and tell the user:
 
 All `{BIBLE_BUDDY}` references below use the resolved path.
 
+Resolve `{MARKDOWN_TO_HTML}` (optional — for the HTML 好讀版). Check in order:
+
+1. **Project-level**: `.claude/skills/markdown-to-html/` (relative to repo root)
+2. **User-level**: `~/.claude/skills/markdown-to-html/`
+
+Use the first path where `scripts/md_to_html.py` exists. If none exists, the skill is not installed — skip the HTML step silently.
+
 ## Prerequisites
 
 ```bash
@@ -272,11 +279,11 @@ uv run --directory {BIBLE_BUDDY} scripts/detect_desktop.py bible-bread
 
 **Claude Code (desktop):**
 - Save to: `{Desktop}/bible-bread/YYYYMMDD_{book}_{chapter}.md`
-- **Also generate the mobile-friendly HTML 好讀版** — run bible-buddy's converter on the saved file (a deterministic transform; never hand-write the HTML):
+- **Also generate the mobile-friendly HTML 好讀版 (optional)** — if the `markdown-to-html` skill is installed, delegate the conversion to it (a deterministic transform; never hand-write the HTML):
   ```bash
-  uv run --directory {BIBLE_BUDDY} scripts/md_to_html.py <absolute path to saved .md>
+  uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py <absolute path to saved .md>
   ```
-  This writes a sibling `.html` with the same name, styled for comfortable phone reading (responsive layout, dark mode, ★ Insight callouts). Relay the `file://` link the script prints so the user can open it directly.
+  This writes a sibling `.html` with the same name, styled for comfortable phone reading (responsive layout, dark mode, ★ Insight callouts). Relay the `file://` link the script prints so the user can open it directly. If `markdown-to-html` is not installed, **skip the HTML step silently** — the `.md` is the deliverable.
 - Also display the full content in the conversation
 
 **★ Insight blocks MUST be written to the saved file** — bible-bread markdown output is a devotional document, not source code. All `★ Insight` educational content must be included in the saved file using blockquote format:
@@ -293,7 +300,7 @@ This rule overrides the Explanatory output style default of "not in the codebase
 
 **Claude.ai (web) / Cowork:**
 - Display the full content in the conversation
-- **The HTML 好讀版 still ships here** — write the devotional `.md` to a temporary working directory, run the same converter, and deliver the resulting `.html` to the user (downloadable file / Artifact)
+- **The HTML 好讀版 still ships here (if `markdown-to-html` is installed)** — write the devotional `.md` to a temporary working directory, run the same converter, and deliver the resulting `.html` to the user (downloadable file / Artifact); skip it silently if the skill is absent
 - Remind the user they can copy/save the markdown
 
 ### Step 6: Follow-Up Interaction

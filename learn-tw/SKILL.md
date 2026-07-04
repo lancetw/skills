@@ -1,6 +1,6 @@
 ---
 name: learn-tw
-description: Generate a personalized learning document that explains a project in plain, engaging Taiwan Traditional Chinese, produced as BOTH a Markdown file (FOR[yourname].md) AND a styled, readable HTML version (FOR[yourname].html). Covers technical architecture, codebase structure, technologies, design decisions, and lessons learned. Use when user wants to understand a codebase deeply, create project documentation for learning purposes, or wants a nicely formatted / 好讀版 / HTML learning doc to read or share.
+description: Generate a personalized learning document that explains a project in plain, engaging Taiwan Traditional Chinese, produced as a Markdown file (FOR[yourname].md) — plus, when the markdown-to-html skill is installed, a styled, readable HTML version (FOR[yourname].html). Covers technical architecture, codebase structure, technologies, design decisions, and lessons learned. Use when user wants to understand a codebase deeply, create project documentation for learning purposes, or wants a nicely formatted / 好讀版 / HTML learning doc to read or share.
 license: MIT
 ---
 
@@ -8,10 +8,10 @@ license: MIT
 
 Create engaging, personalized learning documents that explain projects in plain language.
 
-Every run produces two files together:
+Every run produces the Markdown file; the HTML 好讀版 ships alongside it whenever the optional `markdown-to-html` skill is installed:
 
-- **`FOR[yourname].md`** — plain Markdown; easy to version-control, diff, and read in a terminal.
-- **`FOR[yourname].html`** — the readable version, an editorial "書卷感" layout tuned for long-form Chinese (warm-paper editorial design, a 6-font Chinese font switcher, a scroll-spy table of contents, a reading-progress bar, auto-numbered sections, a light/dark theme toggle, rendered Mermaid diagrams, printable). It is generated from the `.md` by `scripts/md_to_html.py`, so the content has a single source and the HTML is never hand-written.
+- **`FOR[yourname].md`** — plain Markdown; easy to version-control, diff, and read in a terminal. This is the primary deliverable and always ships.
+- **`FOR[yourname].html`** — the readable version, an editorial "書卷感" layout tuned for long-form Chinese (warm-paper editorial design, a 6-font Chinese font switcher, a scroll-spy table of contents, a reading-progress bar, auto-numbered sections, a light/dark theme toggle, rendered Mermaid diagrams, printable). It is generated from the `.md` by the `markdown-to-html` skill's converter, so the content has a single source and the HTML is never hand-written. If that skill is not installed, this step is skipped silently and only the `.md` ships.
 
 ## Language Requirements
 
@@ -204,34 +204,41 @@ Guidance:
    (browser tab + heading at the top of the readable HTML), so it must read like a
    title, not `FOR[username].md`.
 6. Save to project root
-7. **Generate the readable HTML version** by running the bundled converter on the `.md`.
-   Run `uv sync` first so the `markdown` dependency is installed (this surfaces any
-   dependency/network problem up front instead of mid-generation), then convert:
+7. **Generate the readable HTML version (optional)** by delegating to the
+   `markdown-to-html` skill — learn-tw does **not** bundle its own converter.
+   Resolve `{MARKDOWN_TO_HTML}` to the first of these where `scripts/md_to_html.py`
+   exists: `.claude/skills/markdown-to-html/` (project) then
+   `~/.claude/skills/markdown-to-html/` (user). If it resolves, convert:
 
    ```bash
-   uv sync --project <skill-dir>
-   uv run --project <skill-dir> python <skill-dir>/scripts/md_to_html.py FOR[username].md
+   uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py FOR[username].md
    ```
 
-   This writes `FOR[username].html` next to the Markdown file. Always do this
-   step — the two outputs ship together. The script prints the **absolute** paths
-   of both files plus a `file://` link; relay those to the user verbatim so they
-   can open the `.html` directly (e.g. `open FOR[username].html`).
+   This writes `FOR[username].html` next to the Markdown file. The script prints the
+   **absolute** paths of both files plus a `file://` link; relay those to the user
+   verbatim so they can open the `.html` directly (e.g. `open FOR[username].html`).
+   If `markdown-to-html` is not installed, **skip this step silently** — the `.md` is
+   the deliverable.
 
 ## Generating the Readable HTML Version
 
-Markdown → HTML is a pure deterministic transform, so it is handled by
-`scripts/md_to_html.py` — **do not hand-write the HTML** (the single source of
-truth is the `.md`; hand-writing risks the two copies drifting apart).
+Markdown → HTML is a pure deterministic transform, delegated to the optional
+`markdown-to-html` skill — **do not hand-write the HTML** (the single source of
+truth is the `.md`; hand-writing risks the two copies drifting apart). learn-tw
+does not bundle or maintain its own converter.
+
+Resolve `{MARKDOWN_TO_HTML}` — the first of `.claude/skills/markdown-to-html/`
+(project) or `~/.claude/skills/markdown-to-html/` (user) where
+`scripts/md_to_html.py` exists. If none exists, the skill is not installed; skip
+the HTML step silently and ship only the `.md`.
 
 ```bash
-# Sync first so the skill's `markdown` dependency is installed before generating.
-uv sync
-# Run via uv — it resolves the skill's `markdown` dependency from pyproject.toml.
+# Run via the markdown-to-html skill's own project (it resolves the `markdown`
+# dependency from that skill's pyproject.toml).
 # Default: writes a sibling .html with the same name
-uv run python scripts/md_to_html.py FOR[username].md
+uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py FOR[username].md
 # Or specify an explicit output path
-uv run python scripts/md_to_html.py FOR[username].md /path/to/output.html
+uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py FOR[username].md /path/to/output.html
 ```
 
 What the readable version gives you (a single self-contained HTML file; it loads the
@@ -260,7 +267,7 @@ falls back to system fonts / readable source when offline):
 
 Dependencies:
 
-- The Python `markdown` package at generation time — declared in this skill's `pyproject.toml`, so `uv sync` (or running via `uv run`) provides it. Use `uv`, not `pip`.
+- The HTML step requires the optional `markdown-to-html` skill; its converter and the Python `markdown` package it needs are declared in *that* skill's `pyproject.toml`, so `uv run --project {MARKDOWN_TO_HTML}` provides them. Use `uv`, not `pip`. Without the skill, the HTML step is skipped and this dependency is not needed.
 - mermaid.js is loaded from a CDN at **view** time — nothing to install, but the first
   open of an HTML containing diagrams needs network access (only the library is fetched;
   diagram content stays local).

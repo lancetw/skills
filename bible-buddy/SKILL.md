@@ -22,6 +22,13 @@ Use the first path where `scripts/` directory exists.
 All `{BIBLE_BUDDY}` references below use the resolved path.
 All `references/` and `scripts/` paths in this document are relative to `{BIBLE_BUDDY}`.
 
+Resolve `{MARKDOWN_TO_HTML}` to the optional `markdown-to-html` skill (used for the HTML 好讀版). Check in order:
+
+1. **Project-level**: `.claude/skills/markdown-to-html/` (relative to repo root)
+2. **User-level**: `~/.claude/skills/markdown-to-html/`
+
+Use the first path where `scripts/md_to_html.py` exists. If none exists, the skill is not installed — skip the HTML step silently.
+
 ## Prerequisites
 
 ### Dependency Setup
@@ -246,16 +253,23 @@ This ensures the study document is fully accessible to Chinese-reading users. Th
 - **Claude Code** → `uv run --directory {BIBLE_BUDDY} scripts/detect_desktop.py bible-buddy` → save to returned path
 - **Cowork / Claude.ai web** → Do NOT save. Tell user: "你可以複製回應內容存檔，或在 Claude.ai 中使用 Artifact 功能下載。"
 
-**HTML 好讀版 (every environment):** After the `.md` is written, generate the mobile-friendly HTML with the bundled converter (a deterministic transform; never hand-write the HTML):
+**HTML 好讀版 (optional — requires the `markdown-to-html` skill):** After the `.md` is written, delegate the conversion to the `markdown-to-html` skill if it is installed (a deterministic transform; never hand-write the HTML). bible-buddy does **not** bundle its own converter.
+
+Resolve `{MARKDOWN_TO_HTML}` — the first of these where `scripts/md_to_html.py` exists:
+1. `.claude/skills/markdown-to-html/` (project) · 2. `~/.claude/skills/markdown-to-html/` (user)
+
+If it resolves, generate the sibling `.html`:
 
 ```bash
-uv run --directory {BIBLE_BUDDY} scripts/md_to_html.py <absolute path to .md>
+uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py <absolute path to .md>
 ```
 
-This writes a sibling `.html` with the same name, styled for comfortable phone reading (responsive layout, dark mode, ★ Insight callouts).
+This writes a sibling `.html` with the same name, styled for comfortable phone reading (responsive layout, dark mode, ★ Insight callouts, parsed YAML frontmatter panel).
 
 - **Claude Code** → convert the auto-saved `.md`; relay the `file://` link the script prints alongside the `.md` path.
 - **Cowork / Claude.ai web** → the `.md` is not saved to the user's Desktop, but the 好讀版 still ships: write the `.md` to a temporary working directory, run the converter, and deliver the resulting `.html` to the user (downloadable file / Artifact).
+
+If `markdown-to-html` is not installed, **skip the HTML step silently** — the `.md` is the deliverable.
 
 **YAML frontmatter fields:** `created`, `date`, `reference`, `topic`, `study_type`, `sources`, `verified_claims`, `unverified_claims`
 

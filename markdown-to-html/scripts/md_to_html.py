@@ -30,6 +30,7 @@ Design notes:
 
 from __future__ import annotations
 
+import html
 import json
 import re
 import sys
@@ -149,6 +150,42 @@ main {
 }
 .meta { display: block; color: var(--faint); font-size: .82rem; letter-spacing: .03em; margin: 0 0 2rem; }
 
+/* Frontmatter panel: a leading YAML block parsed (see _render_meta_card) into a quiet
+   metadata byline under the H1. Field-agnostic — it renders ANY Markdown's frontmatter,
+   not one fixed shape: every field is a label|value row, nothing folded, nothing
+   assumed. No box chrome (left bar / shadow / radius), so it never reads as another
+   .insight or .self-check content box; hierarchy comes from type, not a frame. */
+.doc-meta { margin: 0 0 3rem; font-size: .84rem; }
+.doc-meta dl {
+  margin: 0; display: grid;
+  grid-template-columns: max-content 1fr;   /* label column only as wide as its widest key */
+  gap: .45rem 1.15rem;
+}
+.doc-meta dt {
+  color: var(--accent); font-weight: 700;
+  letter-spacing: .08em;                     /* small, spaced — reads as a label, not prose */
+  white-space: nowrap; align-self: start;
+}
+.doc-meta dd { margin: 0; color: var(--muted); min-width: 0; overflow-wrap: break-word; }
+/* Prose / long-item lists (a value with several sentences) as a quiet bullet stack. */
+.doc-meta dd ul { margin: 0; padding-left: 1.15rem; }
+.doc-meta dd li { margin: .14rem 0; }
+.doc-meta dd li::marker { color: var(--faint); }
+/* Short token lists (tags, categories) as inline pills instead of a bullet stack —
+   the common shape of arbitrary-Markdown list fields. */
+.doc-meta__tags { display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.doc-meta__tags span {
+  padding: .05rem .6rem;
+  border: 1px solid var(--border-strong); border-radius: 999px;
+  color: var(--muted); font-size: .84em; line-height: 1.7;
+}
+/* Stack label above value on narrow screens so long CJK values are not squeezed. */
+@media (max-width: 560px) {
+  .doc-meta dl { grid-template-columns: 1fr; gap: .12rem; }
+  .doc-meta dt { margin-top: .55rem; }
+  .doc-meta dt:first-child { margin-top: 0; }
+}
+
 /* text-wrap: balance evens multi-line headings (no orphan last word). */
 h1, h2, h3, h4 { color: var(--heading); font-weight: 700; text-wrap: balance; overflow-wrap: break-word; }
 h1 {
@@ -240,6 +277,9 @@ blockquote p { margin: .35rem 0; white-space: pre-line; }
   font-size: .85rem;
   letter-spacing: .05em;
 }
+/* An author-tagged callout ('★ Insight（重要警告）───') shows its own label instead
+   of the default '★ 重點' — the label is carried on data-label by _wrap_insights. */
+.insight[data-label]::before { content: "★ " attr(data-label); }
 .insight > :first-child { margin-top: 0; }
 .insight > :last-child { margin-bottom: 0; }
 .insight ul, .insight ol { margin: .3rem 0; padding-left: 1.3rem; }
@@ -1436,9 +1476,13 @@ GLOSSARY_RUNTIME = """<script>
 # Explanatory output-style and memory templates present them that way, so the
 # model writes them so in practice. The optional `` ` `` anchors absorb that form;
 # without them the backticks would survive as inline <code> and no callout builds.
+# An optional label may sit between "Insight" and the rule ('★ Insight（重要警告）───'):
+# authors tag a callout's kind that way. Captured as `label` (any non-dash text before
+# the ─ run) and surfaced via data-label so the CSS shows '★ <label>' instead of the
+# default '★ 重點'. Without a label the group is empty and the default stands.
 _INSIGHT_BLOCK = re.compile(
-    r"^`?★[ \t]*Insight[ \t]*─{3,}[^\n]*\n"
-    r"(.*?)\n"
+    r"^`?★[ \t]*Insight[ \t]*(?P<label>[^\n─]*?)[ \t]*─{3,}[^\n]*\n"
+    r"(?P<body>.*?)\n"
     r"`?[ \t]*─{3,}[ \t]*`?[ \t]*$",
     re.MULTILINE | re.DOTALL,
 )
@@ -1449,7 +1493,7 @@ _INSIGHT_BLOCK = re.compile(
 # Matched as a unit here, then the quote markers are stripped so the block falls
 # through to _INSIGHT_BLOCK like the plain form.
 _INSIGHT_BLOCKQUOTE = re.compile(
-    r"^>[ \t]*`?★[ \t]*Insight[ \t]*─{3,}[^\n]*\n"
+    r"^>[ \t]*`?★[ \t]*Insight[ \t]*[^\n─]*?[ \t]*─{3,}[^\n]*\n"
     r"(?:>[^\n]*\n)*?"
     r">[ \t]*`?[ \t]*─{3,}[ \t]*`?[ \t]*$",
     re.MULTILINE,
@@ -1467,8 +1511,11 @@ def _wrap_insights(md_text: str) -> str:
     md_text = _INSIGHT_BLOCKQUOTE.sub(unquote, md_text)
 
     def repl(match: re.Match) -> str:
-        inner = match.group(1).strip("\n")
-        return '<div class="insight" markdown="1">\n\n' + inner + "\n\n</div>"
+        inner = match.group("body").strip("\n")
+        # Trim surrounding brackets/whitespace so '（重要警告）' -> '重要警告'.
+        label = re.sub(r"^[\s（）()【】\[\]]+|[\s（）()【】\[\]]+$", "", match.group("label") or "")
+        attr = f' data-label="{html.escape(label, quote=True)}"' if label else ""
+        return f'<div class="insight"{attr} markdown="1">\n\n' + inner + "\n\n</div>"
 
     return _INSIGHT_BLOCK.sub(repl, md_text)
 
@@ -1518,12 +1565,108 @@ def _has_manual_section_numbers(md_text: str) -> bool:
     return any(total > 0 and numbered * 2 >= total for total, numbered in counts.values())
 
 
+# A leading YAML frontmatter block, as any Markdown document may carry. Without
+# handling, `markdown` renders it as a raw <hr> + key:value <p> + <hr> dump at the very
+# top. Anchored to \A so it only ever eats a block that OPENS the document, and
+# non-greedy so it stops at the first closing '---' (never a later thematic break).
+_FRONTMATTER = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*\r?\n?", re.DOTALL)
+
+
+def _strip_quotes(v: str) -> str:
+    v = v.strip()
+    if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+        return v[1:-1]
+    return v
+
+
+def _extract_frontmatter(md_text: str) -> tuple[dict, str]:
+    """Split a leading YAML frontmatter block off the Markdown.
+
+    Returns (fields, body): fields is an insertion-ordered dict of key -> str |
+    list[str]; body is md_text with the block removed. Parses the common YAML subset
+    Markdown frontmatter uses — `key: scalar`, `key: [a, b, c]` inline lists, and
+    `key:` followed by `  - item` block lists. No pyyaml dependency: this stays a thin,
+    deterministic layer like the rest of the converter (insights, glossary, mermaid are
+    all hand-rolled too). Nested maps and multi-line scalars are out of scope; add them
+    when a real doc needs them.
+    """
+    m = _FRONTMATTER.match(md_text)
+    if not m:
+        return {}, md_text
+    fields: dict = {}
+    key = None
+    for line in m.group(1).splitlines():
+        if not line.strip():
+            continue
+        kv = re.match(r"([A-Za-z_][\w-]*):[ \t]*(.*)$", line)
+        item = re.match(r"[ \t]*-[ \t]+(.*)$", line)
+        if kv:
+            key = kv.group(1)
+            raw = kv.group(2)
+            if raw.startswith("[") and raw.endswith("]"):  # inline flow list: [a, b, c]
+                fields[key] = [_strip_quotes(x) for x in raw[1:-1].split(",") if x.strip()]
+            else:
+                fields[key] = _strip_quotes(raw)  # "" here may become a block list below
+        elif item and key is not None:
+            cur = fields.get(key)
+            if not isinstance(cur, list):
+                cur = [] if not cur else [cur]
+                fields[key] = cur
+            cur.append(_strip_quotes(item.group(1)))
+    return fields, md_text[m.end() :]
+
+
+def _pretty_key(key: str) -> str:
+    """A frontmatter key as a display label: separators to spaces, first letter up.
+
+    'study_type' -> 'Study type', 'verified_claims' -> 'Verified claims'. No per-key
+    table — field-name agnostic — so any document's frontmatter reads cleanly.
+    """
+    key = key.replace("_", " ").replace("-", " ").strip()
+    return key[:1].upper() + key[1:] if key else key
+
+
+def _render_meta_card(fields: dict, title: str = "") -> str:
+    """Render parsed frontmatter as a quiet metadata panel under the H1.
+
+    Field-agnostic and fold-free: every non-empty field becomes a label/value row, in
+    source order, so it serves arbitrary Markdown rather than one document shape. Short
+    token lists (tags/categories) render as inline pills; longer or prose-y lists as a
+    bullet stack. A scalar whose value merely repeats the page `title` is dropped so the
+    header does not echo the H1 (value-based, not field-name-based). Everything is
+    HTML-escaped. Returns "" when there is nothing to show.
+    """
+    rows = []
+    for key, val in fields.items():
+        if not val:
+            continue
+        if isinstance(val, list):
+            items = [v for v in val if v]
+            if not items:
+                continue
+            if all(" " not in x and len(x) <= 24 for x in items):  # tag-like -> pills
+                dd = '<dd class="doc-meta__tags">' + "".join(
+                    f"<span>{html.escape(x)}</span>" for x in items
+                ) + "</dd>"
+            else:  # prose / long items -> bullet stack
+                dd = "<dd><ul>" + "".join(f"<li>{html.escape(x)}</li>" for x in items) + "</ul></dd>"
+        else:
+            if title and val.strip() == title.strip():
+                continue  # a field that only restates the H1 title adds nothing
+            dd = f"<dd>{html.escape(val)}</dd>"
+        rows.append(f"<dt>{html.escape(_pretty_key(key))}</dt>{dd}")
+    if not rows:
+        return ""
+    return '<section class="doc-meta"><dl>' + "".join(rows) + "</dl></section>"
+
+
 def convert(md_text: str, title: str = "文件", timestamp: str | None = None) -> str:
     """Convert Markdown text to a full, self-contained HTML document string.
 
     `timestamp` is injectable so tests stay deterministic; production calls let
     it default to the current local time.
     """
+    fields, md_text = _extract_frontmatter(md_text)
     md = markdown.Markdown(
         extensions=["tables", "fenced_code", "toc", "md_in_html"],
         extension_configs={"toc": {"toc_depth": "2-3"}},
@@ -1562,6 +1705,17 @@ def convert(md_text: str, title: str = "文件", timestamp: str | None = None) -
         toc_drawer_runtime = ""
     mermaid_runtime = MERMAID_RUNTIME if has_mermaid else ""
     glossary_runtime = _glossary_runtime(glossary)
+
+    # Frontmatter panel sits right under the document title (its natural byline
+    # position). If there is no H1 to anchor to, fall back to the top of the body.
+    # `title` lets it drop a field that merely repeats the H1.
+    meta_card = _render_meta_card(fields, title)
+    if meta_card:
+        body = (
+            body.replace("</h1>", "</h1>\n" + meta_card, 1)
+            if "</h1>" in body
+            else meta_card + body
+        )
 
     return f"""<!DOCTYPE html>
 <html lang="zh-TW">
