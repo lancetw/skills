@@ -43,7 +43,9 @@ Every run produces the Markdown file; the HTML 好讀版 ships alongside it when
 /learn-tw
 ```
 
-This generates **both** `FOR[username].md` and `FOR[username].html` in the project root.
+This generates **both** `FOR[username].md` and `FOR[username].html` inside a
+timestamped topic folder in the project root (e.g. `fcs-forensics-20260707-1432/`),
+so each run is a self-contained snapshot rather than two loose files.
 
 ## What Gets Generated
 
@@ -203,21 +205,34 @@ Guidance:
    (e.g. `# fcs-forensics 學習筆記`), NOT the filename. That H1 becomes the page title
    (browser tab + heading at the top of the readable HTML), so it must read like a
    title, not `FOR[username].md`.
-6. Save to project root
+6. **Save into a timestamped topic folder in the project root** — do not dump the
+   files loose in the root. Build the folder name as `<主題>-<時間戳>/`:
+   - `<主題>` — a filesystem-safe slug for what the doc is about, usually the project
+     or repo name (e.g. `fcs-forensics`); lowercase, spaces → `-`, drop anything a
+     path can't hold.
+   - `<時間戳>` — **read the real clock, never guess it**: `date +%Y%m%d-%H%M`
+     (e.g. `20260707-1432`).
+
+   Write `FOR[username].md` to `<主題>-<時間戳>/FOR[username].md`. The Write step
+   creates the folder, so no `mkdir` is needed. Each run gets its own folder, so
+   re-running never overwrites an earlier snapshot (the trade-off is that folders
+   accumulate — that is the point of the timestamp).
 7. **Generate the readable HTML version (optional)** by delegating to the
    `markdown-to-html` skill — learn-tw does **not** bundle its own converter.
    Resolve `{MARKDOWN_TO_HTML}` to the first of these where `scripts/md_to_html.py`
    exists: `.claude/skills/markdown-to-html/` (project) then
-   `~/.claude/skills/markdown-to-html/` (user). If it resolves, convert:
+   `~/.claude/skills/markdown-to-html/` (user). If it resolves, convert **the md at
+   its folder path** — the converter writes the `.html` as a sibling in the same
+   folder by default, so no output path is needed:
 
    ```bash
-   uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py FOR[username].md
+   uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py <主題>-<時間戳>/FOR[username].md
    ```
 
-   This writes `FOR[username].html` next to the Markdown file. The script prints the
-   **absolute** paths of both files plus a `file://` link; relay those to the user
-   verbatim so they can open the `.html` directly (e.g. `open FOR[username].html`).
-   If `markdown-to-html` is not installed, **skip this step silently** — the `.md` is
+   This writes `<主題>-<時間戳>/FOR[username].html` next to the Markdown file. The
+   script prints the **absolute** paths of both files plus a `file://` link; relay
+   those to the user verbatim so they can open the `.html` directly. If
+   `markdown-to-html` is not installed, **skip this step silently** — the `.md` is
    the deliverable.
 
 ## Generating the Readable HTML Version
@@ -276,10 +291,16 @@ Dependencies:
 
 ## Output Location
 
-Both files are saved in the project root directory, where `[username]` is replaced with the user's name:
+Both files go into a **timestamped topic folder** in the project root — not loose in
+the root — named `<主題>-<時間戳>/` (e.g. `fcs-forensics-20260707-1432/`). `<主題>` is a
+filesystem-safe slug for the doc's subject (usually the project/repo name); `<時間戳>`
+comes from `date +%Y%m%d-%H%M`. Each run creates its own folder, so snapshots never
+overwrite each other.
 
-- `FOR[username].md` — Markdown source
-- `FOR[username].html` — readable HTML version (generated from the `.md`)
+- `<主題>-<時間戳>/FOR[username].md` — Markdown source
+- `<主題>-<時間戳>/FOR[username].html` — readable HTML version (generated from the `.md`)
+
+`[username]` is replaced with the user's name.
 
 ## Example Prompts
 
