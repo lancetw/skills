@@ -1,17 +1,59 @@
 ---
 name: learn-tw
-description: Generate a personalized learning document that explains a project in plain, engaging Taiwan Traditional Chinese, produced as a Markdown file (FOR[yourname].md) — plus, when the markdown-to-html skill is installed, a styled, readable HTML version (FOR[yourname].html). Covers technical architecture, codebase structure, technologies, design decisions, and lessons learned. Use when user wants to understand a codebase deeply, create project documentation for learning purposes, or wants a nicely formatted / 好讀版 / HTML learning doc to read or share.
+description: Generate a personalized learning document — FOR[yourname].md explaining a project in plain, engaging Taiwan Traditional Chinese, plus a styled HTML 好讀版 (FOR[yourname].html) when the markdown-to-html skill is installed. Use when the user wants a learning doc for a codebase ("help me understand this project", "write a FOR[name].md"), or a 好讀版 / readable HTML learning doc to read or share.
 license: MIT
 ---
 
 # Learn TW Skill
 
-Create engaging, personalized learning documents that explain projects in plain language.
+Create an engaging, personalized learning document that explains a project in plain language. Two deliverables, one source:
 
-Every run produces the Markdown file; the HTML 好讀版 ships alongside it whenever the optional `markdown-to-html` skill is installed:
+- **`FOR[username].md`** — the primary deliverable; always ships. `[username]` is the user's name.
+- **`FOR[username].html`** — the 好讀版, generated **from the `.md`** by the optional `markdown-to-html` skill (see 〈Generating the HTML 好讀版〉). The `.md` is the single source of truth — the HTML is never hand-written. Skill not installed → skip silently; the `.md` alone is the deliverable.
 
-- **`FOR[yourname].md`** — plain Markdown; easy to version-control, diff, and read in a terminal. This is the primary deliverable and always ships.
-- **`FOR[yourname].html`** — the readable version, an editorial "書卷感" layout tuned for long-form Chinese (warm-paper editorial design, a 6-font Chinese font switcher, a scroll-spy table of contents, a reading-progress bar, auto-numbered sections, a light/dark theme toggle, rendered Mermaid diagrams, printable). It is generated from the `.md` by the `markdown-to-html` skill's converter, so the content has a single source and the HTML is never hand-written. If that skill is not installed, this step is skipped silently and only the `.md` ships.
+## Workflow
+
+1. **先綁定讀者與目標**（見〈讀者與目標〉）——它決定後面每一步深挖哪些子系統。
+2. Explore codebase structure (`ls`, file patterns).
+3. Read key files (entry points, configs, core modules).
+4. Identify architecture patterns and tech decisions.
+5. Note documented bugs/issues in git history and comments.
+6. Write `FOR[username].md` in Taiwan Traditional Chinese, following every rule in the
+   writing-rule sections below (〈Language Requirements〉 through 〈Document template〉).
+   Make the first line (H1) a **descriptive document title** — project name + 學習筆記
+   (e.g. `# fcs-forensics 學習筆記`), NOT the filename; it becomes the HTML page title.
+   Done when: all 7 sections present, every「為什麼」traceable per〈證據紀律〉, every
+   diagram follows〈Diagrams〉.
+7. **Save into a timestamped topic folder** — never loose in the project root.
+   Path: `<主題>-<時間戳>/FOR[username].md`.
+   - `<主題>` — filesystem-safe slug of the subject, usually the repo name: lowercase, spaces → `-`.
+   - `<時間戳>` — **read the real clock, never guess it**: `date +%Y%m%d-%H%M` (e.g. `20260707-1432`).
+   - The Write step creates the folder (no `mkdir`). Each run is a self-contained snapshot;
+     re-running never overwrites an earlier one (folders accumulate — that is the point).
+8. Generate the HTML 好讀版 per 〈Generating the HTML 好讀版〉.
+
+## The 7 sections
+
+1. **專案概述 (Project Overview)** — what the project does, who it's for, the problem it solves
+2. **技術架構 (Technical Architecture)** — system design, data flow, key components and how they connect
+3. **程式碼結構 (Codebase Structure)** — directory layout, important files, where to find things
+4. **技術選型 (Technology Stack)** — what's used and why it beat the alternatives
+5. **設計決策 (Design Decisions)** — the "why" behind architectural choices, trade-offs considered
+6. **學習心得 (Lessons Learned)** — bugs encountered, pitfalls to avoid, best practices discovered
+7. **工程師思維 (How Good Engineers Think)** — patterns, mental models, debugging approaches used
+
+## 讀者與目標（先綁定，再下筆）
+
+一份只把*檔名*個人化的文件，對所有讀者都長一樣，往往太抽象。下筆前先確立
+**這份文件為誰而寫、讀完他要能做什麼**：
+
+- 使用者沒講就**問**（或從他的指令合理推斷）：誰要讀？讀完要能做什麼——
+  onboarding？改某個子系統？評估技術選型？交接？
+- 把它寫成**開場框定**：放在 H1 標題下、`專案概述` 之前，用一句引言（`>`）
+  或一行粗體交代清楚。**不要用 H2**，以免占用七大章節的編號。
+- 讓它**真的影響內容**，而不只是裝飾：目標是「改 FCS parser」→`程式碼結構`
+  與`設計決策`就聚焦那個子系統，而非均勻導覽；讀者是資深工程師→多談 trade-off，
+  是新手→先給定位與全貌。同一個專案，給不同讀者就是兩份不同的文件。
 
 ## Language Requirements
 
@@ -37,57 +79,19 @@ Every run produces the Markdown file; the HTML 好讀版 ships alongside it when
 | 滑鼠 | 鼠標 |
 | 列印 | 打印 |
 
-## Quick Start
+## Writing Style
 
-```
-/learn-tw
-```
-
-This generates **both** `FOR[username].md` and `FOR[username].html` inside a
-timestamped topic folder in the project root (e.g. `fcs-forensics-20260707-1432/`),
-so each run is a self-contained snapshot rather than two loose files.
-
-## What Gets Generated
-
-### FOR[yourname].md / FOR[yourname].html Contents
-
-Both files carry identical content — only the format differs (the `.html` is generated from the `.md`):
-
-1. **專案概述 (Project Overview)** - What the project does, who it's for, the problem it solves
-2. **技術架構 (Technical Architecture)** - System design, data flow, key components and how they connect
-3. **程式碼結構 (Codebase Structure)** - Directory layout, important files, where to find things
-4. **技術選型 (Technology Stack)** - What's used and why we chose it over alternatives
-5. **設計決策 (Design Decisions)** - The "why" behind architectural choices, trade-offs considered
-6. **學習心得 (Lessons Learned)** - Bugs encountered, pitfalls to avoid, best practices discovered
-7. **工程師思維 (How Good Engineers Think)** - Patterns, mental models, debugging approaches used
-
-## Writing Style Guidelines
-
-- **Engaging, not boring** - Write like explaining to a curious friend, not a textbook
-- **Use analogies** - Compare complex concepts to everyday things
-- **Include anecdotes** - "We tried X, it broke because Y, so we did Z"
-- **Be specific** - Real file names, real error messages, real solutions
-- **論斷要有出處** - 見〈論斷要有出處（證據紀律）〉：每個「為什麼」都要連回真實
-  程式碼／git 證據，找不到佐證就標「推測」，不要把猜測寫成事實
-- **Show the journey** - Include the mistakes, not just the final answer
-- **Highlight key insights** - For an important takeaway, write a `★ Insight ─────` block:
+- **Engaging, not boring** — write like explaining to a curious friend, not a textbook
+- **Use analogies** — compare complex concepts to everyday things
+- **Include anecdotes** — "We tried X, it broke because Y, so we did Z"
+- **Be specific** — real file names, real error messages, real solutions
+- **Show the journey** — include the mistakes, not just the final answer
+- **論斷要有出處** — 見〈證據紀律〉
+- **Highlight key insights** — for an important takeaway, write a `★ Insight ─────` block:
   a line `★ Insight` followed by box-drawing rules (`─`), then the points, then a closing
-  `─` rule line. The readable HTML renders it as a styled "★ 重點" callout box.
+  `─` rule line. The 好讀版 renders it as a styled「★ 重點」callout box.
 
-## 讀者與目標（先綁定，再下筆）
-
-一份只把*檔名*個人化的文件，對所有讀者都長一樣，往往太抽象。下筆前先確立
-**這份文件為誰而寫、讀完他要能做什麼**：
-
-- 使用者沒講就**問**（或從他的指令合理推斷）：誰要讀？讀完要能做什麼——
-  onboarding？改某個子系統？評估技術選型？交接？
-- 把它寫成**開場框定**：放在 H1 標題下、`專案概述` 之前，用一句引言（`>`）
-  或一行粗體交代清楚。**不要用 H2**，以免占用七大章節的編號。
-- 讓它**真的影響內容**，而不只是裝飾：目標是「改 FCS parser」→`程式碼結構`
-  與`設計決策`就聚焦那個子系統，而非均勻導覽；讀者是資深工程師→多談 trade-off，
-  是新手→先給定位與全貌。同一個專案，給不同讀者就是兩份不同的文件。
-
-## 論斷要有出處（證據紀律）
+## 證據紀律（論斷要有出處）
 
 把「絕不憑空臆測」當鐵則——這是 learn-tw 最容易出錯的地方（自信地編造設計理由）。
 `設計決策`與`學習心得`裡每個「為什麼」都要能追溯到**真實證據**：
@@ -120,7 +124,7 @@ Both files carry identical content — only the format differs (the `.html` is g
 2. `class="self-check"` 與 `markdown="1"` 兩者都要：前者觸發編輯風樣式，後者讓內層
    答案被當 Markdown 解析（而非一坨原始 HTML）。
 3. 一節最多一題，問「能否重述／推導」而非背名詞；難度適中即可。
-4. 算繪行為：HTML 好讀版是可折疊卡片（收合顯示「？」、展開顯示「✓」，**列印時自動
+4. 算繪行為：好讀版是可折疊卡片（收合顯示「？」、展開顯示「✓」，**列印時自動
    全部展開**）；`.md` 在 GitHub/GitLab 上是原生折疊。
 
 ## 附錄：詞彙表（Glossary，選用）
@@ -139,34 +143,24 @@ Both files carry identical content — only the format differs (the `.html` is g
 
 ## Diagrams: use Mermaid
 
-Draw diagrams as ` ```mermaid ` fenced code blocks, with **Chinese labels written
-directly**. Mermaid renders them as proper vector diagrams, so there is no
-alignment problem — the old "English labels + Chinese legend" ASCII workaround is
-no longer needed.
+Draw diagrams as ` ```mermaid ` fenced code blocks with **Chinese labels written
+directly** — Mermaid renders vector diagrams, so CJK alignment is never a problem.
+The 好讀版 renders them with mermaid.js (loaded from a CDN at view time; the diagram
+text is rendered locally and never sent anywhere — safe for internal architecture);
+the `.md` renders natively on GitHub/GitLab, and in a bare terminal the Mermaid
+source is still legible.
 
-```mermaid
-flowchart LR
-    A[讀取 FCS] --> B[解析 TEXT/DATA]
-    B --> C[計算統計量]
-    C --> D[產生報告]
-```
+1. `flowchart` for pipelines/architecture, `sequenceDiagram` for interactions.
+   Keep labels short; Chinese is fine.
 
-How each output renders it:
-
-- **`FOR[name].html`** renders the diagram with mermaid.js. The library is loaded
-  from a CDN at view time; the diagram text is rendered locally in the browser and
-  never sent anywhere (safe for internal/architecture diagrams). Offline, the block
-  degrades to readable Mermaid source.
-- **`FOR[name].md`** renders natively on GitLab and GitHub. In a bare terminal you
-  see the Mermaid source, which is still legible.
-
-Guidance:
-
-1. Use `flowchart` for pipelines/architecture, `sequenceDiagram` for interactions.
-2. Keep labels short; Chinese is fine.
-3. **Directory / file trees**: draw them as a Mermaid `flowchart LR` (parent → child,
-   left-to-right so it reads like an indented tree) — it renders as a zoomable vector
-   image instead of flat ASCII. Put a node's name and its description on separate lines
+   ```mermaid
+   flowchart LR
+       A[讀取 FCS] --> B[解析 TEXT/DATA]
+       B --> C[計算統計量]
+       C --> D[產生報告]
+   ```
+2. **Directory / file trees** → a Mermaid `flowchart LR` (parent → child, so it reads
+   like an indented tree). Put a node's name and its description on separate lines
    with `<br/>`:
 
    ```mermaid
@@ -175,141 +169,40 @@ Guidance:
        s --> c["core/<br/>核心邏輯"]
        r --> t["tests/<br/>測試"]
    ```
-4. **Never put CJK text inside an ASCII / box-drawing diagram.** A frame built from
-   `┌ ─ ┐ │ └ ┘` / `╔ ═ ╗` / `+--+` only lines up when every character is
-   single-width, but CJK glyphs are **double-width** — each one occupies two columns
-   where an ASCII character occupies one. Put CJK between the borders and the right
-   edge no longer lines up, so the box splits open. This breaks in Markdown, on
-   GitHub/GitLab and in any terminal, regardless of font. So:
-   - A concept drawn as a **labelled box/rectangle** (an interface-vs-area diagram, a
-     quadrant, a stack of layers) → draw it as **Mermaid** (vector, zero alignment
-     problems) or render it as a **Markdown table**. Do **not** hand-draw it in ASCII.
-   - A plain ASCII/text code block is fine **only when its content is pure ASCII** — a
-     tiny `a -> b -> c` pipeline, a code snippet, or a numeric chart whose axis and
-     labels are ASCII. The moment a label needs CJK, switch to Mermaid or a table.
-   In short: Mermaid (or a table) for anything real; ASCII blocks stay ASCII-only.
+3. **CJK never goes inside an ASCII / box-drawing diagram.** CJK glyphs are
+   **double-width**, so a frame built from `┌ ─ ┐ │ └ ┘` / `+--+` splits open the
+   moment a label is Chinese — in every renderer and font. Anything with a real shape
+   (boxes, layers, quadrants, trees) → Mermaid or a Markdown table. A plain ASCII
+   block is fine only while its content stays pure ASCII (`a -> b -> c`, code
+   snippets, ASCII-labelled charts).
 
-## Workflow
-
-先綁定**讀者與目標**（見〈讀者與目標（先綁定，再下筆）〉）——它決定下面各步要
-深挖哪些子系統。然後：
-
-1. Explore codebase structure (`ls`, file patterns)
-2. Read key files (entry points, configs, core modules)
-3. Identify architecture patterns and tech decisions
-4. Note any documented bugs/issues in git history or comments
-5. Write `FOR[username].md` with all sections in Taiwan Traditional Chinese. 套用上述
-   **證據紀律**（論斷連回程式碼／git）；各主要章節結尾可選放一題**自我檢核**；專案若有
-   領域術語則最後補上**詞彙表**附錄。Make the
-   first line (H1) a **descriptive document title** — the project name plus 學習筆記
-   (e.g. `# fcs-forensics 學習筆記`), NOT the filename. That H1 becomes the page title
-   (browser tab + heading at the top of the readable HTML), so it must read like a
-   title, not `FOR[username].md`.
-6. **Save into a timestamped topic folder in the project root** — do not dump the
-   files loose in the root. Build the folder name as `<主題>-<時間戳>/`:
-   - `<主題>` — a filesystem-safe slug for what the doc is about, usually the project
-     or repo name (e.g. `fcs-forensics`); lowercase, spaces → `-`, drop anything a
-     path can't hold.
-   - `<時間戳>` — **read the real clock, never guess it**: `date +%Y%m%d-%H%M`
-     (e.g. `20260707-1432`).
-
-   Write `FOR[username].md` to `<主題>-<時間戳>/FOR[username].md`. The Write step
-   creates the folder, so no `mkdir` is needed. Each run gets its own folder, so
-   re-running never overwrites an earlier snapshot (the trade-off is that folders
-   accumulate — that is the point of the timestamp).
-7. **Generate the readable HTML version (optional)** by delegating to the
-   `markdown-to-html` skill — learn-tw does **not** bundle its own converter.
-   Resolve `{MARKDOWN_TO_HTML}` to the first of these where `scripts/md_to_html.py`
-   exists: `.claude/skills/markdown-to-html/` (project) then
-   `~/.claude/skills/markdown-to-html/` (user). If it resolves, convert **the md at
-   its folder path** — the converter writes the `.html` as a sibling in the same
-   folder by default, so no output path is needed:
-
-   ```bash
-   uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py <主題>-<時間戳>/FOR[username].md
-   ```
-
-   This writes `<主題>-<時間戳>/FOR[username].html` next to the Markdown file. The
-   script prints the **absolute** paths of both files plus a `file://` link; relay
-   those to the user verbatim so they can open the `.html` directly. If
-   `markdown-to-html` is not installed, **skip this step silently** — the `.md` is
-   the deliverable.
-
-## Generating the Readable HTML Version
+## Generating the HTML 好讀版
 
 Markdown → HTML is a pure deterministic transform, delegated to the optional
-`markdown-to-html` skill — **do not hand-write the HTML** (the single source of
-truth is the `.md`; hand-writing risks the two copies drifting apart). learn-tw
-does not bundle or maintain its own converter.
+`markdown-to-html` skill — learn-tw bundles no converter, and the HTML is never
+hand-written.
 
-Resolve `{MARKDOWN_TO_HTML}` — the first of `.claude/skills/markdown-to-html/`
-(project) or `~/.claude/skills/markdown-to-html/` (user) where
-`scripts/md_to_html.py` exists. If none exists, the skill is not installed; skip
-the HTML step silently and ship only the `.md`.
+Resolve `{MARKDOWN_TO_HTML}` to the first of these where `scripts/md_to_html.py`
+exists: `.claude/skills/markdown-to-html/` (project), then
+`~/.claude/skills/markdown-to-html/` (user). No match → the skill is not installed;
+skip this step silently and ship only the `.md`.
 
 ```bash
-# Run via the markdown-to-html skill's own project (it resolves the `markdown`
-# dependency from that skill's pyproject.toml).
-# Default: writes a sibling .html with the same name
-uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py FOR[username].md
-# Or specify an explicit output path
-uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py FOR[username].md /path/to/output.html
+# --project resolves the converter's deps from that skill's own pyproject.toml (uv, not pip)
+uv run --project {MARKDOWN_TO_HTML} python {MARKDOWN_TO_HTML}/scripts/md_to_html.py <主題>-<時間戳>/FOR[username].md
 ```
 
-What the readable version gives you (a single self-contained HTML file; it loads the
-chosen Chinese web font — and, only for diagrams, Mermaid — from a CDN at view time, and
-falls back to system fonts / readable source when offline):
+The converter writes `FOR[username].html` as a sibling in the same folder (no output
+path needed) and prints the **absolute** paths of both files plus a `file://` link —
+relay those to the user verbatim so they can open the `.html` directly.
 
-- Editorial "書卷感" typography for long-form Chinese: a warm-paper palette, generous
-  line-height, an ideal reading width, and a 朱紅 (seal-red) accent
-- A **Chinese font switcher** (top-left): 明體 (Noto Serif TC) / 楷體 (Iansui, default) /
-  文楷 (LXGW WenKai TC) / 楷體＋注音 (Bpmf Iansui) / 黑體 (Noto Sans TC) / 圓體 (Huninn),
-  loaded lazily from Google Fonts and remembered in `localStorage`; offline it falls back
-  to system fonts
-- A scroll-spy table of contents (auto-built from H2/H3): it highlights the section you
-  are currently reading and auto-numbers the 7 sections; clicking a link jumps there
-  cleanly without flickering the highlight through the sections in between
-- A reading-progress bar pinned to the top of the page
-- A light/dark theme toggle (☾/☀ button, top-left): defaults to the system
-  `prefers-color-scheme` on first open, then remembers your choice in `localStorage`; the
-  dark mode is a warm "sepia night" that keeps the book feel
-- **Mermaid diagrams** rendered as vector graphics with native Chinese labels, with a
-  palette tuned per theme (they re-render in the matching colours when you toggle). The
-  mermaid runtime is injected only when the doc actually contains a diagram; offline it
-  degrades to readable Mermaid source
-- A built-in print stylesheet for printing or exporting to PDF (forces a light, paper
-  palette regardless of the on-screen theme)
+The output is a single self-contained editorial page tuned for long-form Chinese
+reading — 書卷感 typography, a Chinese font switcher, a scroll-spy TOC, a light/dark
+theme, Mermaid rendered as vectors, a print stylesheet; web fonts and Mermaid load
+from a CDN at view time and degrade gracefully offline. The authoritative feature
+list lives in the `markdown-to-html` skill.
 
-Dependencies:
-
-- The HTML step requires the optional `markdown-to-html` skill; its converter and the Python `markdown` package it needs are declared in *that* skill's `pyproject.toml`, so `uv run --project {MARKDOWN_TO_HTML}` provides them. Use `uv`, not `pip`. Without the skill, the HTML step is skipped and this dependency is not needed.
-- mermaid.js is loaded from a CDN at **view** time — nothing to install, but the first
-  open of an HTML containing diagrams needs network access (only the library is fetched;
-  diagram content stays local).
-- The chosen **Chinese web font** is loaded from Google Fonts at **view** time (only the
-  selected font, lazily); offline it falls back to the system fonts in each stack.
-
-## Output Location
-
-Both files go into a **timestamped topic folder** in the project root — not loose in
-the root — named `<主題>-<時間戳>/` (e.g. `fcs-forensics-20260707-1432/`). `<主題>` is a
-filesystem-safe slug for the doc's subject (usually the project/repo name); `<時間戳>`
-comes from `date +%Y%m%d-%H%M`. Each run creates its own folder, so snapshots never
-overwrite each other.
-
-- `<主題>-<時間戳>/FOR[username].md` — Markdown source
-- `<主題>-<時間戳>/FOR[username].html` — readable HTML version (generated from the `.md`)
-
-`[username]` is replaced with the user's name.
-
-## Example Prompts
-
-> "Create a learning doc for this project"
-> "Help me understand this codebase"
-> "Write a FOR[myname].md explaining everything"
-> "/learn-tw"
-
-## Example Output Structure
+## Document template
 
 ```markdown
 # [專案名稱] 學習筆記
