@@ -1,11 +1,11 @@
 ---
-name: translate-last
-description: Translate Claude's previous response using an external CLI model (codex / agy / claude). Usage — /translate-last [codex|agy|claude] [target language]
+name: babel
+description: Translate Claude's previous response using an external CLI model (codex / agy / claude). Usage — /babel [codex|agy|claude] [target language]
 disable-model-invocation: true
 context: fork
 ---
 
-# Translate Last Response
+# Babel
 
 Translate Claude's previous response using an external CLI model. This skill
 runs in a forked subagent (`context: fork`), so the extraction and translation
