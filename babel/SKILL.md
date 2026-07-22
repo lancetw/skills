@@ -11,6 +11,21 @@ Translate Claude's previous response using an external CLI model. This skill
 runs in a forked subagent (`context: fork`), so the extraction and translation
 never pollute the main conversation context — only the translation returns.
 
+## Data flow
+
+`/babel` is user-invoked only (`disable-model-invocation: true`). It reads just
+the previous assistant response from the local session transcript and sends it
+to the cloud model of the backend you pick — codex → OpenAI, claude → Anthropic,
+agy → Google — to be translated. Nothing else from the transcript is read or
+sent. Two consequences worth knowing before you run it:
+
+- The source is your own last response. If it contains a secret, the
+  translation will contain it too. Invoke `/babel` only on responses you are
+  comfortable sending to that provider.
+- The source is treated as data, not instructions — the prompt tells the model
+  not to act on it — so text injected into that response cannot hijack the
+  translator.
+
 ## Arguments
 
 `$ARGUMENTS` — first word is the backend, the rest is the target language.
@@ -47,10 +62,16 @@ never pollute the main conversation context — only the translation returns.
    | Backend | Command |
    |---------|---------|
    | codex | `CX=$(mktemp -d); ln -s ~/.codex/auth.json "$CX/auth.json"; CODEX_HOME="$CX" codex exec -s read-only --skip-git-repo-check -o "$WORK/out.md" "$PROMPT" < "$WORK/source.md"` then read `out.md` |
-   | claude | `claude -p "$PROMPT"$'\n\n'"$(cat "$WORK/source.md")" --setting-sources '' --tools "" --strict-mcp-config` |
+   | claude | `claude -p "$PROMPT" --setting-sources '' --tools "" --strict-mcp-config < "$WORK/source.md"` |
    | agy | `GH=$(mktemp -d); mkdir -p "$GH/.gemini"; for e in ~/.gemini/*; do [ "$(basename "$e")" = GEMINI.md ] || ln -s "$e" "$GH/.gemini/$(basename "$e")"; done; HOME="$GH" agy --print "$PROMPT"$'\n\n'"$(cat "$WORK/source.md")"` |
 
    Keep stderr separate (no `2>&1`) — these CLIs print warnings there.
+
+   Source delivery: codex and claude read the source from **stdin**, so the
+   text never lands in `argv`/`ps` and there's no `ARG_MAX` limit on long
+   responses. agy's `--print` requires the prompt as its flag value and ignores
+   stdin, so agy passes the source on the command line — fine for normal
+   responses, but one approaching `ARG_MAX` (~1 MB) would fail there.
 
    Done when: the translation is non-empty. If the chosen CLI is not
    installed, tell the user which command is missing and stop.
