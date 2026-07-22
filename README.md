@@ -12,6 +12,7 @@ Taiwan Traditional Chinese (繁體中文) skills for AI coding agents.
 | [humanizer-zh-tw](humanizer-zh-tw/SKILL.md) | Remove AI-generated traces from Chinese text |
 | [weather-hint-tw](weather-hint-tw/SKILL.md) | Friendly weather reminders with outfit advice, auto IP detection |
 | [know-your-unknowns](know-your-unknowns/SKILL.md) | Surface unknowns as interactive HTML artifacts — 11 techniques for before, during, and after implementation |
+| [translate-last](translate-last/SKILL.md) | Translate Claude's previous response via an external CLI model (codex / agy / claude) in a forked context |
 | [bible-buddy](bible-buddy/SKILL.md) | First-century Hebrew scripture interpretation from Yeshua's Jewish perspective |
 | [bible-fact-check](bible-fact-check/SKILL.md) | 10-point quality checklist for biblical content review |
 | [bible-bread](bible-bread/SKILL.md) | Daily devotional / QT guide with first-century Jewish pedagogy for mainstream Christians (requires bible-buddy) |
