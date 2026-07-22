@@ -47,7 +47,7 @@ never pollute the main conversation context — only the translation returns.
    | Backend | Command |
    |---------|---------|
    | codex | `CX=$(mktemp -d); ln -s ~/.codex/auth.json "$CX/auth.json"; CODEX_HOME="$CX" codex exec -s read-only --skip-git-repo-check -o "$WORK/out.md" "$PROMPT" < "$WORK/source.md"` then read `out.md` |
-   | claude | `claude -p "$PROMPT"$'\n\n'"$(cat "$WORK/source.md")" --tools "" --strict-mcp-config` |
+   | claude | `claude -p "$PROMPT"$'\n\n'"$(cat "$WORK/source.md")" --setting-sources '' --tools "" --strict-mcp-config` |
    | agy | `agy --print "$PROMPT"$'\n\n'"$(cat "$WORK/source.md")"` |
 
    Keep stderr separate (no `2>&1`) — these CLIs print warnings there.
@@ -60,12 +60,15 @@ never pollute the main conversation context — only the translation returns.
    - **codex** — a private `CODEX_HOME` (only `auth.json` symlinked in) means
      no global `AGENTS.md`/config loads, so the default system prompt is
      genuinely absent; `-s read-only` keeps its shell tool harmless.
-   - **claude** — `--tools ""` disables every built-in tool and
-     `--strict-mcp-config` drops all MCP servers. Global `~/.claude/CLAUDE.md`
-     still loads (only `--bare` skips it, and `--bare` breaks subscription
-     auth), so the pipeline framing in `PROMPT` is what neutralizes it.
+   - **claude** — `--setting-sources ''` loads no user/project/local settings,
+     so `~/.claude/CLAUDE.md` and any project memory are genuinely absent
+     (OAuth auth is unaffected — it isn't a settings source). `--tools ""`
+     disables every built-in tool and `--strict-mcp-config` drops all MCP
+     servers. (`--bare` would also skip CLAUDE.md but forces ANTHROPIC_API_KEY
+     auth, breaking the subscription login — don't use it.)
    - **agy** — print mode exposes no tool/sandbox switch (`--sandbox` is
-     rejected headless), so the pipeline framing in `PROMPT` is the only lever.
+     rejected headless) and no memory-disable flag, so the pipeline framing in
+     `PROMPT` is the only lever.
 
 3. **Return the translation verbatim** — no rewriting, no summarizing, no
    added commentary. Done when: the translation's paragraph count matches the
