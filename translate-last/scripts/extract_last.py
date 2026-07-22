@@ -61,11 +61,24 @@ def assistant_text(entry):
     return joined or None
 
 
+def session_jsonl(d):
+    """Exact main-session transcript via CLAUDE_CODE_SESSION_ID (set in skill
+    Bash env, and inside a context:fork subagent it still names the MAIN
+    session). Fallback: newest UUID-named jsonl — fragile once nested CLI
+    sessions (e.g. the claude backend's own `claude -p`) land in the same dir."""
+    sid = os.environ.get("CLAUDE_CODE_SESSION_ID")
+    if sid:
+        p = os.path.join(d, sid + ".jsonl")
+        if os.path.isfile(p):
+            return p
+    return newest_jsonl(d)
+
+
 def main():
     d = transcript_dir()
     if not os.path.isdir(d):
         sys.exit(f"transcript dir not found: {d}")
-    path = newest_jsonl(d)
+    path = session_jsonl(d)
     if not path:
         sys.exit(f"no .jsonl transcript in {d}")
 
