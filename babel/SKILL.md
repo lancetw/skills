@@ -33,7 +33,10 @@ never pollute the main conversation context — only the translation returns.
    its stderr reason to the user and stop.
 
 2. **Translate with the chosen backend.** These CLIs can take 1–2 minutes;
-   set the Bash timeout to 300000.
+   set the Bash timeout to 300000. Each backend is invoked with tools
+   disabled and its default system prompt suppressed as far as the CLI allows
+   (see "Isolation" below) — a translation needs no tools, and the CLIs' global
+   memory (e.g. a "call me <name>" directive) otherwise leaks into the output.
 
    Shared prompt (fill in the target language):
 
@@ -43,14 +46,26 @@ never pollute the main conversation context — only the translation returns.
 
    | Backend | Command |
    |---------|---------|
-   | codex | `codex exec -s read-only -o "$WORK/out.md" "$PROMPT" < "$WORK/source.md"` then read `out.md` |
+   | codex | `CX=$(mktemp -d); ln -s ~/.codex/auth.json "$CX/auth.json"; CODEX_HOME="$CX" codex exec -s read-only --skip-git-repo-check -o "$WORK/out.md" "$PROMPT" < "$WORK/source.md"` then read `out.md` |
+   | claude | `claude -p "$PROMPT"$'\n\n'"$(cat "$WORK/source.md")" --tools "" --strict-mcp-config` |
    | agy | `agy --print "$PROMPT"$'\n\n'"$(cat "$WORK/source.md")"` |
-   | claude | `claude -p "$PROMPT" < "$WORK/source.md"` |
 
    Keep stderr separate (no `2>&1`) — these CLIs print warnings there.
 
    Done when: the translation is non-empty. If the chosen CLI is not
    installed, tell the user which command is missing and stop.
+
+   ### Isolation per backend
+
+   - **codex** — a private `CODEX_HOME` (only `auth.json` symlinked in) means
+     no global `AGENTS.md`/config loads, so the default system prompt is
+     genuinely absent; `-s read-only` keeps its shell tool harmless.
+   - **claude** — `--tools ""` disables every built-in tool and
+     `--strict-mcp-config` drops all MCP servers. Global `~/.claude/CLAUDE.md`
+     still loads (only `--bare` skips it, and `--bare` breaks subscription
+     auth), so the pipeline framing in `PROMPT` is what neutralizes it.
+   - **agy** — print mode exposes no tool/sandbox switch (`--sandbox` is
+     rejected headless), so the pipeline framing in `PROMPT` is the only lever.
 
 3. **Return the translation verbatim** — no rewriting, no summarizing, no
    added commentary. Done when: the translation's paragraph count matches the
