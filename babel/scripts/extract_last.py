@@ -2,8 +2,10 @@
 """Extract the previous assistant response from the current Claude Code session.
 
 Reads the newest .jsonl transcript in ~/.claude/projects/<sanitized-cwd>/,
-finds the last real user message, then walks backwards collecting the full
-assistant text of the turn before it. Prints the verbatim text to stdout.
+finds the last real user message, then walks backwards to the assistant's final
+visible answer — the trailing run of text after the last tool call, as the user
+reads it, not the whole tool-driven turn's interim narration. Prints it verbatim
+to stdout. See extract_last_response for the boundary rule.
 
 Stdlib only. No __init__.py needed (skills install rule).
 """
@@ -61,6 +63,17 @@ def assistant_text(entry):
     return joined or None
 
 
+def has_tool_use(entry):
+    """True if an assistant entry called a tool. Marks the boundary between the
+    final visible answer and the tool-driven work that preceded it."""
+    if entry.get("type") != "assistant" or entry.get("isSidechain"):
+        return False
+    content = entry.get("message", {}).get("content", [])
+    return any(
+        isinstance(b, dict) and b.get("type") == "tool_use" for b in content
+    )
+
+
 def session_jsonl(d):
     """Exact main-session transcript via CLAUDE_CODE_SESSION_ID (set in skill
     Bash env, and inside a context:fork subagent it still names the MAIN
@@ -72,6 +85,38 @@ def session_jsonl(d):
         if os.path.isfile(p):
             return p
     return newest_jsonl(d)
+
+
+def extract_last_response(entries):
+    """The assistant's final visible answer, as the user reads it — not the whole
+    turn. Returns the joined text, or None if no response precedes the last user
+    message.
+
+    A tool-driven turn emits many interim text blocks ("Let me check X")
+    interleaved with tool calls; only the trailing run of text *after the last
+    tool_use* is the answer. Walking backwards from the last real user message we
+    collect assistant text and stop at the first tool_use (or the user prompt
+    that started the turn), so interim narration never leaks into the output.
+    """
+    last_user = next(
+        (i for i in range(len(entries) - 1, -1, -1) if is_real_user(entries[i])), None
+    )
+    if last_user is None:
+        return None
+
+    collected = []
+    for i in range(last_user - 1, -1, -1):
+        entry = entries[i]
+        if has_tool_use(entry):
+            if collected:
+                break
+            continue  # trailing tool call with no answer yet — keep looking back
+        text = assistant_text(entry)
+        if text:
+            collected.append(text)
+        elif collected and is_real_user(entry):
+            break
+    return "\n\n".join(reversed(collected)) if collected else None
 
 
 def main():
@@ -90,26 +135,11 @@ def main():
             except json.JSONDecodeError:
                 continue
 
-    last_user = next(
-        (i for i in range(len(entries) - 1, -1, -1) if is_real_user(entries[i])), None
-    )
-    if last_user is None:
-        sys.exit("no user message found in transcript")
-
-    # Walk backwards from the last user message: skip noise (tool results,
-    # system entries, local-command output) until the first assistant text,
-    # then collect the whole turn, stopping at the user prompt that started it.
-    collected = []
-    for i in range(last_user - 1, -1, -1):
-        text = assistant_text(entries[i])
-        if text:
-            collected.append(text)
-        elif collected and is_real_user(entries[i]):
-            break
-    if not collected:
+    result = extract_last_response(entries)
+    if result is None:
         sys.exit("no previous assistant response found")
 
-    print("\n\n".join(reversed(collected)))
+    print(result)
 
 
 if __name__ == "__main__":
