@@ -313,6 +313,14 @@ async def run_turn(message: str) -> None:
         await events.put({"type": "error", "text": repr(e)})
 
 
+@app.post("/api/chat/reset")
+async def chat_reset():
+    """The page cleared its log: the next turn starts a fresh agent session so old context cannot leak back in."""
+    global _client_stale
+    _client_stale = True
+    return {"ok": True}
+
+
 @app.post("/api/chat/stop")
 async def chat_stop():
     if _client is not None:

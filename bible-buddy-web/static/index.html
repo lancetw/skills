@@ -135,6 +135,8 @@
   .tabs { display:flex; gap:2px; border:1px solid var(--rule); border-radius:6px; padding:2px; background:var(--card); }
   .tabs button { border:none; background:transparent; color:var(--ink-2); padding:4px 10px; }
   .tabs button.on { background:var(--pen); color:var(--paper); }
+  #chat .chead { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid var(--rule); font-size:.82rem; color:var(--ink-2); }
+  #chat .chead button { font-size:.78rem; padding:2px 10px; }
   #log { flex:1; overflow:auto; padding:12px; font-size:.9rem; }
   #log .msg { background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:8px 12px; margin:.5em 0; box-shadow:0 1px 3px #0001; }
   #log details.steps { margin:.2em 0 .2em 6px; }
@@ -172,6 +174,7 @@
 </section>
 <aside id="chat">
   <div id="gutter" title="拖曳調整寬度"></div>
+  <div class="chead"><span>agent 對話</span><button type="button" id="clear" title="清空對話並重新開始 agent session">清除</button></div>
   <div id="log"></div>
   <div id="status" class="tool"></div>
   <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button class="primary" id="send">送出</button></form>
@@ -441,7 +444,7 @@ function logLine(cls, html) { const d = document.createElement('div'); d.classNa
 let running = false, stopTick = null;
 function setRunning(on) {
   running = on;
-  $('#q').disabled = on;
+  $('#q').disabled = on; $('#clear').disabled = on;
   $('#send').classList.toggle('stop', on);
   slot('#send').set(on ? '停止' : '送出');
 }
@@ -521,6 +524,7 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   $('#study').hidden = b.dataset.tab !== 'study';
   if (b.dataset.tab === 'study' && !$('#ssel').options.length) loadStudy();
 });
+$('#clear').onclick = () => { if (running) return; $('#log').innerHTML = ''; slot('#status').set(''); studyPath = null; fetch('/api/chat/reset', { method: 'POST' }); };
 $('#f').onsubmit = e => {
   e.preventDefault();
   if (running) { slot('#status').set('⏹ 停止中…'); fetch('/api/chat/stop', { method: 'POST' }); return; }
