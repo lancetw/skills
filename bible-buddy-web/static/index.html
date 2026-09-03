@@ -502,7 +502,7 @@ $('#log').addEventListener('click', e => {  // fold / unfold toggles must work o
   const b = e.target.closest('.msg.me .more'); if (!b) return; const m = b.closest('.msg'); const f = m.classList.toggle('fold'); b.textContent = f ? '展開 ▾' : '收合 ▴';
 });
 
-let running = false, stopTick = null;
+let running = false, stopTick = null, stepSink = () => {};
 function setRunning(on) {
   running = on;
   $('#q').disabled = on; $('#clear').disabled = on; $('#study').disabled = on; $('#study2').disabled = on;
@@ -520,15 +520,38 @@ async function send(text) {
 
   const cur = logLine('msg pending', `<div class="act"><span class="dots"><span></span><span></span><span></span></span><span class="a"></span><span class="t"></span></div>`);
   const act = slot(cur.querySelector('.a'), 'agent 啟動中…'); stopTick = ticker(cur.querySelector('.t'));
-  let buf = '', finished = false, steps = null, nSteps = 0;
-  // Bash/Grep/… lines fold into one closed block per turn; the pending bubble already names the current tool
-  const step = html => {
+  let buf = '';
+  stepSink = makeSteps(cur);
+  const finish = () => { stopTick?.(); stopTick = null; cur.classList.remove('pending'); cur.querySelector('.act')?.remove(); setRunning(false); saveLog(); };
+  const res = await fetch('/api/chat', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ message:text }) });
+  if (res.headers.get('content-type')?.includes('application/json')) { const r = await res.json(); finish(); slot('#status').set(`✗ ${r.error}`); logLine('tool', `✗ ${esc(r.error)}`); return; }
+  await consume(res, cur, act, () => finish(), b => buf = b, () => buf);
+}
+// Bash/Grep/… lines fold into one closed block per turn, placed before the bubble; the bubble already names the current tool
+function makeSteps(cur) {
+  let steps = null, n = 0;
+  return html => {
     if (!steps) { steps = document.createElement('details'); steps.className = 'steps'; steps.innerHTML = '<summary></summary>'; cur.before(steps); }
     const d = document.createElement('div'); d.className = 'tool'; d.innerHTML = html; steps.appendChild(d);
-    steps.querySelector('summary').textContent = `執行細節 · ${++nSteps} 步`;
+    steps.querySelector('summary').textContent = `執行細節 · ${++n} 步`;
   };
-  const finish = () => { finished = true; stopTick?.(); stopTick = null; cur.classList.remove('pending'); cur.querySelector('.act')?.remove(); setRunning(false); saveLog(); };
-  const res = await fetch('/api/chat', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ message:text }) });
+}
+// after a refresh the server may still be mid-turn: show a pending bubble and attach to its event stream
+async function reattach() {
+  let s; try { s = await (await fetch('/api/chat/status')).json(); } catch { return; }
+  if (!s.running) return;
+  chatOpen(true); setRunning(true);
+  const cur = logLine('msg pending', `<div class="act"><span class="dots"><span></span><span></span><span></span></span><span class="a"></span><span class="t"></span></div>`);
+  const act = slot(cur.querySelector('.a'), '接回進行中的回答…'); stopTick = ticker(cur.querySelector('.t'));
+  stepSink = makeSteps(cur);
+  slot('#status').set('⚙ agent 處理中（接回）…');
+  let buf = '';
+  const finish = () => { stopTick?.(); stopTick = null; cur.classList.remove('pending'); cur.querySelector('.act')?.remove(); setRunning(false); saveLog(); };
+  await consume(await fetch('/api/chat/stream'), cur, act, finish, b => buf = b, () => buf);
+}
+// reads one SSE stream of turn events into a bubble; shared by a fresh turn and a reattached one
+async function consume(res, cur, act, finish, setBuf, getBuf) {
+  let finished = false; const end = () => { finished = true; finish(); };  // not `done`: the reader's { value, done } shadows it below
   const rd = res.body.getReader(), dec = new TextDecoder(); let rest = '';
   while (true) {
     const { value, done } = await rd.read(); if (done) break;
@@ -537,15 +560,15 @@ async function send(text) {
       const line = rest.slice(0, i); rest = rest.slice(i + 2);
       if (!line.startsWith('data: ')) continue;
       const ev = JSON.parse(line.slice(6));
-      if (ev.type === 'text') { buf += ev.text + '\n'; const a = cur.querySelector('.act'); cur.innerHTML = marked.parse(buf); if (a) cur.prepend(a); slot('#status').set('✍ 撰寫中…'); act.set('撰寫中…'); }
-      else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); step(`⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
+      if (ev.type === 'text') { setBuf(getBuf() + ev.text + '\n'); const a = cur.querySelector('.act'); cur.innerHTML = marked.parse(getBuf()); if (a) cur.prepend(a); slot('#status').set('✍ 撰寫中…'); act.set('撰寫中…'); }
+      else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); stepSink(`⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
       else if (ev.type === 'note') { const i = notes.findIndex(x => x.id === ev.note.id); if (i >= 0) notes[i] = ev.note; else { notes.push(ev.note); if (view === 'eli5') view = 'study'; } render(); }
-      else if (ev.type === 'done') { finish(); slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(buf); if (studyPath) loadStudy(studyPath); }
-      else if (ev.type === 'error') { finish(); slot('#status').set('✗ 出錯'); logLine('tool', `✗ ${esc(ev.text)}`); }
+      else if (ev.type === 'done') { end(); slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(getBuf()); if (studyPath) loadStudy(studyPath); }
+      else if (ev.type === 'error') { end(); slot('#status').set('✗ 出錯'); logLine('tool', `✗ ${esc(ev.text)}`); }
       $('#log').scrollTop = 1e9;
     }
   }
-  if (!finished) { finish(); slot('#status').set('✗ 連線中斷，請再送一次'); logLine('tool', '✗ 串流在 done 之前結束（server 重啟？）'); }
+  if (!finished) { end(); slot('#status').set('✗ 連線中斷，重新整理可接回進行中的回答'); logLine('tool', '✗ 串流在 done 之前結束（server 重啟？）'); }
 }
 // 「請選擇 (1-N)」→ 按鈕
 function renderOptions(text) {
@@ -645,7 +668,7 @@ slot('#pload'); slot('#send'); slot('#status', '');
 // a refresh must come back to the same passage, or it would switch the server's passage and drop the running quick pass
 let saved = null; try { saved = JSON.parse(localStorage.getItem('passage')); } catch {}
 if (saved?.ref) { $('#pref').value = saved.ref; $('#pver').value = saved.version || 'rcuv'; }
-loadPassage(saved?.ref, saved?.version);
+loadPassage(saved?.ref, saved?.version).then(reattach);
 </script>
 </body>
 </html>
