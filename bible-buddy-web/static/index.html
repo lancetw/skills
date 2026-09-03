@@ -62,9 +62,12 @@
   #quick { margin-left:auto; font-size:.82rem; padding:4px 12px; border-radius:999px; }
   #quick:disabled { opacity:.5; cursor:default; }
   #quick + #banner { margin-left:0; }
+  .hrow h1 { flex:none; }
+  /* the pill can never widen the row: it shrinks and clips, the full text lives in its title tooltip */
+  #banner { min-width:0; max-width:min(55%, 520px); }
   #banner { margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:4px 12px; border-radius:999px; background:var(--paper-2); border:1px solid var(--rule); color:var(--ink); font-size:.82rem; white-space:nowrap; }
   #banner[hidden] { display:none; }                     /* the display rule above would otherwise beat the hidden attribute */
-  #bannerText { min-width:0; overflow:hidden; white-space:nowrap; }
+  #bannerText { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
   #banner .t { flex:none; font-variant-numeric:tabular-nums; color:var(--ink-2); }
   .spin { width:14px; height:14px; border:2px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; flex:none; }
   @keyframes spin { to { transform:rotate(360deg); } }
@@ -171,8 +174,12 @@ async function loadPassage(refStr, version) {
 async function runQuick() {
   const b = $('#quick'); b.disabled = true;
   banner('速讀筆記產生中（約 1 分鐘）', { timer: true });
+  // the CLI retries 529s with backoff; poll the server's progress line so the wait explains itself
+  const poll = setInterval(async () => {
+    try { const { status } = await (await fetch('/api/auto-notes/quick/status')).json(); if (status) slot('#bannerText').set(`速讀產生中 · ${status}`, { stagger: 0 }); } catch {}
+  }, 2000);
   const n = await addAuto('/api/auto-notes/quick');
-  b.disabled = false;
+  clearInterval(poll); b.disabled = false;
   if (n >= 0) banner(`✓ 速讀筆記 ${notes.filter(x => x.author === 'quick').length} 條`, { spin: false, hideAfter: 3000 });
 }
 // returns the number of new notes, or -1 on failure (the error stays on the banner until the next action)
@@ -182,7 +189,8 @@ async function addAuto(url) {
   if (!Array.isArray(fresh)) {
     const msg = fresh?.error || '伺服器回傳異常';
     $('#banner').title = msg;                      // the pill clips long text; the full error lives in the tooltip
-    banner(`✗ 自動筆記失敗：${msg.slice(0, 80)}`, { spin: false });
+    const code = msg.match(/API Error: (\d+)/);       // "API Error: 529 Overloaded. This is a server-side…" → one short line
+    banner(`✗ 速讀失敗：${code ? `API ${code[1]} ${code[1] === '529' ? '過載' : '錯誤'}，稍後再點一次` : msg.slice(0, 60)}`, { spin: false });
     return -1;
   }
   $('#banner').title = '';

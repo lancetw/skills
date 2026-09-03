@@ -312,21 +312,41 @@ QUICK_PROMPT = """你是第一世紀猶太教背景的聖經學者。對下面�
 
 
 _quick_tasks: dict[str, asyncio.Task] = {}
+_quick_status: dict[str, str] = {}  # live progress per passage, e.g. "API 529 重試 2/3"; the page polls it while waiting
+QUICK_RETRIES = 3     # the CLI retries 529/5xx itself with backoff; its default (~10) kept the spinner up for minutes
+QUICK_TIMEOUT_S = 180  # hard ceiling on one pass, so the button can never spin forever
 
 
-async def _quick_run(ref: str, version: str, verses: list[dict]) -> list[dict]:
+async def _quick_run(key: str, ref: str, version: str, verses: list[dict]) -> list[dict]:
     """The model pass itself. Runs as its own Task so a page refresh (client disconnect) cannot cancel it."""
     text = "\n".join(f"[{v['verse']}] {v['text']}" for v in verses)
     opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
-                              output_format=QUICK_SCHEMA)
+                              output_format=QUICK_SCHEMA, env={"CLAUDE_CODE_MAX_RETRIES": str(QUICK_RETRIES)})
     found: list[dict] = []
-    async for m in query(prompt=QUICK_PROMPT.format(ref=ref, version=version, text=text), options=opts):
-        if isinstance(m, ResultMessage):
-            if m.is_error:  # an API failure (529 overloaded, timeout) arrives as a result, not an exception
-                raise RuntimeError(m.result or f"API error (HTTP {m.api_error_status})")
-            found = (m.structured_output or {}).get("notes", [])
-            print("quick pass:", ref, len(found), "notes", m.total_cost_usd, "USD", file=sys.stderr)
+    _quick_status[key] = ""
+    try:
+        async with asyncio.timeout(QUICK_TIMEOUT_S):
+            async for m in query(prompt=QUICK_PROMPT.format(ref=ref, version=version, text=text), options=opts):
+                if isinstance(m, SystemMessage) and m.subtype == "api_retry":
+                    d = m.data
+                    _quick_status[key] = f"API {d.get('error_status') or '?'}，重試 {d.get('attempt')}/{d.get('max_retries')}（{round((d.get('retry_delay_ms') or 0) / 1000)}s 後）"
+                    print("quick pass retry:", key, _quick_status[key], file=sys.stderr)
+                elif isinstance(m, ResultMessage):
+                    if m.is_error:  # an API failure (529 overloaded, timeout) arrives as a result, not an exception
+                        raise RuntimeError(m.result or f"API error (HTTP {m.api_error_status})")
+                    found = (m.structured_output or {}).get("notes", [])
+                    print("quick pass:", ref, len(found), "notes", m.total_cost_usd, "USD", file=sys.stderr)
+    except TimeoutError:
+        raise RuntimeError(f"逾時：{QUICK_TIMEOUT_S}s 內沒有結果（API 可能過載）") from None
+    finally:
+        _quick_status.pop(key, None)
     return found
+
+
+@app.get("/api/auto-notes/quick/status")
+async def auto_notes_quick_status():
+    key = f"{passage['reference']}|{passage['version']}"
+    return {"status": _quick_status.get(key, "")}
 
 
 @app.get("/api/auto-notes/quick")
@@ -337,7 +357,7 @@ async def auto_notes_quick():
     if key not in _quick_cache:
         task = _quick_tasks.get(key)
         if task is None or (task.done() and task.exception() is not None):
-            task = _quick_tasks[key] = asyncio.create_task(_quick_run(passage["reference"], passage["version"], list(passage["verses"])))
+            task = _quick_tasks[key] = asyncio.create_task(_quick_run(key, passage["reference"], passage["version"], list(passage["verses"])))
         try:
             _quick_cache[key] = await asyncio.shield(task)  # shield: cancelling this request must not cancel the shared task
         except Exception as e:
