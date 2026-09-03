@@ -8,6 +8,7 @@ import hashlib
 import shutil
 import subprocess
 import json
+import os
 import re
 import sys
 import uuid
@@ -27,6 +28,13 @@ from claude_agent_sdk import (
 )
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
+
+# A package-manager guard (pmg) launches `uv run` behind a short-lived loopback proxy and exports it
+# (HTTPS_PROXY=http://127.0.0.1:NNNNN, NODE_USE_ENV_PROXY=1). The Claude CLI we spawn would inherit
+# that and get "Connection refused" once the guard exits, so drop loopback proxies before anything spawns.
+for _k in [k for k in os.environ if k.lower() in ("http_proxy", "https_proxy", "all_proxy", "pip_proxy")]:
+    if "127.0.0.1" in os.environ[_k] or "localhost" in os.environ[_k]:
+        del os.environ[_k]
 
 HERE = Path(__file__).parent
 SKILL = HERE / ".claude/skills/bible-buddy"
@@ -303,20 +311,31 @@ QUICK_PROMPT = """你是第一世紀猶太教背景的聖經學者。對下面�
 {text}"""
 
 
+_quick_tasks: dict[str, asyncio.Task] = {}
+
+
+async def _quick_run(ref: str, version: str, verses: list[dict]) -> list[dict]:
+    """The model pass itself. Runs as its own Task so a page refresh (client disconnect) cannot cancel it."""
+    text = "\n".join(f"[{v['verse']}] {v['text']}" for v in verses)
+    opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
+                              output_format=QUICK_SCHEMA)
+    found: list[dict] = []
+    async for m in query(prompt=QUICK_PROMPT.format(ref=ref, version=version, text=text), options=opts):
+        if isinstance(m, ResultMessage):
+            found = (m.structured_output or {}).get("notes", [])
+            print("quick pass:", ref, len(found), "notes", m.total_cost_usd, "USD", file=sys.stderr)
+    return found
+
+
 @app.get("/api/auto-notes/quick")
 async def auto_notes_quick():
-    """One cheap model pass, no skill, no tools: many arrows in ~20 s. Marked unverified."""
+    """One cheap model pass per passage. Concurrent or repeated callers (a refreshed page) share the same Task."""
     key = f"{passage['reference']}|{passage['version']}"
     if key not in _quick_cache:
-        text = "\n".join(f"[{v['verse']}] {v['text']}" for v in passage["verses"])
-        opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
-                                  output_format=QUICK_SCHEMA)
-        found = []
-        async for m in query(prompt=QUICK_PROMPT.format(ref=passage["reference"], version=passage["version"], text=text), options=opts):
-            if isinstance(m, ResultMessage):
-                found = (m.structured_output or {}).get("notes", [])
-                print("quick pass:", len(found), "notes", m.total_cost_usd, "USD", file=sys.stderr)
-        _quick_cache[key] = found
+        task = _quick_tasks.get(key)
+        if task is None or (task.done() and task.exception() is not None):
+            task = _quick_tasks[key] = asyncio.create_task(_quick_run(passage["reference"], passage["version"], list(passage["verses"])))
+        _quick_cache[key] = await asyncio.shield(task)  # shield: cancelling this request must not cancel the shared task
     out = []
     for n in _quick_cache[key]:
         text = _verse_text(n["verse"])

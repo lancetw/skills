@@ -325,7 +325,11 @@ $('#f').onsubmit = e => {
   if (running) { slot('#status').set('⏹ 停止中…'); fetch('/api/chat/stop', { method: 'POST' }); return; }
   const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t);
 };
-$('#pf').onsubmit = async e => { e.preventDefault(); slot('#pload').set('載入中…'); await loadPassage($('#pref').value.trim(), $('#pver').value); };
+$('#pf').onsubmit = async e => {
+  e.preventDefault(); slot('#pload').set('載入中…');
+  try { localStorage.setItem('passage', JSON.stringify({ ref: $('#pref').value.trim(), version: $('#pver').value })); } catch {}
+  await loadPassage($('#pref').value.trim(), $('#pver').value);
+};
 // theme: explicit data-theme, light by default, remembered per browser
 const root = document.documentElement;
 try { root.dataset.theme = localStorage.getItem('theme') || 'light'; } catch {}
@@ -335,7 +339,10 @@ paintTheme();
 slot('.brand', '').set('Bible Buddy 筆記本', { stagger: 30 });
 slot('#ref', '').set('載入中…');
 slot('#pload'); slot('#send'); slot('#status', '');
-loadPassage();
+// a refresh must come back to the same passage, or it would switch the server's passage and drop the running quick pass
+let saved = null; try { saved = JSON.parse(localStorage.getItem('passage')); } catch {}
+if (saved?.ref) { $('#pref').value = saved.ref; $('#pver').value = saved.version || 'rcuv'; }
+loadPassage(saved?.ref, saved?.version);
 </script>
 </body>
 </html>
