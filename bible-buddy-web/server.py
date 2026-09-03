@@ -285,7 +285,7 @@ async def auto_notes_quick():
         i = text.find(n["quote"])
         note = {"id": _note_id("quick", key, str(n["verse"]), n["quote"]), "verse": str(n["verse"]),
                 "anchor": None if i < 0 else {"start": i, "end": i + len(n["quote"])},
-                "label": n["label"][:20], "body": n["body"] + "\n\n（速讀筆記，未經 bible-buddy 驗證流程）",
+                "label": n["label"][:20], "body": n["body"],  # author=quick is what the UI flags as unverified
                 "kind": n["kind"] if n["kind"] in KINDS else "lexical", "author": "quick"}
         if _add(note):
             out.append(note)
