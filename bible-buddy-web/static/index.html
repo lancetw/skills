@@ -108,7 +108,8 @@
   .hrow { display:flex; align-items:center; gap:12px; min-height:34px; margin:0 0 14px; }
   .hrow h1 { margin:0; }
   #quick { margin-left:auto; font-size:.82rem; padding:4px 12px; border-radius:999px; }
-  #quick + #study { margin-left:0; font-size:.82rem; padding:4px 12px; border-radius:999px; }
+  #quickClear, #study { margin-left:0; font-size:.82rem; padding:4px 12px; border-radius:999px; }
+  #quickClear[hidden] { display:none; } #quickClear.armed { border-color:#c45a38; color:#c45a38; }
   #study + #banner { margin-left:0; }
   .hrow h1 { flex:none; }
   /* the pill can never widen the row: it shrinks and clips, the full text lives in its title tooltip */
@@ -172,7 +173,7 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型速讀整段；產生過的段落直接回傳">✨ 生成 AI 筆記</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程研讀這段，標注畫面並存報告">📝 完整研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型速讀整段；產生過的段落直接回傳">✨ 生成 AI 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有 AI 筆記">🗑</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程研讀這段，標注畫面並存報告">📝 完整研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
@@ -349,15 +350,19 @@ function showCard(n, rect, gap) {
   const unverified = n.author === 'quick' && !n.verified;
   const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`, n.pass_cost != null && `速讀整段 $${n.pass_cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
     + (unverified ? '<span class="tag unv" title="速讀筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
-  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask">追問 →</button></div>`;
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask">追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
   d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
   d.querySelector('#edit').onclick = () => showEditor(n, rect, gap);
+  d.querySelector('#regen')?.addEventListener('click', () => {
+    const quote = verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end);
+    d.hidePopover(); aiNote({ verse: n.verse, quote, replace: n.id });
+  });
   // hand the quick note to the agent; it answers by calling update_annotation, which comes back as a "note" event
   d.querySelector('#verify')?.addEventListener('click', () => {
     const quote = n.anchor ? verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end) : '';
     d.hidePopover();
-    send(`驗證速讀筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程查證原文字義、歷史背景與資料來源，有誤就改正。完成後呼叫 mcp__notes__update_annotation（id=${n.id}）回填一條短筆記：label 20 字內；body 1 到 3 句、100 字內，只寫結論和主要依據（可用 Markdown）。詳細分析寫在對話裡即可，不要塞進筆記，也不要另外新增筆記。`);
+    send(`驗證速讀筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程查證原文字義、歷史背景與資料來源，有誤就改正。完成後呼叫 mcp__notes__update_annotation（id=${n.id}）回填。回填的口氣與格式要跟原筆記一樣：label 20 字內，原文字義類寫「希伯來/希臘字 音譯＝意思」；body 1 到 3 句、100 字內，直接陳述結論與主要依據，像原本那條速讀筆記的寫法，不要寫「經查證」「已驗證」「原筆記正確」這類過程描述，不要教會式應用。詳細分析寫在對話裡即可，不要塞進筆記，也不要另外新增筆記。`);
   });
   // delete is two clicks: the first arms it, so a stray click cannot throw away a note
   d.querySelector('#del').onclick = async e => {
@@ -434,11 +439,11 @@ const elapsed = t0 => { const n = Math.round((Date.now() - t0) / 1000); return n
 function pendingChip(p) {
   const q = esc(p.quote.slice(0, 10));
   if (p.error) return `<span class="chip err" data-pending="${p.id}" title="${esc(p.full || '')}">✗ 「${q}」${esc(p.error)}<button data-retry="${p.id}">再試</button><button data-dismiss="${p.id}" title="關掉">✕</button></span>`;
-  return `<span class="chip pending" data-pending="${p.id}"><span class="spin"></span>「${q}」AI 筆記產生中<span class="st">${p.status ? ` · ${esc(p.status)}` : ''}</span><span class="t">${elapsed(p.t0)}</span></span>`;
+  return `<span class="chip pending" data-pending="${p.id}"><span class="spin"></span>「${q}」${p.replace ? 'AI 筆記重新產生中' : 'AI 筆記產生中'}<span class="st">${p.status ? ` · ${esc(p.status)}` : ''}</span><span class="t">${elapsed(p.t0)}</span></span>`;
 }
 setInterval(() => { for (const p of pending.values()) { const el = document.querySelector(`[data-pending="${p.id}"] .t`); if (el) el.textContent = elapsed(p.t0); } }, 1000);
 async function aiNote(s) {
-  const p = { id: Math.random().toString(36).slice(2, 8), verse: s.verse, quote: s.quote, t0: Date.now(), status: '', error: null };
+  const p = { id: Math.random().toString(36).slice(2, 8), verse: s.verse, quote: s.quote, replace: s.replace, t0: Date.now(), status: '', error: null };
   pending.set(p.id, p); render();
   const key = `one|${s.verse}|${s.quote}`;
   const poll = setInterval(async () => {
@@ -447,13 +452,16 @@ async function aiNote(s) {
       if (status !== p.status) { p.status = status; const el = document.querySelector(`[data-pending="${p.id}"] .st`); if (el) el.textContent = status ? ` · ${status}` : ''; }
     } catch {}
   }, 2000);
-  let r; try { r = await api('/api/auto-notes/one', 'POST', { verse: s.verse, quote: s.quote }); } catch (e) { r = { error: e.message }; }
+  let r; try { r = await api('/api/auto-notes/one', 'POST', { verse: s.verse, quote: s.quote, replace: s.replace }); } catch (e) { r = { error: e.message }; }
   clearInterval(poll);
   if (r.error) {
     const code = r.error.match(/API Error: (\d+)/);
     p.error = code ? `API ${code[1]}${code[1] === '529' ? ' 過載' : ''}` : r.error.slice(0, 40); p.full = r.error; render(); return;
   }
-  pending.delete(p.id); notes.push(r); render();
+  pending.delete(p.id);
+  const i = s.replace ? notes.findIndex(x => x.id === s.replace) : -1;
+  if (i >= 0) notes.splice(i, 1, r); else notes.push(r);
+  render(); quickLabel();
 }
 
 function logLine(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('#log').appendChild(d); $('#log').scrollTop = 1e9; saveLog(); return d; }
@@ -565,7 +573,17 @@ $('#f').onsubmit = e => {
 };
 $('#quick').onclick = runQuick;
 // the button itself shows what the pass for this passage cost, so the number does not vanish with the banner
-function quickLabel() { slot('#quick').set(notes.some(x => x.author === 'quick') ? '✨ AI 筆記 ✓' : '✨ 生成 AI 筆記'); }  // cost stays on the cards and the banner
+function quickLabel() { const has = notes.some(x => x.author === 'quick'); slot('#quick').set(has ? '✨ AI 筆記 ✓' : '✨ 生成 AI 筆記'); $('#quickClear').hidden = !has; }  // cost stays on the cards and the banner
+// delete every AI note of the passage: first click arms, second deletes; the server also forgets the cached pass
+let clearArm = null;
+$('#quickClear').onclick = async () => {
+  const b = $('#quickClear');
+  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = '確定刪除全部 AI 筆記？'; clearArm = setTimeout(() => { b.classList.remove('armed'); b.textContent = '🗑'; }, 4000); return; }
+  clearTimeout(clearArm); b.classList.remove('armed'); b.textContent = '🗑';
+  const r = await api('/api/notes/quick', 'DELETE');
+  notes = notes.filter(x => x.author !== 'quick'); render(); quickLabel();
+  banner(`✓ 已刪除 ${r.removed} 條 AI 筆記`, { spin: false, hideAfter: 3000 });
+};
 $('#pf').onsubmit = async e => {
   e.preventDefault(); slot('#pload').set('載入中…');
   try { localStorage.setItem('passage', JSON.stringify({ ref: $('#pref').value.trim(), version: $('#pver').value })); } catch {}

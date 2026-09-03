@@ -112,6 +112,22 @@ def _find_note(nid: str) -> dict | None:
     return next((n for n in notes if n["id"] == nid), None)
 
 
+@app.delete("/api/notes/quick")
+async def delete_quick_notes():
+    """Remove every AI note of the passage and forget the cached pass, so the next 生成 runs fresh.
+    Their ids leave the hidden set too: a fresh pass may produce the same quotes, and those must be allowed back."""
+    key = _key()
+    gone = [n for n in notes if n.get("author") == "quick"]
+    for n in gone:
+        notes.remove(n)
+        hidden.discard(n["id"])
+    for q in _quick_cache.pop(key, None) or []:
+        hidden.discard(_note_id("quick", key, str(q["verse"]), q["quote"]))
+    _quick_cost.pop(key, None); _quick_tasks.pop(key, None)
+    _save()
+    return {"ok": True, "removed": len(gone)}
+
+
 @app.put("/api/notes/{nid}")
 async def edit_note(nid: str, body: dict):
     """Works on any note, auto or manual: the anchor stays, only label/body/kind change."""
@@ -246,7 +262,7 @@ async def add_annotation(args: dict) -> dict:
 
 @tool(
     "update_annotation",
-    "更新一條既有筆記（驗證速讀筆記用）。id 必填；label 20 字內；body 是短筆記：1 到 3 句、100 字內，只寫結論和主要依據，長篇分析留在對話裡；kind: lexical|history|misread|crossref",
+    "更新一條既有筆記（驗證速讀筆記用）。id 必填。口氣與格式沿用原筆記：label 20 字內（原文字義類寫「希伯來/希臘字 音譯＝意思」）；body 1 到 3 句、100 字內，直接陳述結論與主要依據，第一世紀猶太教背景學者的口吻，不寫「經查證」「已驗證」之類的過程描述，不教會式應用；kind: lexical|history|misread|crossref",
     {"id": str, "label": str, "body": str, "kind": str},
 )
 async def update_annotation(args: dict) -> dict:
@@ -508,23 +524,31 @@ ONE_PROMPT = """你是第一世紀猶太教背景的聖經學者。針對下面�
 
 @app.post("/api/auto-notes/one")
 async def auto_note_one(body: dict):
-    """A model note for one selected phrase. Not cached: the user asked for exactly this one."""
+    """A model note for one selected phrase. Not cached: the user asked for exactly this one.
+    With "replace": <id> it rewrites that note in place, told what the old one said."""
     verse, quote = str(body["verse"]), str(body["quote"]).strip()
     text = _verse_text(verse)
     i = text.find(quote)
     if not quote or i < 0:
         return {"error": "選取的字不在該節經文裡"}
+    old = _find_note(str(body["replace"])) if body.get("replace") else None
     ctx = "\n".join(f"[{v['verse']}] {v['text']}" for v in passage["verses"])
+    prompt = ONE_PROMPT.format(verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx)
+    if old:
+        prompt += f"\n\n先前的筆記是「{old['label']}」：{old.get('body', '')}\n請重寫：修正錯誤，或換一個更有價值的角度；不要照抄。"
     try:
-        r, cost = await _structured(ONE_PROMPT.format(verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx),
-                              ONE_SCHEMA, f"one|{verse}|{quote}")
+        r, cost = await _structured(prompt, ONE_SCHEMA, f"one|{verse}|{quote}")
     except Exception as e:
         print("one-note failed:", verse, quote, repr(e), file=sys.stderr)
         return {"error": str(e)}
     note = {"id": uuid.uuid4().hex[:8], "verse": verse, "anchor": {"start": i, "end": i + len(quote)},
             "label": str(r.get("label", quote))[:20], "body": r.get("body", ""),
             "kind": r["kind"] if r.get("kind") in KINDS else "lexical", "author": "quick", "cost": cost}
-    notes.append(note)
+    if old and old in notes:
+        notes[notes.index(old)] = note
+        hidden.add(old["id"])  # a cached pass must not bring the old one back beside the rewrite
+    else:
+        notes.append(note)
     _save()
     return note
 
