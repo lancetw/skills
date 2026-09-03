@@ -173,7 +173,7 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有 ELI5 筆記">🗑</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次深入研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
@@ -574,16 +574,16 @@ $('#f').onsubmit = e => {
 };
 $('#quick').onclick = runQuick;
 // the button itself shows what the pass for this passage cost, so the number does not vanish with the banner
-function quickLabel() { const has = notes.some(x => x.author === 'quick'); slot('#quick').set(has ? '✨ ELI5 筆記 ✓' : '✨ 生成 ELI5 筆記'); $('#quickClear').hidden = !has; }  // cost stays on the cards and the banner
-// delete every AI note of the passage: first click arms, second deletes; the server also forgets the cached pass
+function quickLabel() { slot('#quick').set(notes.some(x => x.author === 'quick') ? '✨ ELI5 筆記 ✓' : '✨ 生成 ELI5 筆記'); $('#quickClear').hidden = !notes.some(x => x.author !== 'user'); }  // cost stays on the cards and the banner
+// delete every automatic note of the passage (ELI5, agent, references): first click arms, second deletes
 let clearArm = null;
 $('#quickClear').onclick = async () => {
   const b = $('#quickClear');
-  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = '確定刪除全部 ELI5 筆記？'; clearArm = setTimeout(() => { b.classList.remove('armed'); b.textContent = '🗑'; }, 4000); return; }
+  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = '確定刪除全部自動筆記？'; clearArm = setTimeout(() => { b.classList.remove('armed'); b.textContent = '🗑'; }, 4000); return; }
   clearTimeout(clearArm); b.classList.remove('armed'); b.textContent = '🗑';
   const r = await api('/api/notes/quick', 'DELETE');
-  notes = notes.filter(x => x.author !== 'quick'); render(); quickLabel();
-  banner(`✓ 已刪除 ${r.removed} 條 ELI5 筆記`, { spin: false, hideAfter: 3000 });
+  notes = notes.filter(x => x.author === 'user'); render(); quickLabel();
+  banner(`✓ 已刪除 ${r.removed} 條自動筆記`, { spin: false, hideAfter: 3000 });
 };
 $('#pf').onsubmit = async e => {
   e.preventDefault(); slot('#pload').set('載入中…');

@@ -114,13 +114,14 @@ def _find_note(nid: str) -> dict | None:
 
 @app.delete("/api/notes/quick")
 async def delete_quick_notes():
-    """Remove every AI note of the passage and forget the cached pass, so the next 生成 runs fresh.
-    Their ids leave the hidden set too: a fresh pass may produce the same quotes, and those must be allowed back."""
+    """Remove every automatic note of the passage: ELI5 (cached pass forgotten so the next 生成 runs fresh and may
+    produce the same quotes again, so their ids leave the hidden set), agent annotations and reference notes
+    (those stay hidden, since references are re-read on every load). Manual notes stay."""
     key = _key()
-    gone = [n for n in notes if n.get("author") == "quick"]
+    gone = [n for n in notes if n.get("author") != "user"]
     for n in gone:
         notes.remove(n)
-        hidden.discard(n["id"])
+        (hidden.discard if n.get("author") == "quick" else hidden.add)(n["id"])
     for q in _quick_cache.pop(key, None) or []:
         hidden.discard(_note_id("quick", key, str(q["verse"]), q["quote"]))
     _quick_cost.pop(key, None); _quick_tasks.pop(key, None)
