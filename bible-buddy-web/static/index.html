@@ -171,7 +171,7 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型速讀整段；產生過的段落直接回傳">✨ 速讀筆記</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程研讀這段，標注畫面並存報告">📝 完整研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型速讀整段；產生過的段落直接回傳">✨ 生成 AI 筆記</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程研讀這段，標注畫面並存報告">📝 完整研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
@@ -188,7 +188,7 @@
     <p class="ex"><button type="button" data-q="第 1 節逐字原文分析">第 1 節逐字原文分析</button><button type="button" data-q="這段的第一世紀歷史處境">第一世紀歷史處境</button><button type="button" data-q="這段常見的誤讀與翻譯偏差">常見誤讀與翻譯偏差</button><button type="button" data-q="這段的相關經文與引用脈絡">相關經文</button></p>
     <p><button type="button" id="study2" class="primary">📝 產生完整研讀報告</button><br><small>逐節研讀、標注畫面，報告存到「研讀報告」分頁</small></p>
     <p><b>其他入口</b></p>
-    <p>反白經文 → 手動筆記或 AI 筆記。<br>✨ 速讀筆記一次掃整段，「未驗證」的可從卡片請 agent 驗證。<br>對話會保留到你按「清除」；換段經文會重新開始。</p>
+    <p>反白經文 → 手動筆記或 AI 筆記。<br>✨ 生成 AI 筆記一次掃整段，「未驗證」的可從卡片請 agent 驗證。<br>對話會保留到你按「清除」；換段經文會重新開始。</p>
   </div>
   <div id="status" class="tool"></div>
   <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button class="primary" id="send">送出</button></form>
@@ -247,14 +247,14 @@ async function loadPassage(refStr, version) {
 // the model pass is manual: it costs money and a minute, and a 529 on page load used to look like "0 notes"
 async function runQuick() {
   const b = $('#quick'); b.disabled = true;
-  banner('速讀筆記產生中', { timer: true });
+  banner('AI 筆記產生中', { timer: true });
   // the CLI retries 529s with backoff; poll the server's progress line so the wait explains itself
   const poll = setInterval(async () => {
     try { const { status } = await (await fetch('/api/auto-notes/quick/status')).json(); if (status) slot('#bannerText').set(`速讀產生中 · ${status}`, { stagger: 0 }); } catch {}
   }, 2000);
   const n = await addAuto('/api/auto-notes/quick');
   clearInterval(poll); b.disabled = false;
-  if (n >= 0) banner(`✓ 速讀筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}${usd(lastAuto.cost)}`, { spin: false, hideAfter: 4000 });
+  if (n >= 0) banner(`✓ AI 筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}${usd(lastAuto.cost)}`, { spin: false, hideAfter: 4000 });
   quickLabel();
 }
 const usd = c => c == null ? '' : ` · $${c.toFixed(3)}`;
@@ -562,7 +562,7 @@ $('#f').onsubmit = e => {
 };
 $('#quick').onclick = runQuick;
 // the button itself shows what the pass for this passage cost, so the number does not vanish with the banner
-function quickLabel() { const c = notes.find(x => x.pass_cost != null)?.pass_cost; slot('#quick').set(c != null ? `✨ 速讀筆記 · $${c.toFixed(3)}` : '✨ 速讀筆記'); }
+function quickLabel() { slot('#quick').set(notes.some(x => x.author === 'quick') ? '✨ AI 筆記 ✓' : '✨ 生成 AI 筆記'); }  // cost stays on the cards and the banner
 $('#pf').onsubmit = async e => {
   e.preventDefault(); slot('#pload').set('載入中…');
   try { localStorage.setItem('passage', JSON.stringify({ ref: $('#pref').value.trim(), version: $('#pver').value })); } catch {}
