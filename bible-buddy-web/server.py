@@ -4,7 +4,9 @@ annotate the passage on screen via a custom tool, and how does that feel?
 Run:  uv run uvicorn server:app --port 8765   then open http://127.0.0.1:8765
 """
 import asyncio
+import hashlib
 import json
+import re
 import sys
 import uuid
 from pathlib import Path
@@ -18,6 +20,7 @@ from claude_agent_sdk import (
     TextBlock,
     ToolUseBlock,
     create_sdk_mcp_server,
+    query,
     tool,
 )
 from fastapi import FastAPI
@@ -26,6 +29,7 @@ from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 HERE = Path(__file__).parent
 SKILL = HERE / ".claude/skills/bible-buddy"
 sys.path.insert(0, str(SKILL / "scripts"))
+from book_names import lookup  # noqa: E402
 from fetch_fhl import fetch  # noqa: E402  bible-buddy's own fetcher, stdlib only
 
 app = FastAPI()
@@ -49,7 +53,7 @@ async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int =
     r = await asyncio.to_thread(fetch, book, chapter, start, end, version)
     if r.get("reference") != passage["reference"]:
         notes.clear()  # notes carry no book/chapter; a new passage means a clean slate
-    passage.update(reference=r.get("reference", ""), version=version, verses=r.get("verses", []))
+    passage.update(reference=r.get("reference", ""), version=version, verses=r.get("verses", []), book=book)
     return r
 
 
@@ -161,3 +165,128 @@ async def chat(body: dict):
                 break
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+# ── auto notes: arrows on load, before anyone asks the agent ──────────────────
+REFS = SKILL / "references"
+KINDS = ["lexical", "history", "misread", "crossref"]
+_quick_cache: dict[str, list] = {}  # ponytail: in-memory; sqlite in the real thing
+
+
+def _note_id(*parts: str) -> str:
+    return hashlib.sha1("|".join(parts).encode()).hexdigest()[:8]
+
+
+def _verse_text(verse: str) -> str:
+    v = next((x for x in passage["verses"] if str(x["verse"]) == str(verse)), None)
+    return v["text"] if v else ""
+
+
+def _add(note: dict) -> dict | None:
+    if any(n["id"] == note["id"] for n in notes):
+        return None
+    notes.append(note)
+    return note
+
+
+def _table_rows(path: Path):
+    for line in path.read_text().splitlines():
+        if not line.startswith("| ") or line.startswith("| Scripture") or line.startswith("|---"):
+            continue
+        yield [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def _verses_in(ref: str) -> list[str]:
+    """'Isaiah 7:14' / 'Isaiah 7:10-17' / 'Isaiah 7' → loaded verse numbers it covers."""
+    info = lookup(passage.get("book", ""))
+    if not info:
+        return []
+    names = {info[1], info[3]}
+    m = re.match(r"^(.+?) (\d+)(?::(\d+)(?:-(\d+))?)?$", ref)
+    if not m or m.group(1) not in names or int(m.group(2)) != int(re.search(r" (\d+)", passage["reference"]).group(1)):
+        return []
+    loaded = [str(v["verse"]) for v in passage["verses"]]
+    if not m.group(3):
+        return loaded
+    lo, hi = int(m.group(3)), int(m.group(4) or m.group(3))
+    return [v for v in loaded if lo <= int(v) <= hi]
+
+
+@app.get("/api/auto-notes/refs")
+async def auto_notes_refs():
+    """Instant, verified: rows from bible-buddy's own reference tables that hit the loaded passage."""
+    out = []
+    for cells in _table_rows(REFS / "translation-bias.md"):
+        if len(cells) < 5 or cells[3].startswith("Same as"):
+            continue
+        for v in _verses_in(cells[0]):
+            bold = re.search(r"\*\*(.+?)\*\*", cells[1])
+            text = _verse_text(v)
+            i = text.find(bold.group(1)) if bold else -1
+            term = re.match(r"^(\S+) \((\w+)\)", cells[3])
+            label = f"{bold.group(1)}＝{term.group(1)} {term.group(2)}" if bold and term else cells[3][:20]
+            note = {"id": _note_id("bias", cells[0], cells[1]), "verse": v,
+                    "anchor": None if i < 0 else {"start": i, "end": i + len(bold.group(1))},
+                    "label": label[:20], "body": f"**中譯：** {cells[2]}\n\n**原文：** {cells[3]}\n\n**影響：** {cells[4]}",
+                    "kind": "misread", "author": "refs"}
+            if _add(note):
+                out.append(note)
+    for cells in _table_rows(REFS / "commonly-misread-passages.md"):
+        if len(cells) < 4:
+            continue
+        for v in _verses_in(cells[0]):
+            text = _verse_text(v)
+            head = re.split(r"[，：「。；]", text)[0][:8]  # arrow on the verse's first clause
+            note = {"id": _note_id("misread", cells[0], cells[3]), "verse": v,
+                    "anchor": {"start": 0, "end": len(head)} if head else None,
+                    "label": f"誤讀 · {cells[3].replace('*', '')[:14]}", "body": f"**常見誤讀：** {cells[1]}\n\n**第一世紀脈絡：** {cells[2]}",
+                    "kind": "misread", "author": "refs"}
+            if _add(note):
+                out.append(note)
+    return out
+
+
+QUICK_SCHEMA = {"type": "json_schema", "schema": {
+    "type": "object", "required": ["notes"],
+    "properties": {"notes": {"type": "array", "items": {
+        "type": "object", "required": ["verse", "quote", "label", "body", "kind"],
+        "properties": {"verse": {"type": "integer"}, "quote": {"type": "string"}, "label": {"type": "string"},
+                       "body": {"type": "string"}, "kind": {"type": "string", "enum": KINDS}}}}}}}
+
+QUICK_PROMPT = """你是第一世紀猶太教背景的聖經學者。對下面這段經文產生 10 到 14 條速讀筆記，讓讀者一眼看到值得停下來的字。
+規則：
+- quote：逐字取自該節經文的子字串，2 到 8 個字，不含標點；每節最多 2 條，不同條不可重疊。
+- label：台灣繁體中文，14 字以內；原文字義類寫成「希伯來/希臘字 音譯＝意思」，例「עַלְמָה almah＝年輕女子」。
+- body：1 到 3 句，說明為什麼重要；不確定的寫「（待驗證）」。
+- kind：lexical（原文字義）、history（歷史處境）、misread（常見誤讀或翻譯偏差）、crossref（相關經文）。
+- 不要教會式應用，不要靈意化。
+
+{ref}（{version}）
+{text}"""
+
+
+@app.get("/api/auto-notes/quick")
+async def auto_notes_quick():
+    """One cheap model pass, no skill, no tools: many arrows in ~20 s. Marked unverified."""
+    key = f"{passage['reference']}|{passage['version']}"
+    if key not in _quick_cache:
+        text = "\n".join(f"[{v['verse']}] {v['text']}" for v in passage["verses"])
+        opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
+                                  output_format=QUICK_SCHEMA)
+        found = []
+        async for m in query(prompt=QUICK_PROMPT.format(ref=passage["reference"], version=passage["version"], text=text), options=opts):
+            if isinstance(m, ResultMessage):
+                found = (m.structured_output or {}).get("notes", [])
+                print("quick pass:", len(found), "notes", m.total_cost_usd, "USD", file=sys.stderr)
+        _quick_cache[key] = found
+    out = []
+    for n in _quick_cache[key]:
+        text = _verse_text(n["verse"])
+        i = text.find(n["quote"])
+        note = {"id": _note_id("quick", key, str(n["verse"]), n["quote"]), "verse": str(n["verse"]),
+                "anchor": None if i < 0 else {"start": i, "end": i + len(n["quote"])},
+                "label": n["label"][:20], "body": n["body"] + "\n\n（速讀筆記，未經 bible-buddy 驗證流程）",
+                "kind": n["kind"] if n["kind"] in KINDS else "lexical", "author": "quick"}
+        if _add(note):
+            out.append(note)
+    return out
