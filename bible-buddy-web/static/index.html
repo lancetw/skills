@@ -99,7 +99,7 @@
   #detail form.ed textarea { min-height:80px; resize:vertical; font-family:var(--sans); }
   #detail form.ed .row { display:flex; gap:6px; justify-content:flex-end; }
   #detail form.ed .row select { width:auto; margin-right:auto; }
-  /* selection menu: hovers just above the highlighted text */
+  /* selection menu: sits just under the highlighted text */
   #selmenu { position:fixed; margin:0; inset:auto; padding:4px; gap:4px; border:1px solid var(--rule); border-radius:8px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
   #selmenu:popover-open { display:flex; }
   #selmenu button { font-size:.85rem; padding:4px 10px; }
@@ -398,7 +398,9 @@ document.addEventListener('mouseup', e => {
   const rect = sel.getRangeAt(0).getBoundingClientRect();
   pendingSel = { verse: v.verse, quote: q, anchor: { start, end: start + q.length }, rect };
   const m = $('#selmenu'); m.showPopover();
-  m.style.top = Math.max(8, rect.top - m.offsetHeight - 6) + 'px';
+  let top = rect.bottom + 6;  // below the selection; above only when it would run off the bottom
+  if (top + m.offsetHeight > innerHeight - 8) top = Math.max(8, rect.top - m.offsetHeight - 6);
+  m.style.top = top + 'px';
   m.style.left = Math.max(8, Math.min(rect.left, innerWidth - m.offsetWidth - 8)) + 'px';
 });
 $('#selManual').onclick = () => {
