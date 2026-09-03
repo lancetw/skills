@@ -175,10 +175,11 @@ const TOOL_ZH = { Bash:'執行抓經文腳本', WebSearch:'搜尋', WebFetch:'�
 const DOTC = { amber:'#b8751a', blue:'#3b72c4', green:'#2f8f5b', red:'#c45a38', purple:'#8657c8' };
 const $ = s => document.querySelector(s);
 
-// 「以賽亞書 7:10-17」「創世記 1」「Matt 5:17」都吃
+// 「以賽亞書 7:10-17」「創世記 1」「Matt 5:17」「約翰福音」（= 第 1 章）都吃
 async function loadPassage(refStr, version) {
-  const m = (refStr || '').match(/^(\S+)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/);
-  const qs = m ? `?book=${encodeURIComponent(m[1])}&chapter=${m[2]}&start=${m[3]||1}&end=${m[4]||m[3]||200}&version=${version||'rcuv'}` : '';
+  const m = (refStr || '').trim().match(/^(\S+?)\s*(\d+)?(?::(\d+)(?:-(\d+))?)?$/);
+  if (!m || /^\d/.test(m[1])) { banner('✗ 看不懂的經文位置，例：約翰福音 3:16', { spin: false, hideAfter: 4000 }); slot('#pload').set('載入'); return; }
+  const qs = `?book=${encodeURIComponent(m[1])}&chapter=${m[2]||1}&start=${m[3]||1}&end=${m[4]||m[3]||200}&version=${version||'rcuv'}`;
   banner('載入經文…');
   const r = await (await fetch('/api/passage' + qs)).json();
   if (r.error) { banner(`✗ ${r.error}`, { spin: false, hideAfter: 4000 }); slot('#pload').set('載入'); return; }
