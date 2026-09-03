@@ -65,6 +65,7 @@
   .fns h3 { margin:0 0 6px; font-size:.8rem; font-weight:500; letter-spacing:.12em; }
   .fns ol { margin:0; padding-left:1.8em; } .fns li { line-height:1.8; padding:0 4px; border-radius:4px; transition:background .6s; }
   .fns li.flash { background:var(--paper-2); transition:none; }
+  .verse { transition:background .8s; border-radius:4px; } .verse.flash { background:var(--paper-2); transition:none; }  /* ↩ from a footnote lights the verse briefly */
   .fns .v { font-family:var(--hand); color:var(--margin); margin-right:6px; } .fns .back { margin-left:6px; color:var(--pen); text-decoration:none; }
   .fn { font-size:.6em; vertical-align:super; color:var(--pen); cursor:pointer; user-select:none; margin:0 1px; font-family:var(--sans); }  /* translator footnote marker */
   .chip { display:inline-block; font-size:.8rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
@@ -137,6 +138,10 @@
   #log details.steps { margin:.2em 0 .2em 6px; }
   #log details.steps summary { cursor:pointer; color:var(--ink-2); font-size:.76rem; list-style:none; }
   #log details.steps summary::before { content:'▸ '; } #log details.steps[open] summary::before { content:'▾ '; }
+  /* the user's own message: keeps its line breaks; a long one folds to its first line */
+  #log .msg.me .body { white-space:pre-wrap; }
+  #log .msg.me.fold .body { display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+  #log .msg.me .more { border:none; background:transparent; color:var(--pen); font-size:.78rem; padding:2px 0 0; }
   #log .tool { color:var(--ink-2); font-size:.74rem; font-family:ui-monospace, monospace; padding:1px 6px; }
   #log .opts button { display:block; width:100%; margin:4px 0; text-align:left; }
   #study { font-size:1rem; line-height:1.8; }
@@ -372,7 +377,7 @@ $('#verses').addEventListener('click', e => {
   // footnote marker ↔ its entry in the 譯註 list: scroll and flash, no popover
   const jump = (el, flash) => { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); if (flash) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1200); } };
   const fn = e.target.closest('.fn'); if (fn) { jump($('#fn-' + fn.dataset.fn), true); return; }
-  const back = e.target.closest('.fns .back'); if (back) { e.preventDefault(); jump($(back.getAttribute('href'))); return; }
+  const back = e.target.closest('.fns .back'); if (back) { e.preventDefault(); jump($(back.getAttribute('href')).closest('.verse'), true); return; }
   const rt = e.target.closest('[data-retry]'); if (rt) { const p = pending.get(rt.dataset.retry); pending.delete(p.id); aiNote(p); return; }
   const dm = e.target.closest('[data-dismiss]'); if (dm) { pending.delete(dm.dataset.dismiss); render(); return; }
   const a = e.target.closest('[data-id]'); if (!a) return;
@@ -440,7 +445,9 @@ async function send(text) {
   chatOpen(true);  // a message from anywhere (the verify button included) needs the panel visible
   setRunning(true);
   slot('#status').set('⚙ agent 啟動中…');
-  logLine('msg', `<b>你：</b>${esc(text)}`);
+  const long = text.length > 120 || text.includes('\n');
+  const me = logLine(`msg me${long ? ' fold' : ''}`, `<span class="body"><b>你：</b>${esc(text)}</span>${long ? '<button class="more" type="button">展開 ▾</button>' : ''}`);
+  me.querySelector('.more')?.addEventListener('click', e => { const f = me.classList.toggle('fold'); e.target.textContent = f ? '展開 ▾' : '收合 ▴'; });
   const cur = logLine('msg pending', `<div class="act"><span class="dots"><span></span><span></span><span></span></span><span class="a"></span><span class="t"></span></div>`);
   const act = slot(cur.querySelector('.a'), 'agent 啟動中…'); stopTick = ticker(cur.querySelector('.t'));
   let buf = '', finished = false, steps = null, nSteps = 0;
