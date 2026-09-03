@@ -1,58 +1,85 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-theme="light">
 <head>
 <meta charset="utf-8">
 <title>Bible Buddy Web — PROTOTYPE</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/syabro/neat-annotations/neat-annotations.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500&family=Noto+Sans+TC:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
-  :root { color-scheme: light dark; }
-  body { margin:0; font-family:'Noto Sans TC', system-ui, sans-serif; display:grid; grid-template-columns: 1fr 420px; height:100vh; }
-  #reader { overflow:auto; padding:24px 32px; }
-  #chat { border-left:1px solid #8884; display:flex; flex-direction:column; }
-  #log { flex:1; overflow:auto; padding:12px; font-size:.9rem; }
-  #log .tool { color:#888; font-size:.78rem; font-family:monospace; }
-  #log .msg { margin:.5em 0; }
-  #log .opts button { display:block; margin:4px 0; text-align:left; }
-  form { display:flex; gap:6px; padding:10px; border-top:1px solid #8884; }
-  form input { flex:1; padding:8px; }
-  .verse { font-size:1.1rem; line-height:2.1; padding:6px 10px; }
+  /* notebook: ivory paper, red margin rule, serif scripture, handwritten labels. Light by default. */
+  :root {
+    color-scheme: light;
+    --paper:#F8F5EC; --paper-2:#F1EDE1; --ink:#2B2A26; --ink-2:#6E6A60; --rule:#DED8C8; --margin:#D9A3A3;
+    --pen:#3A5A8C; --card:#FFFDF7; --shadow:0 6px 20px #4a412a22;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper:#1E1D1A; --paper-2:#26241F; --ink:#E6E1D6; --ink-2:#A39E92; --rule:#36332C; --margin:#7A4A4A;
+    --pen:#8FB0E0; --card:#2A2823; --shadow:0 6px 20px #00000066;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans TC', system-ui, sans-serif; display:grid; grid-template-columns:1fr 420px; height:100vh; }
+  button, input, select { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:6px 10px; }
+  button { cursor:pointer; } button:hover { border-color:var(--pen); color:var(--pen); }
+  button.primary { background:var(--pen); color:var(--paper); border-color:var(--pen); }
+
+  /* reader = a notebook page */
+  #reader { overflow:auto; padding:20px 32px 40px 24px; }
+  .top { display:flex; gap:8px; align-items:center; margin-bottom:14px; }
+  .top .brand { font-family:'Noto Serif TC', serif; font-weight:700; letter-spacing:.04em; margin-right:auto; }
+  .top input { width:14em; }
+  #page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
+  #page::before { content:""; position:absolute; top:0; bottom:0; left:60px; width:1px; background:var(--margin); }   /* the red margin line */
+  h1 { font-family:'Noto Serif TC', serif; font-size:1.05rem; font-weight:600; color:var(--ink-2); margin:0 0 14px; }
+  .verse { position:relative; font-family:'Noto Serif TC', 'Songti TC', serif; font-size:1.15rem; line-height:2.1; padding:6px 0; }
   .verse.has-notes { padding-bottom:78px; }
-  .verse .n { font-family:monospace; font-size:.7rem; opacity:.6; margin-right:.5em; vertical-align:super; }
+  .verse .n { position:absolute; left:-52px; top:6px; width:32px; text-align:right; font-family:'Shantell Sans', cursive; font-size:.8rem; color:var(--margin); line-height:2.1; }
   .ann { --ann-font:'Shantell Sans','Noto Sans TC',cursive; cursor:pointer; }
-  /* notes that didn't get an arrow (cap per verse / too close / no anchor) become chips under the verse */
-  .chips { line-height:1.4; margin-top:2px; }
-  .verse.has-notes .chips { margin-top:72px; }          /* below the hanging labels */
+  .chips { line-height:1.4; margin-top:2px; font-family:'Noto Sans TC', sans-serif; }
+  .verse.has-notes .chips { margin-top:72px; }
   .verse.has-notes:has(.chips) { padding-bottom:8px; }
-  .chip { display:inline-block; font-size:.72rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; }
-  /* note card: native popover = top layer + light dismiss; positioned next to the clicked span */
-  #detail { position:fixed; margin:0; inset:auto; width:min(440px, 90vw); max-height:45vh; overflow:auto; padding:12px 14px; border:1px solid #8886; border-radius:10px; background:Canvas; color:CanvasText; box-shadow:0 10px 30px #0005; font-size:.9rem; line-height:1.6; }
+  .chip { display:inline-block; font-size:.72rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
+
+  /* note card popover */
+  #detail { position:fixed; margin:0; inset:auto; width:min(440px, 90vw); max-height:45vh; overflow:auto; padding:12px 14px; border:1px solid var(--rule); border-radius:10px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); font-size:.9rem; line-height:1.6; }
   #detail::backdrop { background:transparent; }
   #detail .hd { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
   #detail .dot { width:10px; height:10px; border-radius:50%; background:var(--c); }
-  #detail .hd small { opacity:.6; }
-  #detail .hd button { margin-left:auto; font-size:.8rem; }
+  #detail .hd small { color:var(--ink-2); }
+  #detail .hd button { margin-left:auto; font-size:.8rem; padding:2px 8px; }
   #detail p { margin:.4em 0; }
-  #study { display:none; padding:12px; overflow:auto; flex:1; font-size:.9rem; }
-  #study blockquote { border-left:3px solid #b8751a; padding-left:10px; opacity:.9; }
-  h1 { font-size:1.1rem; margin:0 0 12px; opacity:.7; }
-  .tabs { display:flex; gap:8px; padding:8px 12px 0; }
-  .tabs button.on { font-weight:700; }
+
+  /* chat = sticky notes column */
+  #chat { border-left:1px solid var(--rule); background:var(--paper-2); display:flex; flex-direction:column; }
+  .tabs { display:flex; gap:4px; padding:10px 12px 0; }
+  .tabs button { border-radius:6px 6px 0 0; border-bottom:none; background:transparent; color:var(--ink-2); }
+  .tabs button.on { background:var(--card); color:var(--ink); font-weight:700; }
+  #log { flex:1; overflow:auto; padding:12px; font-size:.9rem; border-top:1px solid var(--rule); }
+  #log .msg { background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:8px 12px; margin:.5em 0; box-shadow:0 1px 3px #0001; }
+  #log .tool { color:var(--ink-2); font-size:.74rem; font-family:ui-monospace, monospace; padding:1px 6px; }
+  #log .opts button { display:block; width:100%; margin:4px 0; text-align:left; }
+  #study { display:none; padding:12px; overflow:auto; flex:1; font-size:.9rem; border-top:1px solid var(--rule); }
+  #study blockquote { border-left:3px solid #b8751a; padding-left:10px; color:var(--ink-2); }
+  #study .tool { font-size:.74rem; color:var(--ink-2); word-break:break-all; }
+  form#f { display:flex; gap:6px; padding:10px; border-top:1px solid var(--rule); }
+  form#f input { flex:1; }
 </style>
 </head>
 <body>
 <section id="reader">
-  <form id="pf" style="display:flex;gap:6px;margin-bottom:8px"><input id="pref" value="以賽亞書 7:10-17" style="width:14em"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button>載入</button></form>
-  <h1 id="ref">載入中…</h1>
-  <div id="verses"></div>
+  <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary">載入</button><button type="button" id="theme" title="切換深淺色">☾</button></form>
+  <div id="page">
+    <h1 id="ref">載入中…</h1>
+    <div id="verses"></div>
+  </div>
   <div id="detail" popover></div>
 </section>
 <aside id="chat">
   <div class="tabs"><button class="on" data-tab="log">對話</button><button data-tab="study">研讀報告</button></div>
   <div id="log"></div>
   <div id="study"></div>
-  <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button>送出</button></form>
+  <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button class="primary">送出</button></form>
 </aside>
 <script>
 const MAX_ARROWS = 3, MIN_GAP = 9;
@@ -195,6 +222,12 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
 });
 $('#f').onsubmit = e => { e.preventDefault(); const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t); };
 $('#pf').onsubmit = e => { e.preventDefault(); loadPassage($('#pref').value.trim(), $('#pver').value); };
+// theme: explicit data-theme, light by default, remembered per browser
+const root = document.documentElement;
+try { root.dataset.theme = localStorage.getItem('theme') || 'light'; } catch {}
+const paintTheme = () => $('#theme').textContent = root.dataset.theme === 'dark' ? '☀' : '☾';
+$('#theme').onclick = () => { root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('theme', root.dataset.theme); } catch {} paintTheme(); };
+paintTheme();
 loadPassage();
 </script>
 </body>
