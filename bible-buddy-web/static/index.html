@@ -33,8 +33,8 @@
   .top { display:flex; gap:8px; align-items:center; margin-bottom:14px; }
   .top .brand { font-family:'Noto Serif TC', serif; font-weight:700; letter-spacing:.04em; margin-right:auto; }
   .top input { width:14em; }
-  #page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
-  #page::before { content:""; position:absolute; top:0; bottom:0; left:60px; width:1px; background:var(--margin); }   /* the red margin line */
+  .page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
+  .page::before { content:""; position:absolute; top:0; bottom:0; left:60px; width:1px; background:var(--margin); }   /* the red margin line */
   h1 { font-family:'Noto Serif TC', serif; font-size:1.05rem; font-weight:600; color:var(--ink-2); margin:0 0 14px; }
   .verse { position:relative; font-family:'Noto Serif TC', 'Songti TC', serif; font-size:1.15rem; line-height:2.1; padding:6px 0; }
   .verse.has-notes { padding-bottom:78px; }
@@ -58,34 +58,34 @@
 
   /* chat = sticky notes column */
   #chat { border-left:1px solid var(--rule); background:var(--paper-2); display:flex; flex-direction:column; }
-  #log, #study { min-height:0; }   /* flex children only scroll when allowed to shrink below content height */
-  .tabs { display:flex; gap:4px; padding:10px 12px 0; }
-  .tabs button { border-radius:6px 6px 0 0; border-bottom:none; background:transparent; color:var(--ink-2); }
-  .tabs button.on { background:var(--card); color:var(--ink); font-weight:700; }
-  #log { flex:1; overflow:auto; padding:12px; font-size:.9rem; border-top:1px solid var(--rule); }
+  #log { min-height:0; }   /* flex children only scroll when allowed to shrink below content height */
+  .tabs { display:flex; gap:2px; border:1px solid var(--rule); border-radius:6px; padding:2px; background:var(--card); }
+  .tabs button { border:none; background:transparent; color:var(--ink-2); padding:4px 10px; }
+  .tabs button.on { background:var(--pen); color:var(--paper); }
+  #log { flex:1; overflow:auto; padding:12px; font-size:.9rem; }
   #log .msg { background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:8px 12px; margin:.5em 0; box-shadow:0 1px 3px #0001; }
   #log .tool { color:var(--ink-2); font-size:.74rem; font-family:ui-monospace, monospace; padding:1px 6px; }
   #log .opts button { display:block; width:100%; margin:4px 0; text-align:left; }
-  #study { display:none; padding:12px; overflow:auto; flex:1; font-size:.9rem; border-top:1px solid var(--rule); }
+  #study { font-size:1rem; line-height:1.8; }
   #study blockquote { border-left:3px solid #b8751a; padding-left:10px; color:var(--ink-2); }
-  #study .tool { font-size:.74rem; color:var(--ink-2); word-break:break-all; }
+  #study table { border-collapse:collapse; font-size:.9rem; } #study td, #study th { border:1px solid var(--rule); padding:4px 8px; }
+  #study #ssel { width:100%; margin-bottom:12px; }
   form#f { display:flex; gap:6px; padding:10px; border-top:1px solid var(--rule); }
   form#f input { flex:1; }
 </style>
 </head>
 <body>
 <section id="reader">
-  <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button></form>
-  <div id="page">
+  <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button></form>
+  <div id="page" class="page">
     <h1 id="ref">載入中…</h1>
     <div id="verses"></div>
   </div>
+  <div id="study" class="page" hidden><select id="ssel"></select><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
   <div id="detail" popover></div>
 </section>
 <aside id="chat">
-  <div class="tabs"><button class="on" data-tab="log">對話</button><button data-tab="study">研讀報告</button></div>
   <div id="log"></div>
-  <div id="study"><select id="ssel" style="width:100%;margin-bottom:8px"></select><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
   <div id="status" class="tool"></div>
   <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button class="primary" id="send">送出</button></form>
 </aside>
@@ -246,8 +246,8 @@ const tabStudy = document.querySelector('.tabs button[data-tab="study"]');
 document.querySelectorAll('.tabs button').forEach(b => slot(b));
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
-  $('#log').style.display = b.dataset.tab === 'log' ? '' : 'none';
-  $('#study').style.display = b.dataset.tab === 'study' ? 'block' : 'none';
+  $('#page').hidden = b.dataset.tab !== 'page';
+  $('#study').hidden = b.dataset.tab !== 'study';
   if (b.dataset.tab === 'study' && !$('#ssel').options.length) loadStudy();
 });
 $('#f').onsubmit = e => { e.preventDefault(); const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t); };
