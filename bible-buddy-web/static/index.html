@@ -46,6 +46,14 @@
   .chips { line-height:1.4; margin-top:2px; font-family:var(--hand); }
   .verse.has-notes .chips { margin-top:72px; }
   .verse.has-notes:has(.chips) { padding-bottom:8px; }
+  /* AI note in flight: a dashed chip in the verse's own chip row, where the note will land; red with actions on failure */
+  .chip.pending, .chip.err { display:inline-flex; align-items:center; gap:5px; cursor:default; opacity:1; }
+  .chip.pending { --c:var(--ink-2); border-style:dashed; }
+  .chip.pending .spin { width:10px; height:10px; border-width:1.5px; }
+  .chip.pending .t { font-variant-numeric:tabular-nums; opacity:.7; }
+  .chip.err { --c:#c45a38; }
+  .chip.err button { font-size:.75rem; padding:0 5px; border-color:transparent; background:transparent; color:inherit; }
+  .chip.err button:hover { text-decoration:underline; }
   .chip { display:inline-block; font-size:.8rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
 
   /* note card popover */
@@ -67,6 +75,7 @@
   #detail .ft button[data-armed] { color:#c45a38; border-color:#c45a38; }
   #detail .ft #ask { margin-left:auto; color:var(--pen); }
   #detail .ed .cap { font-size:.75rem; color:var(--ink-2); }
+  #detail .hd, #detail .ed .cap { cursor:move; user-select:none; touch-action:none; }  /* drag handles */
   /* inline editor: same card, fields stacked */
   #detail form.ed { display:grid; gap:6px; }
   #detail form.ed input, #detail form.ed textarea, #detail form.ed select { width:100%; box-sizing:border-box; }
@@ -234,7 +243,8 @@ function render() {
       pos = n.anchor.end; shown++; lastStart = n.anchor.start;
     }
     out += esc(v.text.slice(pos));
-    const chips = rest.length ? `<div class="chips">${rest.map(n => `<span class="chip" data-id="${n.id}" style="--c:${DOTC[COLOR[n.kind]]}">${esc(n.label)}</span>`).join('')}</div>` : '';
+    const pend = [...pending.values()].filter(p => p.verse === v.verse);
+    const chips = rest.length || pend.length ? `<div class="chips">${rest.map(n => `<span class="chip" data-id="${n.id}" style="--c:${DOTC[COLOR[n.kind]]}">${esc(n.label)}</span>`).join('')}${pend.map(pendingChip).join('')}</div>` : '';
     return `<div class="verse ${shown ? 'has-notes' : ''}" data-verse="${v.verse}"><span class="n">${v.verse}</span>${out}<span class="eol">\u200b</span>${chips}</div>`;
   }).join('');
   demoteWrapped();
@@ -307,7 +317,19 @@ function showEditor(n, rect, gap) {
   };
   d.showPopover(); placeDetail(rect, gap); f.label.focus();
 }
+// 拖曳：抓標題列（或編輯器的說明列）移動卡片；按鈕和輸入框不當把手
+$('#detail').addEventListener('pointerdown', e => {
+  const d = $('#detail');
+  if (!e.target.closest('.hd, .cap') || e.target.closest('button, input, select, textarea')) return;
+  const r = d.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+  const move = ev => { d.style.left = Math.max(0, Math.min(ev.clientX - dx, innerWidth - r.width)) + 'px'; d.style.top = Math.max(0, Math.min(ev.clientY - dy, innerHeight - r.height)) + 'px'; };
+  d.setPointerCapture(e.pointerId); d.addEventListener('pointermove', move);
+  d.addEventListener('pointerup', () => { d.removeEventListener('pointermove', move); d.releasePointerCapture(e.pointerId); }, { once: true });
+  e.preventDefault();
+});
 $('#verses').addEventListener('click', e => {
+  const rt = e.target.closest('[data-retry]'); if (rt) { const p = pending.get(rt.dataset.retry); pending.delete(p.id); aiNote(p); return; }
+  const dm = e.target.closest('[data-dismiss]'); if (dm) { pending.delete(dm.dataset.dismiss); render(); return; }
   const a = e.target.closest('[data-id]'); if (!a) return;
   showCard(notes.find(x => x.id === a.dataset.id), a.getBoundingClientRect(), 78);
 });
@@ -331,14 +353,34 @@ $('#selManual').onclick = () => {
   const s = pendingSel; if (!s) return; $('#selmenu').hidePopover();
   showEditor({ verse: s.verse, anchor: s.anchor, label: s.quote.slice(0, 20), body: '', kind: 'personal' }, s.rect);
 };
-$('#selAi').onclick = async () => {
-  const s = pendingSel; if (!s) return; $('#selmenu').hidePopover(); window.getSelection()?.removeAllRanges();
-  banner(`AI 筆記產生中：「${s.quote.slice(0, 12)}」`, { timer: true });
+$('#selAi').onclick = () => { const s = pendingSel; if (!s) return; $('#selmenu').hidePopover(); window.getSelection()?.removeAllRanges(); aiNote(s); };
+// AI 筆記的狀態列掛在那一節的 chip 列（頁首 pill 留給整段速讀）：等待中顯示秒數和 API 重試進度，失敗變紅並可再試或關掉
+const pending = new Map();
+const elapsed = t0 => { const n = Math.round((Date.now() - t0) / 1000); return n < 60 ? `${n}s` : `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`; };
+function pendingChip(p) {
+  const q = esc(p.quote.slice(0, 10));
+  if (p.error) return `<span class="chip err" data-pending="${p.id}" title="${esc(p.full || '')}">✗ 「${q}」${esc(p.error)}<button data-retry="${p.id}">再試</button><button data-dismiss="${p.id}" title="關掉">✕</button></span>`;
+  return `<span class="chip pending" data-pending="${p.id}"><span class="spin"></span>「${q}」AI 筆記產生中<span class="st">${p.status ? ` · ${esc(p.status)}` : ''}</span><span class="t">${elapsed(p.t0)}</span></span>`;
+}
+setInterval(() => { for (const p of pending.values()) { const el = document.querySelector(`[data-pending="${p.id}"] .t`); if (el) el.textContent = elapsed(p.t0); } }, 1000);
+async function aiNote(s) {
+  const p = { id: Math.random().toString(36).slice(2, 8), verse: s.verse, quote: s.quote, t0: Date.now(), status: '', error: null };
+  pending.set(p.id, p); render();
+  const key = `one|${s.verse}|${s.quote}`;
+  const poll = setInterval(async () => {
+    try {
+      const { status } = await api('/api/auto-notes/quick/status?key=' + encodeURIComponent(key));
+      if (status !== p.status) { p.status = status; const el = document.querySelector(`[data-pending="${p.id}"] .st`); if (el) el.textContent = status ? ` · ${status}` : ''; }
+    } catch {}
+  }, 2000);
   let r; try { r = await api('/api/auto-notes/one', 'POST', { verse: s.verse, quote: s.quote }); } catch (e) { r = { error: e.message }; }
-  if (r.error) { $('#banner').title = r.error; const code = r.error.match(/API Error: (\d+)/); banner(`✗ AI 筆記失敗：${code ? `API ${code[1]}，稍後再試` : r.error.slice(0, 60)}`, { spin: false }); return; }
-  notes.push(r); render();
-  banner(`✓ AI 筆記：${r.label}`, { spin: false, hideAfter: 3000 });
-};
+  clearInterval(poll);
+  if (r.error) {
+    const code = r.error.match(/API Error: (\d+)/);
+    p.error = code ? `API ${code[1]}${code[1] === '529' ? ' 過載' : ''}` : r.error.slice(0, 40); p.full = r.error; render(); return;
+  }
+  pending.delete(p.id); notes.push(r); render();
+}
 
 function logLine(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('#log').appendChild(d); $('#log').scrollTop = 1e9; return d; }
 
