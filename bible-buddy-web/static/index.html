@@ -245,15 +245,16 @@ async function loadPassage(refStr, version) {
   banner(refsN ? `✓ 已驗證 ${refsN} 條` : null, { spin: false, hideAfter: 3000 });
 }
 // the model pass is manual: it costs money and a minute, and a 529 on page load used to look like "0 notes"
+let quickBusy = false;
 async function runQuick() {
-  const b = $('#quick'); b.disabled = true;
+  const b = $('#quick'); quickBusy = true; b.disabled = true;
   banner('AI 筆記產生中', { timer: true });
   // the CLI retries 529s with backoff; poll the server's progress line so the wait explains itself
   const poll = setInterval(async () => {
     try { const { status } = await (await fetch('/api/auto-notes/quick/status')).json(); if (status) slot('#bannerText').set(`速讀產生中 · ${status}`, { stagger: 0 }); } catch {}
   }, 2000);
   const n = await addAuto('/api/auto-notes/quick');
-  clearInterval(poll); b.disabled = false;
+  clearInterval(poll); quickBusy = false; b.disabled = running;
   if (n >= 0) banner(`✓ AI 筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}${usd(lastAuto.cost)}`, { spin: false, hideAfter: 4000 });
   quickLabel();
 }
@@ -466,6 +467,7 @@ let running = false, stopTick = null;
 function setRunning(on) {
   running = on;
   $('#q').disabled = on; $('#clear').disabled = on; $('#study').disabled = on; $('#study2').disabled = on;
+  $('#quick').disabled = on || quickBusy;  // one model job at a time on the page
   $('#send').classList.toggle('stop', on);
   slot('#send').set(on ? '停止' : '送出');
 }
