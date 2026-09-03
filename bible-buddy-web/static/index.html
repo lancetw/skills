@@ -108,7 +108,8 @@
   .hrow { display:flex; align-items:center; gap:12px; min-height:34px; margin:0 0 14px; }
   .hrow h1 { margin:0; }
   #quick { margin-left:auto; font-size:.82rem; padding:4px 12px; border-radius:999px; }
-  #quick + #banner { margin-left:0; }
+  #quick + #study { margin-left:0; font-size:.82rem; padding:4px 12px; border-radius:999px; }
+  #study + #banner { margin-left:0; }
   .hrow h1 { flex:none; }
   /* the pill can never widen the row: it shrinks and clips, the full text lives in its title tooltip */
   #banner { min-width:0; max-width:min(55%, 520px); }
@@ -138,6 +139,11 @@
   #chat .chead { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid var(--rule); font-size:.82rem; color:var(--ink-2); }
   #chat .chead button { font-size:.78rem; padding:2px 10px; }
   #log { flex:1; overflow:auto; padding:12px; font-size:.9rem; }
+  #log:empty { flex:0; padding:0; }                       /* an empty log yields the space to the guide */
+  #guide { flex:1; overflow:auto; padding:16px 14px; font-size:.86rem; color:var(--ink-2); line-height:1.6; }
+  #guide[hidden] { display:none; } #guide p { margin:0 0 10px; } #guide b { color:var(--ink); }
+  #guide .ex { display:flex; flex-wrap:wrap; gap:6px; } #guide .ex button { font-size:.8rem; padding:3px 10px; border-radius:999px; }
+  #guide small { display:block; margin-top:4px; }
   #log .msg { background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:8px 12px; margin:.5em 0; box-shadow:0 1px 3px #0001; }
   #log details.steps { margin:.2em 0 .2em 6px; }
   #log details.steps summary { cursor:pointer; color:var(--ink-2); font-size:.76rem; list-style:none; }
@@ -165,7 +171,7 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次便宜的模型速讀，約 1 分鐘；產生過的段落直接回傳">✨ 速讀筆記</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次便宜的模型速讀，約 1 分鐘；產生過的段落直接回傳">✨ 速讀筆記</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程研讀這段，標注畫面並存報告（幾分鐘、數美元）">📝 完整研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
@@ -176,6 +182,14 @@
   <div id="gutter" title="拖曳調整寬度"></div>
   <div class="chead"><span>agent 對話</span><button type="button" id="clear" title="清空對話並重新開始 agent session">清除</button></div>
   <div id="log"></div>
+  <div id="guide">
+    <p><b>agent 可以做什麼</b></p>
+    <p>問這段經文的任何問題，agent 會依 bible-buddy 流程查原文、背景與資料來源，並把關鍵發現標在左邊的經文上。</p>
+    <p class="ex"><button type="button" data-q="第 1 節逐字原文分析">第 1 節逐字原文分析</button><button type="button" data-q="這段的第一世紀歷史處境">第一世紀歷史處境</button><button type="button" data-q="這段常見的誤讀與翻譯偏差">常見誤讀與翻譯偏差</button><button type="button" data-q="這段的相關經文與引用脈絡">相關經文</button></p>
+    <p><button type="button" id="study2" class="primary">📝 產生完整研讀報告</button><br><small>逐節研讀、標注畫面，報告存到「研讀報告」分頁（幾分鐘、數美元）</small></p>
+    <p><b>其他入口</b></p>
+    <p>反白經文 → 手動筆記或 AI 筆記。<br>✨ 速讀筆記一次掃整段，「未驗證」的可從卡片請 agent 驗證。<br>對話會保留到你按「清除」；換段經文會重新開始。</p>
+  </div>
   <div id="status" class="tool"></div>
   <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button class="primary" id="send">送出</button></form>
 </aside>
@@ -224,7 +238,7 @@ async function loadPassage(refStr, version) {
   const title = `${r.reference} · ${r.version}`;
   if (lastRef && lastRef !== r.reference) logLine('tool', `📖 切換到 ${esc(r.reference)}，agent 對話重新開始`);  // the server drops the agent session on a passage change
   lastRef = r.reference;
-  slot('#ref').set(title);
+  slot('#ref').set(title); quickLabel();
   render();
   slot('#pload').set('載入');
   const refsN = await addAuto('/api/auto-notes/refs');        // instant, from bible-buddy references
@@ -241,6 +255,7 @@ async function runQuick() {
   const n = await addAuto('/api/auto-notes/quick');
   clearInterval(poll); b.disabled = false;
   if (n >= 0) banner(`✓ 速讀筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}${usd(lastAuto.cost)}`, { spin: false, hideAfter: 4000 });
+  quickLabel();
 }
 const usd = c => c == null ? '' : ` · $${c.toFixed(3)}`;
 let lastAuto = {};  // the last auto-notes response: cost and cached flag for the banner
@@ -330,7 +345,7 @@ function placeDetail(r, gap = 8) {
 function showCard(n, rect, gap) {
   const d = $('#detail');
   const unverified = n.author === 'quick' && !n.verified;
-  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
+  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`, n.pass_cost != null && `速讀整段 $${n.pass_cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
     + (unverified ? '<span class="tag unv" title="速讀筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
   d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask">追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
@@ -439,12 +454,18 @@ async function aiNote(s) {
   pending.delete(p.id); notes.push(r); render();
 }
 
-function logLine(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('#log').appendChild(d); $('#log').scrollTop = 1e9; return d; }
+function logLine(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('#log').appendChild(d); $('#log').scrollTop = 1e9; saveLog(); return d; }
+// the log survives a refresh: its HTML is kept in the browser (the agent session itself lives on the server)
+function saveLog() { try { const h = $('#log').innerHTML; localStorage.setItem('chatlog', h.length > 400000 ? '' : h); } catch {} }
+try { const h = localStorage.getItem('chatlog'); if (h) { $('#log').innerHTML = h; $('#log').querySelectorAll('.msg.pending').forEach(m => { m.classList.remove('pending'); m.querySelector('.act')?.remove(); }); $('#log').scrollTop = 1e9; } } catch {}
+$('#log').addEventListener('click', e => {  // fold / unfold toggles must work on restored messages too
+  const b = e.target.closest('.msg.me .more'); if (!b) return; const m = b.closest('.msg'); const f = m.classList.toggle('fold'); b.textContent = f ? '展開 ▾' : '收合 ▴';
+});
 
 let running = false, stopTick = null;
 function setRunning(on) {
   running = on;
-  $('#q').disabled = on; $('#clear').disabled = on;
+  $('#q').disabled = on; $('#clear').disabled = on; $('#study').disabled = on; $('#study2').disabled = on;
   $('#send').classList.toggle('stop', on);
   slot('#send').set(on ? '停止' : '送出');
 }
@@ -454,7 +475,7 @@ async function send(text) {
   slot('#status').set('⚙ agent 啟動中…');
   const long = text.length > 120 || text.includes('\n');
   const me = logLine(`msg me${long ? ' fold' : ''}`, `<span class="body"><b>你：</b>${esc(text)}</span>${long ? '<button class="more" type="button">展開 ▾</button>' : ''}`);
-  me.querySelector('.more')?.addEventListener('click', e => { const f = me.classList.toggle('fold'); e.target.textContent = f ? '展開 ▾' : '收合 ▴'; });
+
   const cur = logLine('msg pending', `<div class="act"><span class="dots"><span></span><span></span><span></span></span><span class="a"></span><span class="t"></span></div>`);
   const act = slot(cur.querySelector('.a'), 'agent 啟動中…'); stopTick = ticker(cur.querySelector('.t'));
   let buf = '', finished = false, steps = null, nSteps = 0;
@@ -464,7 +485,7 @@ async function send(text) {
     const d = document.createElement('div'); d.className = 'tool'; d.innerHTML = html; steps.appendChild(d);
     steps.querySelector('summary').textContent = `執行細節 · ${++nSteps} 步`;
   };
-  const finish = () => { finished = true; stopTick?.(); stopTick = null; cur.classList.remove('pending'); cur.querySelector('.act')?.remove(); setRunning(false); };
+  const finish = () => { finished = true; stopTick?.(); stopTick = null; cur.classList.remove('pending'); cur.querySelector('.act')?.remove(); setRunning(false); saveLog(); };
   const res = await fetch('/api/chat', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ message:text }) });
   const rd = res.body.getReader(), dec = new TextDecoder(); let rest = '';
   while (true) {
@@ -524,13 +545,24 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   $('#study').hidden = b.dataset.tab !== 'study';
   if (b.dataset.tab === 'study' && !$('#ssel').options.length) loadStudy();
 });
-$('#clear').onclick = () => { if (running) return; $('#log').innerHTML = ''; slot('#status').set(''); studyPath = null; fetch('/api/chat/reset', { method: 'POST' }); };
+// guide fills the panel until the first message; example buttons only fill the input
+new MutationObserver(() => $('#guide').hidden = $('#log').children.length > 0).observe($('#log'), { childList: true });
+$('#guide').hidden = $('#log').children.length > 0;
+$('#guide').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) { $('#q').value = b.dataset.q; $('#q').focus(); } });
+function fullStudy() {
+  if (running || !lastRef) return;
+  send(`完整研讀 ${lastRef}：依 bible-buddy 完整流程研讀目前畫面的整段經文，逐節處理原文字義、第一世紀歷史處境、常見誤讀或翻譯偏差、相關經文；每個關鍵發現用 mcp__notes__add_annotation 標在畫面上，最後把研讀報告存成 .md。`);
+}
+$('#study').onclick = fullStudy; $('#study2').onclick = fullStudy;
+$('#clear').onclick = () => { if (running) return; $('#log').innerHTML = ''; saveLog(); slot('#status').set(''); studyPath = null; fetch('/api/chat/reset', { method: 'POST' }); };
 $('#f').onsubmit = e => {
   e.preventDefault();
   if (running) { slot('#status').set('⏹ 停止中…'); fetch('/api/chat/stop', { method: 'POST' }); return; }
   const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t);
 };
 $('#quick').onclick = runQuick;
+// the button itself shows what the pass for this passage cost, so the number does not vanish with the banner
+function quickLabel() { const c = notes.find(x => x.pass_cost != null)?.pass_cost; slot('#quick').set(c != null ? `✨ 速讀筆記 · $${c.toFixed(3)}` : '✨ 速讀筆記'); }
 $('#pf').onsubmit = async e => {
   e.preventDefault(); slot('#pload').set('載入中…');
   try { localStorage.setItem('passage', JSON.stringify({ ref: $('#pref').value.trim(), version: $('#pver').value })); } catch {}
