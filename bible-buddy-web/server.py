@@ -322,6 +322,8 @@ async def _quick_run(ref: str, version: str, verses: list[dict]) -> list[dict]:
     found: list[dict] = []
     async for m in query(prompt=QUICK_PROMPT.format(ref=ref, version=version, text=text), options=opts):
         if isinstance(m, ResultMessage):
+            if m.is_error:  # an API failure (529 overloaded, timeout) arrives as a result, not an exception
+                raise RuntimeError(m.result or f"API error (HTTP {m.api_error_status})")
             found = (m.structured_output or {}).get("notes", [])
             print("quick pass:", ref, len(found), "notes", m.total_cost_usd, "USD", file=sys.stderr)
     return found
@@ -329,13 +331,18 @@ async def _quick_run(ref: str, version: str, verses: list[dict]) -> list[dict]:
 
 @app.get("/api/auto-notes/quick")
 async def auto_notes_quick():
-    """One cheap model pass per passage. Concurrent or repeated callers (a refreshed page) share the same Task."""
+    """One cheap model pass per passage. Concurrent or repeated callers (a refreshed page) share the same Task.
+    A failed pass is not cached: the next call starts a fresh Task, so the button doubles as retry."""
     key = f"{passage['reference']}|{passage['version']}"
     if key not in _quick_cache:
         task = _quick_tasks.get(key)
         if task is None or (task.done() and task.exception() is not None):
             task = _quick_tasks[key] = asyncio.create_task(_quick_run(passage["reference"], passage["version"], list(passage["verses"])))
-        _quick_cache[key] = await asyncio.shield(task)  # shield: cancelling this request must not cancel the shared task
+        try:
+            _quick_cache[key] = await asyncio.shield(task)  # shield: cancelling this request must not cancel the shared task
+        except Exception as e:
+            print("quick pass failed:", key, repr(e), file=sys.stderr)
+            return {"error": str(e)}
     out = []
     for n in _quick_cache[key]:
         text = _verse_text(n["verse"])
