@@ -96,9 +96,31 @@ function render() {
     }
     out += esc(v.text.slice(pos));
     const chips = rest.length ? `<div class="chips">${rest.map(n => `<span class="chip" data-id="${n.id}" style="--c:${DOTC[COLOR[n.kind]]}">${esc(n.label)}</span>`).join('')}</div>` : '';
-    return `<div class="verse ${shown ? 'has-notes' : ''}" data-verse="${v.verse}"><span class="n">${v.verse}</span>${out}${chips}</div>`;
+    return `<div class="verse ${shown ? 'has-notes' : ''}" data-verse="${v.verse}"><span class="n">${v.verse}</span>${out}<span class="eol">\u200b</span>${chips}</div>`;
   }).join('');
+  demoteWrapped();
 }
+// Labels hang ~70px under their span, so an arrow on any line but the last would cover the next line.
+// After layout, turn those into chips. Re-run on resize since wrapping changes.
+function demoteWrapped() {
+  for (const vEl of document.querySelectorAll('.verse.has-notes')) {
+    const lastTop = vEl.querySelector('.eol').getBoundingClientRect().top;
+    for (const a of [...vEl.querySelectorAll('.ann')]) {
+      const r = a.getBoundingClientRect();
+      if (r.bottom >= lastTop) {                                        // on the last line: keep the arrow
+        if (r.left - vEl.getBoundingClientRect().left < 110) a.classList.replace('ann-n', 'ann-nw');  // near left edge: lean right
+        continue;
+      }
+      const n = notes.find(x => x.id === a.dataset.id);
+      let chips = vEl.querySelector('.chips');
+      if (!chips) { chips = document.createElement('div'); chips.className = 'chips'; vEl.appendChild(chips); }
+      chips.insertAdjacentHTML('afterbegin', `<span class="chip" data-id="${n.id}" style="--c:${DOTC[COLOR[n.kind]]}">${esc(n.label)}</span>`);
+      a.replaceWith(document.createTextNode(a.textContent));
+    }
+    if (!vEl.querySelector('.ann')) vEl.classList.remove('has-notes');
+  }
+}
+addEventListener('resize', render);
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const AUTHOR = { agent:'agent 研讀', quick:'速讀', refs:'references', user:'我' };
