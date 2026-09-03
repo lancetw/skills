@@ -5,6 +5,8 @@ Run:  uv run uvicorn server:app --port 8765   then open http://127.0.0.1:8765
 """
 import asyncio
 import hashlib
+import shutil
+import subprocess
 import json
 import re
 import sys
@@ -79,12 +81,31 @@ async def list_studies():
     return [{"name": f.name, "path": str(f)} for f in files]
 
 
+def _study_file(path: str) -> Path | None:
+    p = Path(path).expanduser().resolve()
+    return p if p.suffix == ".md" and p.parent == STUDY_DIR.resolve() and p.is_file() else None
+
+
 @app.get("/api/study", response_class=PlainTextResponse)
 async def read_study(path: str):
-    p = Path(path).expanduser().resolve()
-    if not (p.suffix == ".md" and "bible-buddy" in p.parts and p.is_file()):
-        return "not allowed"
-    return p.read_text()
+    p = _study_file(path)
+    return p.read_text() if p else "not allowed"
+
+
+@app.delete("/api/study")
+async def delete_study(path: str):
+    """Move the report (and its .html twin) to the Trash, never rm: a study is minutes of agent work."""
+    p = _study_file(path)
+    if not p:
+        return {"ok": False, "error": "not allowed"}
+    targets = [f for f in (p, p.with_suffix(".html")) if f.exists()]
+    if shutil.which("trash"):
+        subprocess.run(["trash", *map(str, targets)], check=True)
+    else:  # ponytail: no trash CLI → park under .trash/ next to the reports
+        bin_ = STUDY_DIR / ".trash"; bin_.mkdir(exist_ok=True)
+        for f in targets:
+            f.rename(bin_ / f.name)
+    return {"ok": True, "trashed": [f.name for f in targets]}
 
 
 @tool(
