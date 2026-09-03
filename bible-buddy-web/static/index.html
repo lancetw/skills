@@ -85,7 +85,9 @@
   #log .opts button { display:block; width:100%; margin:4px 0; text-align:left; }
   #study { font-size:1rem; line-height:1.8; }
   #study { overflow-wrap:anywhere; }
-  #study blockquote { border-left:3px solid #b8751a; padding-left:10px; color:var(--ink-2); overflow:hidden; }   /* ★ Insight rules are one unbreakable run of ─; clip instead of overflow */
+  #study blockquote { border-left:3px solid var(--rule); padding-left:10px; color:var(--ink-2); }
+  #study blockquote.insight { border:1px solid #b8751a; border-left-width:3px; border-radius:6px; padding:8px 14px; background:color-mix(in oklch, #b8751a 6%, transparent); color:var(--ink); }
+  #study blockquote.insight > p:first-child { color:#b8751a; font-weight:700; margin-top:0; }
   #study table { display:block; overflow-x:auto; }
   #study table { border-collapse:collapse; font-size:.9rem; } #study td, #study th { border:1px solid var(--rule); padding:4px 8px; }
   #study #ssel { width:100%; margin-bottom:12px; }
@@ -289,7 +291,11 @@ async function loadStudy(path) {
   if (!list.length) return;
   $('#ssel').value = path && list.some(f => f.path === path) ? path : list[0].path;
   const md = await (await fetch('/api/study?path=' + encodeURIComponent($('#ssel').value))).text();
-  $('#sbody').className = ''; $('#sbody').innerHTML = marked.parse(md.replace(/^---[\s\S]*?\n---\n/, ''));  // drop YAML frontmatter
+  const clean = md.replace(/^---[\s\S]*?\n---\n/, '')            // drop YAML frontmatter
+    .replace(/^> ★ Insight ─+ *$/gm, '> ★ Insight')                 // the ─ rules are one unbreakable run; the box below replaces them
+    .replace(/^> ─+ *$/gm, '>');
+  $('#sbody').className = ''; $('#sbody').innerHTML = marked.parse(clean);
+  for (const bq of $('#sbody').querySelectorAll('blockquote')) if (bq.textContent.trim().startsWith('★ Insight')) bq.classList.add('insight');
   if (path) slot(tabStudy).flash('報告已生成', { revertAfter: 2500 });
 }
 $('#ssel').onchange = () => loadStudy($('#ssel').value);
