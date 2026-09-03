@@ -262,7 +262,7 @@ async def add_annotation(args: dict) -> dict:
 
 @tool(
     "update_annotation",
-    "更新一條既有筆記（驗證速讀筆記用）。id 必填。口氣與格式沿用原筆記：label 20 字內（原文字義類寫「希伯來/希臘字 音譯＝意思」）；body 1 到 3 句、100 字內，直接陳述結論與主要依據，第一世紀猶太教背景學者的口吻，不寫「經查證」「已驗證」之類的過程描述，不教會式應用；kind: lexical|history|misread|crossref",
+    "更新一條既有筆記（驗證 AI 筆記用）。id 必填。口氣與格式沿用原筆記（ELI5 風格的就維持淺白）：label 20 字內（原文字義類寫「希伯來/希臘字 音譯＝意思」）；body 1 到 3 句、100 字內，直接陳述結論與主要依據，第一世紀猶太教背景學者的口吻，不寫「經查證」「已驗證」之類的過程描述，不教會式應用；kind: lexical|history|misread|crossref",
     {"id": str, "label": str, "body": str, "kind": str},
 )
 async def update_annotation(args: dict) -> dict:
@@ -455,13 +455,17 @@ QUICK_SCHEMA = {"type": "json_schema", "schema": {
         "properties": {"verse": {"type": "integer"}, "quote": {"type": "string"}, "label": {"type": "string"},
                        "body": {"type": "string"}, "kind": {"type": "string", "enum": KINDS}}}}}}}
 
-QUICK_PROMPT = """你是第一世紀猶太教背景的聖經學者。對下面這段經文產生 10 到 14 條速讀筆記，讓讀者一眼看到值得停下來的字。
+ELI5_RULES = """- 寫給完全沒有背景的人看（ELI5：像對聰明的 12 歲孩子解釋）：日常用語、短句，先說「這是什麼」再說「為什麼值得注意」，可用一個生活比喻。
+- 專有名詞或原文字出現時，緊接著用五個字內的白話解釋；不要堆術語。"""
+
+QUICK_PROMPT = """你是第一世紀猶太教背景的聖經學者。對下面這段經文產生 10 到 14 條 ELI5 筆記，讓讀者一眼看到值得停下來的字，而且看得懂為什麼。
 規則：
 - quote：逐字取自該節經文的子字串，2 到 8 個字，不含標點；每節最多 2 條，不同條不可重疊。
-- label：台灣繁體中文，14 字以內；原文字義類寫成「希伯來/希臘字 音譯＝意思」，例「עַלְמָה almah＝年輕女子」。
-- body：1 到 3 句，說明為什麼重要；不確定的寫「（待驗證）」。
+- label：台灣繁體中文，14 字以內，白話說重點；原文字義類可寫「音譯＝白話意思」，例「almah＝年輕女子」。
+- body：2 到 3 句、120 字內；不確定的寫「（待驗證）」。
+""" + ELI5_RULES + """
 - kind：lexical（原文字義）、history（歷史處境）、misread（常見誤讀或翻譯偏差）、crossref（相關經文）。
-- 不要教會式應用，不要靈意化。
+- 不要教會式應用，不要靈意化，不要說教。
 
 {ref}（{version}）
 {text}"""
@@ -534,6 +538,9 @@ async def auto_note_one(body: dict):
     old = _find_note(str(body["replace"])) if body.get("replace") else None
     ctx = "\n".join(f"[{v['verse']}] {v['text']}" for v in passage["verses"])
     prompt = ONE_PROMPT.format(verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx)
+    eli5 = bool(body.get("eli5")) or (old or {}).get("style") == "eli5"  # a rewrite keeps the note's register
+    if eli5:
+        prompt += "\n補充規則：\n" + ELI5_RULES
     if old:
         prompt += f"\n\n先前的筆記是「{old['label']}」：{old.get('body', '')}\n請重寫：修正錯誤，或換一個更有價值的角度；不要照抄。"
     try:
@@ -543,7 +550,7 @@ async def auto_note_one(body: dict):
         return {"error": str(e)}
     note = {"id": uuid.uuid4().hex[:8], "verse": verse, "anchor": {"start": i, "end": i + len(quote)},
             "label": str(r.get("label", quote))[:20], "body": r.get("body", ""),
-            "kind": r["kind"] if r.get("kind") in KINDS else "lexical", "author": "quick", "cost": cost}
+            "kind": r["kind"] if r.get("kind") in KINDS else "lexical", "author": "quick", "cost": cost, **({"style": "eli5"} if eli5 else {})}
     if old and old in notes:
         notes[notes.index(old)] = note
         hidden.add(old["id"])  # a cached pass must not bring the old one back beside the rewrite
@@ -583,7 +590,7 @@ async def auto_notes_quick():
         note = {"id": _note_id("quick", key, str(n["verse"]), n["quote"]), "verse": str(n["verse"]),
                 "anchor": None if i < 0 else {"start": i, "end": i + len(n["quote"])},
                 "label": n["label"][:20], "body": n["body"],  # author=quick is what the UI flags as unverified
-                "kind": n["kind"] if n["kind"] in KINDS else "lexical", "author": "quick",
+                "kind": n["kind"] if n["kind"] in KINDS else "lexical", "author": "quick", "style": "eli5",
                 "pass_cost": _quick_cost.get(key)}  # the whole pass's USD, carried on each of its notes
         if _add(note):
             out.append(note)
