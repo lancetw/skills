@@ -22,7 +22,8 @@
     --pen:#8FB0E0; --card:#2A2823; --shadow:0 6px 20px #00000066;
   }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans TC', system-ui, sans-serif; display:grid; grid-template-columns:1fr 420px; height:100vh; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans TC', system-ui, sans-serif; display:grid; grid-template-columns:1fr 420px; grid-template-rows:100vh; height:100vh; }
+  #reader, #chat { min-height:0; }   /* grid items default to min-height:auto and would grow past the row */
   button, input, select { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:6px 10px; }
   button { cursor:pointer; } button:hover { border-color:var(--pen); color:var(--pen); }
   button.primary { background:var(--pen); color:var(--paper); border-color:var(--pen); }
@@ -57,6 +58,7 @@
 
   /* chat = sticky notes column */
   #chat { border-left:1px solid var(--rule); background:var(--paper-2); display:flex; flex-direction:column; }
+  #log, #study { min-height:0; }   /* flex children only scroll when allowed to shrink below content height */
   .tabs { display:flex; gap:4px; padding:10px 12px 0; }
   .tabs button { border-radius:6px 6px 0 0; border-bottom:none; background:transparent; color:var(--ink-2); }
   .tabs button.on { background:var(--card); color:var(--ink); font-weight:700; }
