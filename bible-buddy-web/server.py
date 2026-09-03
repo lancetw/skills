@@ -337,7 +337,12 @@ def _short(d: dict) -> str:
     return s if len(s) < 160 else s[:160] + "…"
 
 
+_turn_running = False
+
+
 async def run_turn(message: str) -> None:
+    global _turn_running
+    _turn_running = True
     try:
         if not await _ensure_passage():
             await events.put({"type": "error", "text": "尚未載入經文：請先在上方載入一段經文再問"})
@@ -359,6 +364,46 @@ async def run_turn(message: str) -> None:
                 await events.put({"type": "done", "cost": m.total_cost_usd, "turns": m.num_turns, "is_error": m.is_error, "result": m.result})
     except Exception as e:  # prototype: surface, don't handle
         await events.put({"type": "error", "text": repr(e)})
+    finally:
+        _turn_running = False
+
+
+@app.get("/api/chat/status")
+async def chat_status():
+    """Is a turn in flight? The page asks on load (to reattach after a refresh) and the operator before a restart."""
+    return {"running": _turn_running}
+
+
+_stream_task: asyncio.Task | None = None
+
+
+def _event_stream():
+    async def gen():
+        global _stream_task
+        # one consumer of the queue: a refreshed page's new stream replaces the old one, which would otherwise sit in
+        # events.get() until the next event and swallow it (the page never saw "done")
+        if _stream_task is not None and not _stream_task.done():
+            _stream_task.cancel()
+        _stream_task = asyncio.current_task()
+        try:
+            while True:
+                try:
+                    ev = await asyncio.wait_for(events.get(), 15)
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+                    continue
+                yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
+                if ev["type"] in ("done", "error"):
+                    break
+        except asyncio.CancelledError:
+            return
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+@app.get("/api/chat/stream")
+async def chat_stream():
+    """Attach to the running turn's events without starting one: a refreshed page picks up where it left off."""
+    return _event_stream()
 
 
 @app.post("/api/chat/reset")
@@ -378,20 +423,10 @@ async def chat_stop():
 
 @app.post("/api/chat")
 async def chat(body: dict):
+    if _turn_running:
+        return {"error": "agent 還在處理上一個問題"}
     asyncio.create_task(run_turn(body["message"]))
-
-    async def gen():
-        while True:
-            try:
-                ev = await asyncio.wait_for(events.get(), 15)
-            except asyncio.TimeoutError:
-                yield ": keepalive\n\n"
-                continue
-            yield f"data: {json.dumps(ev, ensure_ascii=False)}\n\n"
-            if ev["type"] in ("done", "error"):
-                break
-
-    return StreamingResponse(gen(), media_type="text/event-stream")
+    return _event_stream()
 
 
 # ── auto notes: arrows on load, before anyone asks the agent ──────────────────
