@@ -25,7 +25,12 @@
     --pen:#8FB0E0; --card:#2A2823; --shadow:0 6px 20px #00000066;
   }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); display:grid; grid-template-columns:1fr 420px; grid-template-rows:100vh; height:100vh; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); display:grid; grid-template-columns:1fr var(--chat-w, 420px); grid-template-rows:100vh; height:100vh; }
+  /* chat panel: hidden by default, width set by dragging its left edge; both remembered per browser */
+  body.chat-hidden { grid-template-columns:1fr 0; } body.chat-hidden #chat { display:none; }
+  #gutter { position:absolute; left:-4px; top:0; bottom:0; width:8px; cursor:col-resize; z-index:6; }
+  #gutter:hover, #gutter.on { background:var(--pen); opacity:.3; }
+  #chatToggle.on { border-color:var(--pen); color:var(--pen); }
   #reader, #chat { min-height:0; }   /* grid items default to min-height:auto and would grow past the row */
   button, input, select { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:6px 10px; }
   button { cursor:pointer; } button:hover { border-color:var(--pen); color:var(--pen); }
@@ -122,7 +127,7 @@
   #detail p { margin:.4em 0; }
 
   /* chat = sticky notes column */
-  #chat { border-left:1px solid var(--rule); background:var(--paper-2); display:flex; flex-direction:column; }
+  #chat { position:relative; min-width:0; border-left:1px solid var(--rule); background:var(--paper-2); display:flex; flex-direction:column; }
   #log { min-height:0; }   /* flex children only scroll when allowed to shrink below content height */
   .tabs { display:flex; gap:2px; border:1px solid var(--rule); border-radius:6px; padding:2px; background:var(--card); }
   .tabs button { border:none; background:transparent; color:var(--ink-2); padding:4px 10px; }
@@ -149,7 +154,7 @@
 </head>
 <body>
 <section id="reader">
-  <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button></form>
+  <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
   <div id="page" class="page">
     <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次便宜的模型速讀，約 1 分鐘；產生過的段落直接回傳">✨ 速讀筆記</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
@@ -159,6 +164,7 @@
   <div id="selmenu" popover><button type="button" id="selManual">✎ 手動筆記</button><button type="button" id="selAi">✨ AI 筆記</button></div>
 </section>
 <aside id="chat">
+  <div id="gutter" title="拖曳調整寬度"></div>
   <div id="log"></div>
   <div id="status" class="tool"></div>
   <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button class="primary" id="send">送出</button></form>
@@ -431,6 +437,7 @@ function setRunning(on) {
   slot('#send').set(on ? '停止' : '送出');
 }
 async function send(text) {
+  chatOpen(true);  // a message from anywhere (the verify button included) needs the panel visible
   setRunning(true);
   slot('#status').set('⚙ agent 啟動中…');
   logLine('msg', `<b>你：</b>${esc(text)}`);
@@ -514,6 +521,19 @@ $('#pf').onsubmit = async e => {
   try { localStorage.setItem('passage', JSON.stringify({ ref: $('#pref').value.trim(), version: $('#pver').value })); } catch {}
   await loadPassage($('#pref').value.trim(), $('#pver').value);
 };
+// chat panel: closed by default; the 💬 button toggles it, the gutter resizes it, both remembered
+function chatOpen(on) { document.body.classList.toggle('chat-hidden', !on); $('#chatToggle').classList.toggle('on', on); try { localStorage.setItem('chat', on ? '1' : '0'); } catch {} }
+let chatPref = '0', chatW = 0; try { chatPref = localStorage.getItem('chat') ?? '0'; chatW = +localStorage.getItem('chatW'); } catch {}
+chatOpen(chatPref === '1');
+if (chatW) document.body.style.setProperty('--chat-w', chatW + 'px');
+$('#chatToggle').onclick = () => chatOpen(document.body.classList.contains('chat-hidden'));
+$('#gutter').addEventListener('pointerdown', e => {
+  const g = e.currentTarget; g.setPointerCapture(e.pointerId); g.classList.add('on');
+  const move = ev => document.body.style.setProperty('--chat-w', Math.max(280, Math.min(innerWidth * .7, innerWidth - ev.clientX)) + 'px');
+  g.addEventListener('pointermove', move);
+  g.addEventListener('pointerup', () => { g.removeEventListener('pointermove', move); g.classList.remove('on'); try { localStorage.setItem('chatW', parseInt(document.body.style.getPropertyValue('--chat-w'))); } catch {} render(); }, { once: true });
+  e.preventDefault();
+});
 // theme: explicit data-theme, light by default, remembered per browser
 const root = document.documentElement;
 try { root.dataset.theme = localStorage.getItem('theme') || 'light'; } catch {}
