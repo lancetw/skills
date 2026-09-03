@@ -178,7 +178,7 @@
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次深入研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
   <div id="detail" popover></div>
-  <div id="selmenu" popover><button type="button" id="selManual">✎ 手動筆記</button><button type="button" id="selAi">✨ AI 筆記</button></div>
+  <div id="selmenu" popover><button type="button" id="selManual">✎ 手動筆記</button><button type="button" id="selAi" title="用模型針對這幾個字寫一條淺顯易懂的筆記">✨ ELI5 筆記</button></div>
 </section>
 <aside id="chat">
   <div id="gutter" title="拖曳調整寬度"></div>
@@ -190,7 +190,7 @@
     <p class="ex"><button type="button" data-q="第 1 節逐字原文分析">第 1 節逐字原文分析</button><button type="button" data-q="這段的第一世紀歷史處境">第一世紀歷史處境</button><button type="button" data-q="這段常見的誤讀與翻譯偏差">常見誤讀與翻譯偏差</button><button type="button" data-q="這段的相關經文與引用脈絡">相關經文</button></p>
     <p><button type="button" id="study2" class="primary">📝 產生深入研讀報告</button><br><small>逐節研讀、標注畫面，報告存到「研讀報告」分頁</small></p>
     <p><b>其他入口</b></p>
-    <p>反白經文 → 手動筆記或 AI 筆記。<br>✨ 生成 ELI5 筆記：一次掃整段，寫成淺顯易懂的筆記；「未驗證」的可從卡片請 agent 驗證。<br>對話會保留到你按「清除」；換段經文會重新開始。</p>
+    <p>反白經文 → 手動筆記或 ELI5 筆記。<br>✨ 生成 ELI5 筆記：一次掃整段，寫成淺顯易懂的筆記；「未驗證」的可從卡片請 agent 驗證。<br>對話會保留到你按「清除」；換段經文會重新開始。</p>
   </div>
   <div id="status" class="tool"></div>
   <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button class="primary" id="send">送出</button></form>
@@ -411,7 +411,7 @@ $('#verses').addEventListener('click', e => {
   showCard(notes.find(x => x.id === a.dataset.id), a.getBoundingClientRect(), 78);
 });
 
-// 反白一節內的文字 → 選單：手動筆記（自己寫）或 AI 筆記（模型針對這幾個字寫一條）
+// 反白一節內的文字 → 選單：手動筆記（自己寫）或 ELI5 筆記（模型針對這幾個字寫一條淺白的）
 let pendingSel = null;  // captured at mouseup: the click on the menu clears the browser selection before its handler runs
 document.addEventListener('mouseup', e => {
   if (e.target.closest?.('#selmenu, #detail')) return;
@@ -433,13 +433,13 @@ $('#selManual').onclick = () => {
   showEditor({ verse: s.verse, anchor: s.anchor, label: s.quote.slice(0, 20), body: '', kind: 'personal' }, s.rect);
 };
 $('#selAi').onclick = () => { const s = pendingSel; if (!s) return; $('#selmenu').hidePopover(); window.getSelection()?.removeAllRanges(); aiNote(s); };
-// AI 筆記的狀態列掛在那一節的 chip 列（頁首 pill 留給整段速讀）：等待中顯示秒數和 API 重試進度，失敗變紅並可再試或關掉
+// ELI5 單條筆記的狀態列掛在那一節的 chip 列（頁首 pill 留給整段 ELI5）：等待中顯示秒數和 API 重試進度，失敗變紅並可再試或關掉
 const pending = new Map();
 const elapsed = t0 => { const n = Math.round((Date.now() - t0) / 1000); return n < 60 ? `${n}s` : `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`; };
 function pendingChip(p) {
   const q = esc(p.quote.slice(0, 10));
   if (p.error) return `<span class="chip err" data-pending="${p.id}" title="${esc(p.full || '')}">✗ 「${q}」${esc(p.error)}<button data-retry="${p.id}">再試</button><button data-dismiss="${p.id}" title="關掉">✕</button></span>`;
-  return `<span class="chip pending" data-pending="${p.id}"><span class="spin"></span>「${q}」${p.replace ? 'AI 筆記重新產生中' : 'AI 筆記產生中'}<span class="st">${p.status ? ` · ${esc(p.status)}` : ''}</span><span class="t">${elapsed(p.t0)}</span></span>`;
+  return `<span class="chip pending" data-pending="${p.id}"><span class="spin"></span>「${q}」${p.replace ? 'ELI5 筆記重新產生中' : 'ELI5 筆記產生中'}<span class="st">${p.status ? ` · ${esc(p.status)}` : ''}</span><span class="t">${elapsed(p.t0)}</span></span>`;
 }
 setInterval(() => { for (const p of pending.values()) { const el = document.querySelector(`[data-pending="${p.id}"] .t`); if (el) el.textContent = elapsed(p.t0); } }, 1000);
 async function aiNote(s) {
@@ -452,7 +452,7 @@ async function aiNote(s) {
       if (status !== p.status) { p.status = status; const el = document.querySelector(`[data-pending="${p.id}"] .st`); if (el) el.textContent = status ? ` · ${status}` : ''; }
     } catch {}
   }, 2000);
-  let r; try { r = await api('/api/auto-notes/one', 'POST', { verse: s.verse, quote: s.quote, replace: s.replace }); } catch (e) { r = { error: e.message }; }
+  let r; try { r = await api('/api/auto-notes/one', 'POST', { verse: s.verse, quote: s.quote, replace: s.replace, eli5: true }); } catch (e) { r = { error: e.message }; }
   clearInterval(poll);
   if (r.error) {
     const code = r.error.match(/API Error: (\d+)/);
