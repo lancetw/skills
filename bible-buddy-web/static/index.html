@@ -55,6 +55,19 @@
   #detail .hd b { font-family:var(--hand); font-weight:500; font-size:1.05rem; }
   #detail .dot { width:10px; height:10px; border-radius:50%; background:var(--c); }
   #detail .hd small { color:var(--ink-2); }
+  #detail .hd .acts { margin-left:auto; display:flex; gap:4px; }
+  #detail .hd .acts button { margin:0; }
+  #detail .hd .acts button.danger { border-color:#c45a38; color:#c45a38; }
+  /* inline editor: same card, fields stacked */
+  #detail form.ed { display:grid; gap:6px; }
+  #detail form.ed input, #detail form.ed textarea, #detail form.ed select { width:100%; box-sizing:border-box; }
+  #detail form.ed textarea { min-height:80px; resize:vertical; font-family:var(--sans); }
+  #detail form.ed .row { display:flex; gap:6px; justify-content:flex-end; }
+  #detail form.ed .row select { width:auto; margin-right:auto; }
+  /* selection menu: hovers just above the highlighted text */
+  #selmenu { position:fixed; margin:0; inset:auto; padding:4px; gap:4px; border:1px solid var(--rule); border-radius:8px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
+  #selmenu:popover-open { display:flex; }
+  #selmenu button { font-size:.85rem; padding:4px 10px; }
   /* loading states: a banner on the page for passage/quick-notes waits, a pending bubble for agent turns */
   /* status pill sits in the fixed-height heading row, so showing/hiding it never shifts the verses */
   .hrow { display:flex; align-items:center; gap:12px; min-height:34px; margin:0 0 14px; }
@@ -116,6 +129,7 @@
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
   <div id="detail" popover></div>
+  <div id="selmenu" popover><button type="button" id="selManual">✎ 手動筆記</button><button type="button" id="selAi">✨ AI 筆記</button></div>
 </section>
 <aside id="chat">
   <div id="log"></div>
@@ -241,34 +255,79 @@ addEventListener('resize', render);
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const AUTHOR = { agent:'agent 研讀', quick:'速讀', refs:'references', user:'我' };
-$('#verses').addEventListener('click', e => {
-  const a = e.target.closest('[data-id]'); if (!a) return;
-  const n = notes.find(x => x.id === a.dataset.id);
+const KIND_ZH = { lexical:'原文字義', history:'歷史背景', misread:'誤讀/翻譯', crossref:'相關經文', personal:'個人' };
+const api = (url, method, body) => fetch(url, { method, headers:{'content-type':'application/json'}, body: body && JSON.stringify(body) }).then(r => r.json());
+// place the card below a rect (labels hang ~70px under a span, so a span rect gets extra room); flip above if it would overflow
+function placeDetail(r, gap = 8) {
   const d = $('#detail');
-  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b><small>${AUTHOR[n.author]||n.author} · ${n.kind}</small>${n.author === 'quick' ? '<span class="unv" title="速讀筆記，未經 bible-buddy 驗證流程">?</span>' : ''}<button id="ask">追問</button></div>${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}`;
-  cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
-  d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
-  d.showPopover();
-  // below the label (label sits ~70px under the span); flip above if it would overflow
-  const r = a.getBoundingClientRect();
-  let top = r.bottom + 78;
+  let top = r.bottom + gap;
   if (top + d.offsetHeight > innerHeight - 8) top = Math.max(8, r.top - d.offsetHeight - 8);
   d.style.top = top + 'px';
   d.style.left = Math.max(8, Math.min(r.left, innerWidth - d.offsetWidth - 8)) + 'px';
+}
+function showCard(n, rect, gap) {
+  const d = $('#detail');
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b><small>${AUTHOR[n.author]||n.author} · ${n.kind}${n.edited ? ' · 已編輯' : ''}</small>${n.author === 'quick' ? '<span class="unv" title="速讀筆記，未經 bible-buddy 驗證流程">?</span>' : ''}<span class="acts"><button id="ask">追問</button><button id="edit">編輯</button><button id="del" class="danger">刪除</button></span></div>${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}`;
+  cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
+  d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
+  d.querySelector('#edit').onclick = () => showEditor(n, rect, gap);
+  // delete is two clicks: the first arms it, so a stray click cannot throw away a note
+  d.querySelector('#del').onclick = async e => {
+    if (!e.target.dataset.armed) { e.target.dataset.armed = '1'; e.target.textContent = '確定刪除？'; return; }
+    await api('/api/notes/' + n.id, 'DELETE');
+    notes = notes.filter(x => x.id !== n.id); d.hidePopover(); render();
+  };
+  d.showPopover(); placeDetail(rect, gap);
+}
+// one editor for new manual notes and for editing any note (auto notes included); the anchor never changes here
+function showEditor(n, rect, gap) {
+  const d = $('#detail'), isNew = !n.id;
+  const kinds = Object.keys(KIND_ZH).map(k => `<option value="${k}" ${k === n.kind ? 'selected' : ''}>${KIND_ZH[k]}</option>`).join('');
+  d.innerHTML = `<form class="ed"><input name="label" maxlength="20" placeholder="標籤（≤20 字）" value="${esc(n.label || '')}" required><textarea name="body" placeholder="內文，可用 Markdown">${esc(n.body || '')}</textarea><div class="row"><select name="kind">${kinds}</select><button type="button" id="cancel">取消</button><button class="primary" type="submit">${isNew ? '新增' : '儲存'}</button></div></form>`;
+  const f = d.querySelector('form');
+  f.querySelector('#cancel').onclick = () => isNew ? d.hidePopover() : showCard(n, rect, gap);
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const patch = { label: f.label.value.trim().slice(0, 20), body: f.body.value, kind: f.kind.value };
+    const saved = isNew ? await api('/api/notes', 'POST', { ...n, ...patch }) : await api('/api/notes/' + n.id, 'PUT', patch);
+    if (saved.error) { banner(`✗ ${saved.error}`, { spin: false, hideAfter: 4000 }); return; }
+    if (isNew) notes.push(saved); else Object.assign(n, saved);
+    d.hidePopover(); render();
+  };
+  d.showPopover(); placeDetail(rect, gap); f.label.focus();
+}
+$('#verses').addEventListener('click', e => {
+  const a = e.target.closest('[data-id]'); if (!a) return;
+  showCard(notes.find(x => x.id === a.dataset.id), a.getBoundingClientRect(), 78);
 });
 
-// 手動筆記：反白一節內的文字 → prompt 標籤
-document.addEventListener('mouseup', async () => {
+// 反白一節內的文字 → 選單：手動筆記（自己寫）或 AI 筆記（模型針對這幾個字寫一條）
+let pendingSel = null;  // captured at mouseup: the click on the menu clears the browser selection before its handler runs
+document.addEventListener('mouseup', e => {
+  if (e.target.closest?.('#selmenu, #detail')) return;
   const sel = window.getSelection(); if (!sel || sel.isCollapsed) return;
   const q = sel.toString().trim(); if (!q) return;
   const vEl = sel.anchorNode.parentElement.closest('.verse'); if (!vEl) return;
   const v = verses.find(x => x.verse === vEl.dataset.verse);
   const start = v.text.indexOf(q); if (start < 0) return;
-  const label = window.prompt(`筆記標籤（≤20 字）：「${q}」`); if (!label) return;
-  const note = await (await fetch('/api/notes', { method:'POST', headers:{'content-type':'application/json'},
-    body: JSON.stringify({ verse: v.verse, anchor:{start, end:start+q.length}, label: label.slice(0,20), body:'' }) })).json();
-  notes.push(note); sel.removeAllRanges(); render();
+  const rect = sel.getRangeAt(0).getBoundingClientRect();
+  pendingSel = { verse: v.verse, quote: q, anchor: { start, end: start + q.length }, rect };
+  const m = $('#selmenu'); m.showPopover();
+  m.style.top = Math.max(8, rect.top - m.offsetHeight - 6) + 'px';
+  m.style.left = Math.max(8, Math.min(rect.left, innerWidth - m.offsetWidth - 8)) + 'px';
 });
+$('#selManual').onclick = () => {
+  const s = pendingSel; if (!s) return; $('#selmenu').hidePopover();
+  showEditor({ verse: s.verse, anchor: s.anchor, label: s.quote.slice(0, 20), body: '', kind: 'personal' }, s.rect);
+};
+$('#selAi').onclick = async () => {
+  const s = pendingSel; if (!s) return; $('#selmenu').hidePopover(); window.getSelection()?.removeAllRanges();
+  banner(`AI 筆記產生中：「${s.quote.slice(0, 12)}」`, { timer: true });
+  let r; try { r = await api('/api/auto-notes/one', 'POST', { verse: s.verse, quote: s.quote }); } catch (e) { r = { error: e.message }; }
+  if (r.error) { $('#banner').title = r.error; const code = r.error.match(/API Error: (\d+)/); banner(`✗ AI 筆記失敗：${code ? `API ${code[1]}，稍後再試` : r.error.slice(0, 60)}`, { spin: false }); return; }
+  notes.push(r); render();
+  banner(`✓ AI 筆記：${r.label}`, { spin: false, hideAfter: 3000 });
+};
 
 function logLine(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('#log').appendChild(d); $('#log').scrollTop = 1e9; return d; }
 

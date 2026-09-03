@@ -46,6 +46,7 @@ from fetch_fhl import fetch  # noqa: E402  bible-buddy's own fetcher, stdlib onl
 app = FastAPI()
 passage: dict = {"reference": "", "version": "rcuv", "verses": []}
 notes: list[dict] = []
+hidden: set[str] = set()  # ids the user deleted; the auto passes are cached and must not resurrect them
 events: asyncio.Queue = asyncio.Queue()  # ponytail: one global queue = one user
 
 SYSTEM_APPEND = """你在一個網頁查經工具裡工作。畫面左側顯示 [目前畫面] 列出的經文。
@@ -63,7 +64,7 @@ async def index():
 async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int = 10, end: int = 17, version: str = "rcuv"):
     r = await asyncio.to_thread(fetch, book, chapter, start, end, version)
     if r.get("reference") != passage["reference"]:
-        notes.clear()  # notes carry no book/chapter; a new passage means a clean slate
+        notes.clear(); hidden.clear()  # notes carry no book/chapter; a new passage means a clean slate
     passage.update(reference=r.get("reference", ""), version=version, verses=r.get("verses", []), book=book)
     return r
 
@@ -78,6 +79,32 @@ async def add_user_note(body: dict):
     note = {"id": uuid.uuid4().hex[:8], "author": "user", "kind": "personal", **body}
     notes.append(note)
     return note
+
+
+def _find_note(nid: str) -> dict | None:
+    return next((n for n in notes if n["id"] == nid), None)
+
+
+@app.put("/api/notes/{nid}")
+async def edit_note(nid: str, body: dict):
+    """Works on any note, auto or manual: the anchor stays, only label/body/kind change."""
+    n = _find_note(nid)
+    if not n:
+        return {"error": "not found"}
+    for k in ("label", "body", "kind"):
+        if k in body:
+            n[k] = str(body[k])[:20] if k == "label" else body[k]
+    n["edited"] = True
+    return n
+
+
+@app.delete("/api/notes/{nid}")
+async def delete_note(nid: str):
+    n = _find_note(nid)
+    if n:
+        notes.remove(n)
+        hidden.add(nid)
+    return {"ok": n is not None}
 
 
 STUDY_DIR = detect_desktop("bible-buddy")  # where the skill auto-saves its .md reports
@@ -229,7 +256,7 @@ def _verse_text(verse: str) -> str:
 
 
 def _add(note: dict) -> dict | None:
-    if any(n["id"] == note["id"] for n in notes):
+    if note["id"] in hidden or any(n["id"] == note["id"] for n in notes):
         return None
     notes.append(note)
     return note
@@ -317,30 +344,72 @@ QUICK_RETRIES = 3     # the CLI retries 529/5xx itself with backoff; its default
 QUICK_TIMEOUT_S = 180  # hard ceiling on one pass, so the button can never spin forever
 
 
-async def _quick_run(key: str, ref: str, version: str, verses: list[dict]) -> list[dict]:
-    """The model pass itself. Runs as its own Task so a page refresh (client disconnect) cannot cancel it."""
-    text = "\n".join(f"[{v['verse']}] {v['text']}" for v in verses)
+async def _structured(prompt: str, schema: dict, key: str) -> dict:
+    """One tool-less model call with a JSON schema. Retries are capped and a ceiling applies, so it always ends;
+    an API failure (529 overloaded, timeout) arrives as an error ResultMessage, not an exception, and is raised here."""
     opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
-                              output_format=QUICK_SCHEMA, env={"CLAUDE_CODE_MAX_RETRIES": str(QUICK_RETRIES)})
-    found: list[dict] = []
+                              output_format=schema, env={"CLAUDE_CODE_MAX_RETRIES": str(QUICK_RETRIES)})
     _quick_status[key] = ""
     try:
         async with asyncio.timeout(QUICK_TIMEOUT_S):
-            async for m in query(prompt=QUICK_PROMPT.format(ref=ref, version=version, text=text), options=opts):
+            async for m in query(prompt=prompt, options=opts):
                 if isinstance(m, SystemMessage) and m.subtype == "api_retry":
                     d = m.data
                     _quick_status[key] = f"API {d.get('error_status') or '?'}，重試 {d.get('attempt')}/{d.get('max_retries')}（{round((d.get('retry_delay_ms') or 0) / 1000)}s 後）"
-                    print("quick pass retry:", key, _quick_status[key], file=sys.stderr)
+                    print("model retry:", key, _quick_status[key], file=sys.stderr)
                 elif isinstance(m, ResultMessage):
-                    if m.is_error:  # an API failure (529 overloaded, timeout) arrives as a result, not an exception
+                    if m.is_error:
                         raise RuntimeError(m.result or f"API error (HTTP {m.api_error_status})")
-                    found = (m.structured_output or {}).get("notes", [])
-                    print("quick pass:", ref, len(found), "notes", m.total_cost_usd, "USD", file=sys.stderr)
+                    print("model pass:", key, m.total_cost_usd, "USD", file=sys.stderr)
+                    return m.structured_output or {}
     except TimeoutError:
         raise RuntimeError(f"逾時：{QUICK_TIMEOUT_S}s 內沒有結果（API 可能過載）") from None
     finally:
         _quick_status.pop(key, None)
-    return found
+    return {}
+
+
+async def _quick_run(key: str, ref: str, version: str, verses: list[dict]) -> list[dict]:
+    """The model pass itself. Runs as its own Task so a page refresh (client disconnect) cannot cancel it."""
+    text = "\n".join(f"[{v['verse']}] {v['text']}" for v in verses)
+    return (await _structured(QUICK_PROMPT.format(ref=ref, version=version, text=text), QUICK_SCHEMA, key)).get("notes", [])
+
+
+ONE_SCHEMA = {"type": "json_schema", "schema": {
+    "type": "object", "required": ["label", "body", "kind"],
+    "properties": {"label": {"type": "string"}, "body": {"type": "string"}, "kind": {"type": "string", "enum": KINDS}}}}
+
+ONE_PROMPT = """你是第一世紀猶太教背景的聖經學者。針對下面經文第 {verse} 節中的「{quote}」寫一條筆記。
+規則：
+- label：台灣繁體中文，14 字以內；原文字義類寫成「希伯來/希臘字 音譯＝意思」，例「עַלְמָה almah＝年輕女子」。
+- body：1 到 3 句，說明為什麼重要；不確定的寫「（待驗證）」。
+- kind：lexical（原文字義）、history（歷史處境）、misread（常見誤讀或翻譯偏差）、crossref（相關經文）。
+- 不要教會式應用，不要靈意化。
+
+{ref}（{version}）
+{text}"""
+
+
+@app.post("/api/auto-notes/one")
+async def auto_note_one(body: dict):
+    """A model note for one selected phrase. Not cached: the user asked for exactly this one."""
+    verse, quote = str(body["verse"]), str(body["quote"]).strip()
+    text = _verse_text(verse)
+    i = text.find(quote)
+    if not quote or i < 0:
+        return {"error": "選取的字不在該節經文裡"}
+    ctx = "\n".join(f"[{v['verse']}] {v['text']}" for v in passage["verses"])
+    try:
+        r = await _structured(ONE_PROMPT.format(verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx),
+                              ONE_SCHEMA, f"one|{verse}|{quote}")
+    except Exception as e:
+        print("one-note failed:", verse, quote, repr(e), file=sys.stderr)
+        return {"error": str(e)}
+    note = {"id": uuid.uuid4().hex[:8], "verse": verse, "anchor": {"start": i, "end": i + len(quote)},
+            "label": str(r.get("label", quote))[:20], "body": r.get("body", ""),
+            "kind": r["kind"] if r.get("kind") in KINDS else "lexical", "author": "quick"}
+    notes.append(note)
+    return note
 
 
 @app.get("/api/auto-notes/quick/status")
