@@ -173,7 +173,7 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型速讀整段；產生過的段落直接回傳">✨ 生成 AI 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有 AI 筆記">🗑</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程研讀這段，標注畫面並存報告">📝 完整研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有 ELI5 筆記">🗑</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程研讀這段，標注畫面並存報告">📝 完整研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
@@ -190,7 +190,7 @@
     <p class="ex"><button type="button" data-q="第 1 節逐字原文分析">第 1 節逐字原文分析</button><button type="button" data-q="這段的第一世紀歷史處境">第一世紀歷史處境</button><button type="button" data-q="這段常見的誤讀與翻譯偏差">常見誤讀與翻譯偏差</button><button type="button" data-q="這段的相關經文與引用脈絡">相關經文</button></p>
     <p><button type="button" id="study2" class="primary">📝 產生完整研讀報告</button><br><small>逐節研讀、標注畫面，報告存到「研讀報告」分頁</small></p>
     <p><b>其他入口</b></p>
-    <p>反白經文 → 手動筆記或 AI 筆記。<br>✨ 生成 AI 筆記一次掃整段，「未驗證」的可從卡片請 agent 驗證。<br>對話會保留到你按「清除」；換段經文會重新開始。</p>
+    <p>反白經文 → 手動筆記或 AI 筆記。<br>✨ 生成 ELI5 筆記：一次掃整段，寫成淺顯易懂的筆記；「未驗證」的可從卡片請 agent 驗證。<br>對話會保留到你按「清除」；換段經文會重新開始。</p>
   </div>
   <div id="status" class="tool"></div>
   <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button class="primary" id="send">送出</button></form>
@@ -250,14 +250,14 @@ async function loadPassage(refStr, version) {
 let quickBusy = false;
 async function runQuick() {
   const b = $('#quick'); quickBusy = true; b.disabled = true;
-  banner('AI 筆記產生中', { timer: true });
+  banner('ELI5 筆記產生中', { timer: true });
   // the CLI retries 529s with backoff; poll the server's progress line so the wait explains itself
   const poll = setInterval(async () => {
-    try { const { status } = await (await fetch('/api/auto-notes/quick/status')).json(); if (status) slot('#bannerText').set(`速讀產生中 · ${status}`, { stagger: 0 }); } catch {}
+    try { const { status } = await (await fetch('/api/auto-notes/quick/status')).json(); if (status) slot('#bannerText').set(`ELI5 筆記產生中 · ${status}`, { stagger: 0 }); } catch {}
   }, 2000);
   const n = await addAuto('/api/auto-notes/quick');
   clearInterval(poll); quickBusy = false; b.disabled = running;
-  if (n >= 0) banner(`✓ AI 筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}${usd(lastAuto.cost)}`, { spin: false, hideAfter: 4000 });
+  if (n >= 0) banner(`✓ ELI5 筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}${usd(lastAuto.cost)}`, { spin: false, hideAfter: 4000 });
   quickLabel();
 }
 const usd = c => c == null ? '' : ` · $${c.toFixed(3)}`;
@@ -271,7 +271,7 @@ async function addAuto(url) {
     const msg = fresh?.error || '伺服器回傳異常';
     $('#banner').title = msg;                      // the pill clips long text; the full error lives in the tooltip
     const code = msg.match(/API Error: (\d+)/);       // "API Error: 529 Overloaded. This is a server-side…" → one short line
-    banner(`✗ 速讀失敗：${code ? `API ${code[1]} ${code[1] === '529' ? '過載' : '錯誤'}，稍後再點一次` : msg.slice(0, 60)}`, { spin: false });
+    banner(`✗ ELI5 筆記失敗：${code ? `API ${code[1]} ${code[1] === '529' ? '過載' : '錯誤'}，稍後再點一次` : msg.slice(0, 60)}`, { spin: false });
     return -1;
   }
   $('#banner').title = '';
@@ -334,7 +334,7 @@ function demoteWrapped() {
 addEventListener('resize', render);
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-const AUTHOR = { agent:'agent 研讀', quick:'速讀', refs:'references', user:'我' };
+const AUTHOR = { agent:'agent 研讀', quick:'AI', refs:'references', user:'我' };
 const KIND_ZH = { lexical:'原文字義', history:'歷史背景', misread:'誤讀/翻譯', crossref:'相關經文', personal:'個人' };
 const api = (url, method, body) => fetch(url, { method, headers:{'content-type':'application/json'}, body: body && JSON.stringify(body) }).then(r => r.json());
 // place the card below a rect (labels hang ~70px under a span, so a span rect gets extra room); flip above if it would overflow
@@ -348,8 +348,8 @@ function placeDetail(r, gap = 8) {
 function showCard(n, rect, gap) {
   const d = $('#detail');
   const unverified = n.author === 'quick' && !n.verified;
-  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`, n.pass_cost != null && `速讀整段 $${n.pass_cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
-    + (unverified ? '<span class="tag unv" title="速讀筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
+  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.style === 'eli5' && 'ELI5', n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`, n.pass_cost != null && `整段 $${n.pass_cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
+    + (unverified ? '<span class="tag unv" title="AI 筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
   d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask">追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
   d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
@@ -362,7 +362,7 @@ function showCard(n, rect, gap) {
   d.querySelector('#verify')?.addEventListener('click', () => {
     const quote = n.anchor ? verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end) : '';
     d.hidePopover();
-    send(`驗證速讀筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程查證原文字義、歷史背景與資料來源，有誤就改正。完成後呼叫 mcp__notes__update_annotation（id=${n.id}）回填。回填的口氣與格式要跟原筆記一樣：label 20 字內，原文字義類寫「希伯來/希臘字 音譯＝意思」；body 1 到 3 句、100 字內，直接陳述結論與主要依據，像原本那條速讀筆記的寫法，不要寫「經查證」「已驗證」「原筆記正確」這類過程描述，不要教會式應用。詳細分析寫在對話裡即可，不要塞進筆記，也不要另外新增筆記。`);
+    send(`驗證 AI 筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：${n.style === 'eli5' ? '（這條是 ELI5 淺白風格，回填也要同樣淺白）' : ''}\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程查證原文字義、歷史背景與資料來源，有誤就改正。完成後呼叫 mcp__notes__update_annotation（id=${n.id}）回填。回填的口氣與格式要跟原筆記一樣：label 20 字內，原文字義類寫「希伯來/希臘字 音譯＝意思」；body 1 到 3 句、100 字內，直接陳述結論與主要依據，像原本那條筆記的寫法，不要寫「經查證」「已驗證」「原筆記正確」這類過程描述，不要教會式應用。詳細分析寫在對話裡即可，不要塞進筆記，也不要另外新增筆記。`);
   });
   // delete is two clicks: the first arms it, so a stray click cannot throw away a note
   d.querySelector('#del').onclick = async e => {
@@ -573,16 +573,16 @@ $('#f').onsubmit = e => {
 };
 $('#quick').onclick = runQuick;
 // the button itself shows what the pass for this passage cost, so the number does not vanish with the banner
-function quickLabel() { const has = notes.some(x => x.author === 'quick'); slot('#quick').set(has ? '✨ AI 筆記 ✓' : '✨ 生成 AI 筆記'); $('#quickClear').hidden = !has; }  // cost stays on the cards and the banner
+function quickLabel() { const has = notes.some(x => x.author === 'quick'); slot('#quick').set(has ? '✨ ELI5 筆記 ✓' : '✨ 生成 ELI5 筆記'); $('#quickClear').hidden = !has; }  // cost stays on the cards and the banner
 // delete every AI note of the passage: first click arms, second deletes; the server also forgets the cached pass
 let clearArm = null;
 $('#quickClear').onclick = async () => {
   const b = $('#quickClear');
-  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = '確定刪除全部 AI 筆記？'; clearArm = setTimeout(() => { b.classList.remove('armed'); b.textContent = '🗑'; }, 4000); return; }
+  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = '確定刪除全部 ELI5 筆記？'; clearArm = setTimeout(() => { b.classList.remove('armed'); b.textContent = '🗑'; }, 4000); return; }
   clearTimeout(clearArm); b.classList.remove('armed'); b.textContent = '🗑';
   const r = await api('/api/notes/quick', 'DELETE');
   notes = notes.filter(x => x.author !== 'quick'); render(); quickLabel();
-  banner(`✓ 已刪除 ${r.removed} 條 AI 筆記`, { spin: false, hideAfter: 3000 });
+  banner(`✓ 已刪除 ${r.removed} 條 ELI5 筆記`, { spin: false, hideAfter: 3000 });
 };
 $('#pf').onsubmit = async e => {
   e.preventDefault(); slot('#pload').set('載入中…');
