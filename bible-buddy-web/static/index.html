@@ -58,6 +58,15 @@ async function loadPassage(refStr, version) {
   verses = r.verses;
   $('#ref').textContent = `${r.reference} · ${r.version}`;
   render();
+  await addAuto('/api/auto-notes/refs');        // instant, from bible-buddy references
+  $('#ref').textContent += '　⏳ 速讀筆記產生中…';
+  await addAuto('/api/auto-notes/quick');       // one cheap model pass, ~20 s
+  $('#ref').textContent = `${r.reference} · ${r.version}`;
+}
+async function addAuto(url) {
+  const fresh = await (await fetch(url)).json();
+  for (const n of fresh) if (!notes.some(x => x.id === n.id)) notes.push(n);
+  render();
 }
 
 function render() {
