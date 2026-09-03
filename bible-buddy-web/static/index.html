@@ -32,6 +32,7 @@
 </head>
 <body>
 <section id="reader">
+  <form id="pf" style="display:flex;gap:6px;margin-bottom:8px"><input id="pref" value="以賽亞書 7:10-17" style="width:14em"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button>載入</button></form>
   <h1 id="ref">載入中…</h1>
   <div id="verses"></div>
   <div id="detail"></div>
@@ -47,9 +48,13 @@ const COLOR = { lexical:'amber', history:'blue', misread:'red', crossref:'purple
 let verses = [], notes = [], studyPath = null;
 const $ = s => document.querySelector(s);
 
-async function loadPassage() {
-  notes = await (await fetch('/api/notes')).json();
-  const r = await (await fetch('/api/passage')).json();
+// 「以賽亞書 7:10-17」「創世記 1」「Matt 5:17」都吃
+async function loadPassage(refStr, version) {
+  const m = (refStr || '').match(/^(\S+)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/);
+  const qs = m ? `?book=${encodeURIComponent(m[1])}&chapter=${m[2]}&start=${m[3]||1}&end=${m[4]||m[3]||200}&version=${version||'rcuv'}` : '';
+  notes = qs ? [] : await (await fetch('/api/notes')).json();
+  const r = await (await fetch('/api/passage' + qs)).json();
+  if (r.error) { alert(r.error); return; }
   verses = r.verses;
   $('#ref').textContent = `${r.reference} · ${r.version}`;
   render();
@@ -133,6 +138,7 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   $('#study').style.display = b.dataset.tab === 'study' ? 'block' : 'none';
 });
 $('#f').onsubmit = e => { e.preventDefault(); const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t); };
+$('#pf').onsubmit = e => { e.preventDefault(); loadPassage($('#pref').value.trim(), $('#pver').value); };
 loadPassage();
 </script>
 </body>

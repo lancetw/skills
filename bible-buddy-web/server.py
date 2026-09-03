@@ -47,6 +47,8 @@ async def index():
 @app.get("/api/passage")
 async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int = 10, end: int = 17, version: str = "rcuv"):
     r = await asyncio.to_thread(fetch, book, chapter, start, end, version)
+    if r.get("reference") != passage["reference"]:
+        notes.clear()  # notes carry no book/chapter; a new passage means a clean slate
     passage.update(reference=r.get("reference", ""), version=version, verses=r.get("verses", []))
     return r
 
