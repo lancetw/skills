@@ -76,7 +76,7 @@ function render() {
     for (const n of vs) {
       if (n.anchor.start < pos) continue; // ponytail: overlaps skipped, list only
       out += esc(v.text.slice(pos, n.anchor.start));
-      out += `<span class="ann ann-n ann-${COLOR[n.kind]||'amber'}" data-note="${esc(n.label)}" data-id="${n.id}">${esc(v.text.slice(n.anchor.start, n.anchor.end))}</span>`;
+      out += `<span class="ann ${n.anchor.start === 0 ? 'ann-ne' : 'ann-n'} ann-${COLOR[n.kind]||'amber'}" data-note="${esc(n.label)}" data-id="${n.id}">${esc(v.text.slice(n.anchor.start, n.anchor.end))}</span>`;
       pos = n.anchor.end;
     }
     out += esc(v.text.slice(pos));
