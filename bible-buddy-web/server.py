@@ -588,6 +588,58 @@ ONE_PROMPT = """你是第一世紀猶太教背景的聖經學者。針對下面�
 {text}"""
 
 
+STUDY_RULES = """- 寫給有背景的讀者：第一世紀猶太教學者的口吻，用語精確；原文字義類 label 寫成「希伯來/希臘字 音譯＝意思」。"""
+
+VERSION_PROMPT = """你是第一世紀猶太教背景的聖經學者。把下面這條關於 {ref} 第 {verse} 節{quote}的筆記改寫成{target}版本。
+規則：
+- 保持同樣的論點與事實，不要新增未經驗證的主張；原本標「（待驗證）」的維持。
+- label：台灣繁體中文，14 字以內。
+- body：2 到 3 句、120 字內。
+{rules}
+- kind 維持 {kind}。
+- 不要教會式應用，不要靈意化。
+
+原筆記：「{label}」：{body}
+
+經文：
+{text}"""
+
+
+def _style_of(n: dict) -> str:
+    return "eli5" if n.get("style") == "eli5" else "study"
+
+
+@app.post("/api/notes/{nid}/version")
+async def note_version(nid: str, body: dict):
+    """Show this note in the other register. The first request for a register the note lacks has the model rewrite it
+    (same claims, plain or scholarly); both versions stay on the note, so later switches are instant."""
+    await _ensure_passage()
+    n = _find_note(nid)
+    style = body.get("style")
+    if not n or style not in ("eli5", "study"):
+        return {"error": "not found"}
+    cur = _style_of(n)
+    versions = n.setdefault("versions", {})
+    versions[cur] = {"label": n["label"], "body": n.get("body", "")}  # snapshot what is shown now
+    if style not in versions:
+        text = _verse_text(n["verse"])
+        quote = text[n["anchor"]["start"]:n["anchor"]["end"]] if n.get("anchor") else ""
+        ctx = "\n".join(f"[{v['verse']}] {v['text']}" for v in passage["verses"])
+        prompt = VERSION_PROMPT.format(ref=passage["reference"], verse=n["verse"], quote=f"「{quote}」" if quote else "",
+                                       target="ELI5 淺白" if style == "eli5" else "深入", rules=ELI5_RULES if style == "eli5" else STUDY_RULES,
+                                       kind=n["kind"], label=n["label"], body=n.get("body", ""), text=ctx)
+        try:
+            r, cost = await _structured(prompt, ONE_SCHEMA, f"ver|{nid}")
+        except Exception as e:
+            print("version failed:", nid, style, repr(e), file=sys.stderr)
+            return {"error": str(e)}
+        versions[style] = {"label": str(r.get("label", n["label"]))[:20], "body": r.get("body", "")}
+        n["cost"] = round((n.get("cost") or 0) + (cost or 0), 6)
+    n["label"], n["body"], n["style"] = versions[style]["label"], versions[style]["body"], style
+    _save()
+    return n
+
+
 @app.post("/api/auto-notes/one")
 async def auto_note_one(body: dict):
     """A model note for one selected phrase. Not cached: the user asked for exactly this one.
