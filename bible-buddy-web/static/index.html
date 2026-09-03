@@ -108,6 +108,13 @@
   .hrow { display:flex; align-items:center; gap:12px; min-height:34px; margin:0 0 14px; }
   .hrow h1 { margin:0; }
   #quick { margin-left:auto; font-size:.82rem; padding:4px 12px; border-radius:999px; }
+  /* note layers: ELI5 (model) and 深入研讀 (agent) would crowd the same verse, so they are viewed one at a time or together */
+  .views { display:inline-flex; border:1px solid var(--rule); border-radius:999px; overflow:hidden; font-size:.78rem; flex:none; }
+  .views[hidden] { display:none; }
+  .views button { border:none; border-radius:0; background:transparent; color:var(--ink-2); padding:3px 10px; }
+  .views button + button { border-left:1px solid var(--rule); }
+  .views button.on { background:var(--paper-2); color:var(--pen); }
+  .views small { opacity:.7; font-variant-numeric:tabular-nums; }
   #quickClear, #study { margin-left:0; font-size:.82rem; padding:4px 12px; border-radius:999px; }
   #quickClear[hidden] { display:none; } #quickClear.armed { border-color:#c45a38; color:#c45a38; }
   #study + #banner { margin-left:0; }
@@ -173,7 +180,7 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1><div class="views" hidden title="切換要看哪一層筆記；手動筆記與 references 每層都顯示"><button type="button" data-view="all">全部</button><button type="button" data-view="eli5">ELI5 <small></small></button><button type="button" data-view="study">深入研讀 <small></small></button></div><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次深入研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
@@ -257,6 +264,7 @@ async function runQuick() {
   }, 2000);
   const n = await addAuto('/api/auto-notes/quick');
   clearInterval(poll); quickBusy = false; b.disabled = running;
+  if (n > 0 && view === 'study') setView('eli5');
   if (n >= 0) banner(`✓ ELI5 筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}${usd(lastAuto.cost)}`, { spin: false, hideAfter: 4000 });
   quickLabel();
 }
@@ -280,13 +288,29 @@ async function addAuto(url) {
   return fresh.length;
 }
 
+// which layer a note belongs to: model notes, agent annotations, or the base that always shows (manual, references)
+const LAYER = n => n.author === 'quick' ? 'eli5' : n.author === 'agent' ? 'study' : 'base';
+let view = 'all'; try { view = localStorage.getItem('view') || 'all'; } catch {}
+function setView(v) { view = v; try { localStorage.setItem('view', v); } catch {} render(); }
+function inView(n) {
+  const c = { eli5: notes.some(x => LAYER(x) === 'eli5'), study: notes.some(x => LAYER(x) === 'study') };
+  const eff = view !== 'all' && !c[view] ? 'all' : view;  // a view with nothing in it falls back to everything
+  return eff === 'all' || LAYER(n) === 'base' || LAYER(n) === eff;
+}
+function paintViews() {
+  const c = { eli5: notes.filter(x => LAYER(x) === 'eli5').length, study: notes.filter(x => LAYER(x) === 'study').length };
+  const el = document.querySelector('.views'); el.hidden = !(c.eli5 && c.study);
+  for (const b of el.querySelectorAll('button')) { b.classList.toggle('on', b.dataset.view === view); const s = b.querySelector('small'); if (s) s.textContent = c[b.dataset.view] || ''; }
+}
+document.querySelector('.views').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
 function render() {
+  paintViews();
   let fnN = 0; fnNum = {}; const fnList = [];  // translator footnotes numbered once across the passage
   for (const v of verses) for (const [i, f] of (v.footnotes || []).entries()) { fnNum[`${v.verse}:${i}`] = ++fnN; fnList.push({ n: fnN, verse: v.verse, text: f.text }); }
   $('#verses').innerHTML = verses.map(v => {
-    const vs = notes.filter(n => n.verse === v.verse && n.anchor).sort((a,b) => a.anchor.start - b.anchor.start);
+    const vs = notes.filter(n => inView(n) && n.verse === v.verse && n.anchor).sort((a,b) => a.anchor.start - b.anchor.start);
     let out = '', pos = 0, shown = 0, lastStart = -99;
-    const rest = notes.filter(n => n.verse === v.verse && !n.anchor);
+    const rest = notes.filter(n => inView(n) && n.verse === v.verse && !n.anchor);
     for (const n of vs) {
       // one arrow per ~9 chars and at most 3 per verse, so labels don't pile up; the rest become chips
       if (n.anchor.start < pos || shown >= MAX_ARROWS || n.anchor.start - lastStart < MIN_GAP) { rest.push(n); continue; }
@@ -350,13 +374,18 @@ function showCard(n, rect, gap) {
   const unverified = n.author === 'quick' && !n.verified;
   const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.style === 'eli5' && 'ELI5', n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`, n.pass_cost != null && `整段 $${n.pass_cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
     + (unverified ? '<span class="tag unv" title="AI 筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
-  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask" ${running ? 'disabled title="agent 忙碌中"' : ''}>追問 →</button></div>`;
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : n.author === 'agent' ? `<button id="rewrite" title="請 agent 重新研讀並重寫這條" ${running ? 'disabled' : ''}>🔄 請 agent 重寫</button>` : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask" ${running ? 'disabled title="agent 忙碌中"' : ''}>追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
   d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
   d.querySelector('#edit').onclick = () => showEditor(n, rect, gap);
   d.querySelector('#regen')?.addEventListener('click', () => {
     const quote = verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end);
     d.hidePopover(); aiNote({ verse: n.verse, quote, replace: n.id });
+  });
+  d.querySelector('#rewrite')?.addEventListener('click', () => {
+    const quote = n.anchor ? verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end) : '';
+    d.hidePopover();
+    send(`重寫筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程重新研讀這個點，修正錯誤或換更精確、更有價值的角度，然後呼叫 mcp__notes__update_annotation（id=${n.id}）回填：label 20 字內；body 1 到 3 句、100 字內，口氣與格式跟原筆記一樣${n.style === 'eli5' ? '（ELI5 淺白）' : ''}。詳細分析寫在對話裡即可，不要另外新增筆記。`);
   });
   // hand the quick note to the agent; it answers by calling update_annotation, which comes back as a "note" event
   d.querySelector('#verify')?.addEventListener('click', () => {
@@ -461,6 +490,7 @@ async function aiNote(s) {
   pending.delete(p.id);
   const i = s.replace ? notes.findIndex(x => x.id === s.replace) : -1;
   if (i >= 0) notes.splice(i, 1, r); else notes.push(r);
+  if (view === 'study') view = 'eli5';
   render(); quickLabel();
 }
 
@@ -477,7 +507,7 @@ function setRunning(on) {
   running = on;
   $('#q').disabled = on; $('#clear').disabled = on; $('#study').disabled = on; $('#study2').disabled = on;
   $('#quick').disabled = on || quickBusy;  // one model job at a time on the page
-  for (const b of document.querySelectorAll('#detail #ask, #detail #verify')) { b.disabled = on; b.title = on ? 'agent 忙碌中' : ''; }
+  for (const b of document.querySelectorAll('#detail #ask, #detail #verify, #detail #rewrite')) { b.disabled = on; b.title = on ? 'agent 忙碌中' : ''; }
   $('#send').classList.toggle('stop', on);
   slot('#send').set(on ? '停止' : '送出');
 }
@@ -509,7 +539,7 @@ async function send(text) {
       const ev = JSON.parse(line.slice(6));
       if (ev.type === 'text') { buf += ev.text + '\n'; const a = cur.querySelector('.act'); cur.innerHTML = marked.parse(buf); if (a) cur.prepend(a); slot('#status').set('✍ 撰寫中…'); act.set('撰寫中…'); }
       else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); step(`⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
-      else if (ev.type === 'note') { const i = notes.findIndex(x => x.id === ev.note.id); if (i >= 0) notes[i] = ev.note; else notes.push(ev.note); render(); }
+      else if (ev.type === 'note') { const i = notes.findIndex(x => x.id === ev.note.id); if (i >= 0) notes[i] = ev.note; else { notes.push(ev.note); if (view === 'eli5') view = 'study'; } render(); }
       else if (ev.type === 'done') { finish(); slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(buf); if (studyPath) loadStudy(studyPath); }
       else if (ev.type === 'error') { finish(); slot('#status').set('✗ 出錯'); logLine('tool', `✗ ${esc(ev.text)}`); }
       $('#log').scrollTop = 1e9;
