@@ -57,7 +57,9 @@
   #detail .hd small { color:var(--ink-2); }
   /* loading states: a banner on the page for passage/quick-notes waits, a pending bubble for agent turns */
   #banner { position:sticky; top:-22px; z-index:2; display:flex; align-items:center; gap:10px; margin:-22px -28px 14px -78px; padding:10px 16px 10px 78px; background:var(--paper-2); border-bottom:1px solid var(--rule); color:var(--ink); font-size:.92rem; }
-  #banner .t { margin-left:auto; font-variant-numeric:tabular-nums; color:var(--ink-2); }
+  #banner[hidden] { display:none; }                     /* the display:flex above would otherwise beat the hidden attribute */
+  #bannerText { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; }   /* never let the rolled chars wrap one per line */
+  #banner .t { margin-left:auto; flex:none; font-variant-numeric:tabular-nums; color:var(--ink-2); }
   .spin { width:14px; height:14px; border:2px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; flex:none; }
   @keyframes spin { to { transform:rotate(360deg); } }
   .dots span { display:inline-block; width:6px; height:6px; margin-right:4px; border-radius:50%; background:var(--pen); animation:blink 1.2s infinite; }
@@ -155,11 +157,10 @@ async function loadPassage(refStr, version) {
   slot('#ref').set(title);
   render();
   slot('#pload').set('載入');
-  const before = notes.length;
   const refsN = await addAuto('/api/auto-notes/refs');        // instant, from bible-buddy references
   banner(refsN ? `已標 ${refsN} 條已驗證筆記，速讀筆記產生中（約 1 分鐘）` : '速讀筆記產生中（約 1 分鐘）', { timer: true });
   await addAuto('/api/auto-notes/quick');                     // one cheap model pass, ~75 s
-  banner(`✓ 自動筆記完成，共 ${notes.length - before} 條`, { spin: false, hideAfter: 3000 });
+  banner(`✓ 自動筆記 ${notes.filter(n => n.author === 'refs' || n.author === 'quick').length} 條`, { spin: false, hideAfter: 3000 });
 }
 async function addAuto(url) {
   let fresh = [];
@@ -292,7 +293,7 @@ async function loadStudy(path) {
   $('#ssel').value = path && list.some(f => f.path === path) ? path : list[0].path;
   const md = await (await fetch('/api/study?path=' + encodeURIComponent($('#ssel').value))).text();
   const clean = md.replace(/^---[\s\S]*?\n---\n/, '')            // drop YAML frontmatter
-    .replace(/^> ★ Insight ─+ *$/gm, '> ★ Insight')                 // the ─ rules are one unbreakable run; the box below replaces them
+    .replace(/^> ★ Insight ─+ *$/gm, '> ★ Insight\n>')             // the ─ rules are one unbreakable run; the box below replaces them; blank quote line splits the title off the body
     .replace(/^> ─+ *$/gm, '>');
   $('#sbody').className = ''; $('#sbody').innerHTML = marked.parse(clean);
   for (const bq of $('#sbody').querySelectorAll('blockquote')) if (bq.textContent.trim().startsWith('★ Insight')) bq.classList.add('insight');
