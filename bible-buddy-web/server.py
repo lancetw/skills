@@ -52,6 +52,7 @@ events: asyncio.Queue = asyncio.Queue()  # ponytail: one global queue = one user
 SYSTEM_APPEND = """你在一個網頁查經工具裡工作。畫面左側顯示 [目前畫面] 列出的經文。
 每個關鍵發現（原文字義 lexical、歷史背景 history、常見誤讀或翻譯偏差 misread、相關經文 crossref）
 呼叫一次 mcp__notes__add_annotation：quote 必須逐字取自 [目前畫面] 的該節經文，label 20 字內，長分析放 body。
+要求「驗證」一條既有筆記時，查證後呼叫 mcp__notes__update_annotation 更新那條（帶原 id），不要另外新增。
 需要使用者選擇時，用編號清單，最後一行寫「請選擇 (1-N)：」。AskUserQuestion 工具不可用。"""
 
 
@@ -240,6 +241,22 @@ async def add_annotation(args: dict) -> dict:
     return {"content": [{"type": "text", "text": f"已加入筆記 {note['id']} {miss}"}]}
 
 
+@tool(
+    "update_annotation",
+    "更新一條既有筆記（驗證速讀筆記用）。id 必填；label 20 字內；body 寫查證結論與依據；kind: lexical|history|misread|crossref",
+    {"id": str, "label": str, "body": str, "kind": str},
+)
+async def update_annotation(args: dict) -> dict:
+    n = _find_note(str(args["id"]))
+    if not n:
+        return {"content": [{"type": "text", "text": f"找不到筆記 {args['id']}"}], "is_error": True}
+    n.update(label=str(args["label"])[:20], body=args.get("body", n.get("body", "")),
+             kind=args["kind"] if args.get("kind") in KINDS else n["kind"], author="agent", verified=True)
+    _save()
+    await events.put({"type": "note", "note": n})
+    return {"content": [{"type": "text", "text": f"已更新筆記 {n['id']}"}]}
+
+
 _client: ClaudeSDKClient | None = None
 _client_stale = False
 
@@ -258,8 +275,8 @@ async def get_client() -> ClaudeSDKClient:
             cwd=str(HERE),
             setting_sources=["project"],
             system_prompt={"type": "preset", "preset": "claude_code", "append": SYSTEM_APPEND},
-            mcp_servers={"notes": create_sdk_mcp_server("notes", tools=[add_annotation])},
-            allowed_tools=["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch", "Write", "Edit", "Skill", "mcp__notes__add_annotation"],
+            mcp_servers={"notes": create_sdk_mcp_server("notes", tools=[add_annotation, update_annotation])},
+            allowed_tools=["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch", "Write", "Edit", "Skill", "mcp__notes__add_annotation", "mcp__notes__update_annotation"],
             disallowed_tools=["AskUserQuestion"],
             permission_mode="acceptEdits",
             max_turns=80,
