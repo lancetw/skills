@@ -43,9 +43,9 @@
   #reader { overflow:auto; padding:0 32px 40px 24px; }
   /* the title bar stays put while the passage scrolls under it */
   /* a solid band edge to edge (negative margins undo the reader's gutters), with a hard rule; no shadow, nothing shows through */
-  .top { display:flex; gap:8px; align-items:center; position:sticky; top:0; z-index:5; margin:0 -32px 14px -24px; padding:14px 32px 12px 24px; background:var(--paper-2); border-bottom:1px solid var(--rule); }
+  .top { display:flex; flex-wrap:wrap; row-gap:8px; gap:8px; align-items:center; position:sticky; top:0; z-index:5; margin:0 -32px 14px -24px; padding:14px 32px 12px 24px; background:var(--paper-2); border-bottom:1px solid var(--rule); }
   .top .brand { font-family:'Noto Serif TC', serif; font-weight:700; letter-spacing:.04em; margin-right:auto; }
-  .top input { width:14em; }
+  .top input { flex:1 1 10em; min-width:8em; width:auto; }
   .page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
   .page::before { content:""; position:absolute; top:0; bottom:0; left:60px; width:1px; background:var(--margin); }   /* the red margin line */
   h1 { font-family:'Noto Serif TC', serif; font-size:1.05rem; font-weight:600; color:var(--ink-2); margin:0 0 14px; }
@@ -110,10 +110,12 @@
   #selmenu button { font-size:.85rem; padding:4px 10px; }
   /* loading states: a banner on the page for passage/quick-notes waits, a pending bubble for agent turns */
   /* status pill sits in the fixed-height heading row, so showing/hiding it never shifts the verses */
-  .hrow { display:flex; align-items:center; gap:12px; min-height:34px; margin:0 0 14px; }
+  .hrow { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; margin:0 0 8px; }
   .hrow h1 { margin:0; }
+  /* tools row: action pills left, status pill right; wraps on a narrow reader, fixed min-height so the pill's coming and going never shifts the verses */
+  .trow { display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; min-height:34px; margin:0 0 14px; }
   /* passage actions: one group of identical pills at the right of the heading row */
-  .actions { margin-left:auto; display:inline-flex; gap:6px; flex:none; }
+  .actions { display:inline-flex; flex-wrap:wrap; gap:6px; }
   .actions button { font-size:.82rem; padding:4px 12px; border-radius:999px; background:var(--paper-2); }
   .actions button:hover { background:var(--card); }
   .actions #quickClear:hover { border-color:#c45a38; color:#c45a38; }
@@ -126,9 +128,9 @@
   .views small { opacity:.7; font-variant-numeric:tabular-nums; }
   #quickClear[hidden] { display:none; }
   .actions + #banner { margin-left:0; }
-  .hrow h1 { flex:none; }
+
   /* the pill can never widen the row: it shrinks and clips, the full text lives in its title tooltip */
-  #banner { min-width:0; max-width:min(55%, 520px); }
+  #banner { min-width:0; max-width:100%; }
   #banner { margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:4px 12px; border-radius:999px; background:var(--paper-2); border:1px solid var(--rule); color:var(--ink); font-size:.82rem; white-space:nowrap; }
   #banner[hidden] { display:none; }                     /* the display rule above would otherwise beat the hidden attribute */
   #bannerText { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
@@ -188,7 +190,8 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><div class="views" hidden title="切換要看哪一層筆記；手動筆記與 references 每層都顯示"><button type="button" data-view="all">全部</button><button type="button" data-view="eli5">ELI5 <small></small></button><button type="button" data-view="study">深入研讀 <small></small></button></div><div class="actions"><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑 清除自動筆記</button></div><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1><div class="views" hidden title="切換要看哪一層筆記；手動筆記與 references 每層都顯示"><button type="button" data-view="all">全部</button><button type="button" data-view="eli5">ELI5 <small></small></button><button type="button" data-view="study">深入研讀 <small></small></button></div></div>
+    <div class="trow"><div class="actions"><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑 清除自動筆記</button></div><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次深入研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
