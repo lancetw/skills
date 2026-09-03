@@ -32,8 +32,9 @@
   button.primary { background:var(--pen); color:var(--paper); border-color:var(--pen); }
 
   /* reader = a notebook page */
-  #reader { overflow:auto; padding:20px 32px 40px 24px; }
-  .top { display:flex; gap:8px; align-items:center; margin-bottom:14px; }
+  #reader { overflow:auto; padding:0 32px 40px 24px; }
+  /* the title bar stays put while the passage scrolls under it */
+  .top { display:flex; gap:8px; align-items:center; position:sticky; top:0; z-index:5; padding:16px 0 10px; margin-bottom:8px; background:var(--paper); box-shadow:0 10px 12px -12px #0003; }
   .top .brand { font-family:'Noto Serif TC', serif; font-weight:700; letter-spacing:.04em; margin-right:auto; }
   .top input { width:14em; }
   .page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
@@ -54,6 +55,7 @@
   .chip.err { --c:#c45a38; }
   .chip.err button { font-size:.75rem; padding:0 5px; border-color:transparent; background:transparent; color:inherit; }
   .chip.err button:hover { text-decoration:underline; }
+  .fn { font-size:.6em; vertical-align:super; color:var(--pen); cursor:pointer; user-select:none; margin:0 1px; font-family:var(--sans); }  /* translator footnote marker */
   .chip { display:inline-block; font-size:.8rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
 
   /* note card popover */
@@ -121,6 +123,9 @@
   .tabs button.on { background:var(--pen); color:var(--paper); }
   #log { flex:1; overflow:auto; padding:12px; font-size:.9rem; }
   #log .msg { background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:8px 12px; margin:.5em 0; box-shadow:0 1px 3px #0001; }
+  #log details.steps { margin:.2em 0 .2em 6px; }
+  #log details.steps summary { cursor:pointer; color:var(--ink-2); font-size:.76rem; list-style:none; }
+  #log details.steps summary::before { content:'▸ '; } #log details.steps[open] summary::before { content:'▾ '; }
   #log .tool { color:var(--ink-2); font-size:.74rem; font-family:ui-monospace, monospace; padding:1px 6px; }
   #log .opts button { display:block; width:100%; margin:4px 0; text-align:left; }
   #study { font-size:1rem; line-height:1.8; }
@@ -243,16 +248,25 @@ function render() {
     for (const n of vs) {
       // one arrow per ~9 chars and at most 3 per verse, so labels don't pile up; the rest become chips
       if (n.anchor.start < pos || shown >= MAX_ARROWS || n.anchor.start - lastStart < MIN_GAP) { rest.push(n); continue; }
-      out += esc(v.text.slice(pos, n.anchor.start));
-      out += `<span class="ann ${n.anchor.start === 0 ? 'ann-nw' : 'ann-n'} ann-${COLOR[n.kind]||'amber'}" data-note="${esc(n.label)}" data-id="${n.id}">${esc(v.text.slice(n.anchor.start, n.anchor.end))}</span>`;
+      out += seg(v, pos, n.anchor.start);
+      out += `<span class="ann ${n.anchor.start === 0 ? 'ann-nw' : 'ann-n'} ann-${COLOR[n.kind]||'amber'}" data-note="${esc(n.label)}" data-id="${n.id}">${seg(v, n.anchor.start, n.anchor.end)}</span>`;
       pos = n.anchor.end; shown++; lastStart = n.anchor.start;
     }
-    out += esc(v.text.slice(pos));
+    out += seg(v, pos, v.text.length);
     const pend = [...pending.values()].filter(p => p.verse === v.verse);
     const chips = rest.length || pend.length ? `<div class="chips">${rest.map(n => `<span class="chip" data-id="${n.id}" style="--c:${DOTC[COLOR[n.kind]]}">${esc(n.label)}</span>`).join('')}${pend.map(pendingChip).join('')}</div>` : '';
     return `<div class="verse ${shown ? 'has-notes' : ''}" data-verse="${v.verse}"><span class="n">${v.verse}</span>${out}<span class="eol">\u200b</span>${chips}</div>`;
   }).join('');
   demoteWrapped();
+}
+// a slice of the verse text with its footnote markers dropped in at their offsets (the text itself is already clean)
+function seg(v, a, b) {
+  let out = '', p = a;
+  for (const [i, f] of (v.footnotes || []).entries()) {
+    if (f.pos < a || f.pos > b || (f.pos === b && b !== v.text.length)) continue;
+    out += esc(v.text.slice(p, f.pos)) + `<sup class="fn" data-verse="${v.verse}" data-fn="${i}" title="${esc(f.text)}">${i + 1}</sup>`; p = f.pos;
+  }
+  return out + esc(v.text.slice(p, b));
 }
 // Labels hang ~70px under their span, so an arrow on any line but the last would cover the next line.
 // After layout, turn those into chips. Re-run on resize since wrapping changes.
@@ -333,6 +347,12 @@ $('#detail').addEventListener('pointerdown', e => {
   e.preventDefault();
 });
 $('#verses').addEventListener('click', e => {
+  const fn = e.target.closest('.fn');
+  if (fn) {  // translator footnote: same card, no actions
+    const v = verses.find(x => x.verse === fn.dataset.verse), f = v.footnotes[+fn.dataset.fn], d = $('#detail');
+    d.innerHTML = `<div class="hd"><b>譯註 ${+fn.dataset.fn + 1}</b></div><div class="meta"><span class="tag">第 ${v.verse} 節</span><span class="tag">${esc($('#pver').selectedOptions[0].text)}</span></div><div class="body">${esc(f.text)}</div>`;
+    d.showPopover(); placeDetail(fn.getBoundingClientRect()); return;
+  }
   const rt = e.target.closest('[data-retry]'); if (rt) { const p = pending.get(rt.dataset.retry); pending.delete(p.id); aiNote(p); return; }
   const dm = e.target.closest('[data-dismiss]'); if (dm) { pending.delete(dm.dataset.dismiss); render(); return; }
   const a = e.target.closest('[data-id]'); if (!a) return;
@@ -402,7 +422,13 @@ async function send(text) {
   logLine('msg', `<b>你：</b>${esc(text)}`);
   const cur = logLine('msg pending', `<div class="act"><span class="dots"><span></span><span></span><span></span></span><span class="a"></span><span class="t"></span></div>`);
   const act = slot(cur.querySelector('.a'), 'agent 啟動中…'); stopTick = ticker(cur.querySelector('.t'));
-  let buf = '', finished = false;
+  let buf = '', finished = false, steps = null, nSteps = 0;
+  // Bash/Grep/… lines fold into one closed block per turn; the pending bubble already names the current tool
+  const step = html => {
+    if (!steps) { steps = document.createElement('details'); steps.className = 'steps'; steps.innerHTML = '<summary></summary>'; cur.before(steps); }
+    const d = document.createElement('div'); d.className = 'tool'; d.innerHTML = html; steps.appendChild(d);
+    steps.querySelector('summary').textContent = `執行細節 · ${++nSteps} 步`;
+  };
   const finish = () => { finished = true; stopTick?.(); stopTick = null; cur.classList.remove('pending'); cur.querySelector('.act')?.remove(); setRunning(false); };
   const res = await fetch('/api/chat', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ message:text }) });
   const rd = res.body.getReader(), dec = new TextDecoder(); let rest = '';
@@ -414,7 +440,7 @@ async function send(text) {
       if (!line.startsWith('data: ')) continue;
       const ev = JSON.parse(line.slice(6));
       if (ev.type === 'text') { buf += ev.text + '\n'; const a = cur.querySelector('.act'); cur.innerHTML = marked.parse(buf); if (a) cur.prepend(a); slot('#status').set('✍ 撰寫中…'); act.set('撰寫中…'); }
-      else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); logLine('tool', `⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
+      else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); step(`⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
       else if (ev.type === 'note') { notes.push(ev.note); render(); }
       else if (ev.type === 'done') { finish(); slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(buf); if (studyPath) loadStudy(studyPath); }
       else if (ev.type === 'error') { finish(); slot('#status').set('✗ 出錯'); logLine('tool', `✗ ${esc(ev.text)}`); }
