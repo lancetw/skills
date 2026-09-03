@@ -66,9 +66,9 @@
   .chip.err button:hover { text-decoration:underline; }
   .fns { margin-top:28px; padding-top:12px; border-top:1px solid var(--rule); font-family:var(--serif); font-size:.9rem; color:var(--ink-2); }
   .fns h3 { margin:0 0 6px; font-size:.8rem; font-weight:500; letter-spacing:.12em; }
-  .fns ol { margin:0; padding-left:1.8em; } .fns li { line-height:1.8; padding:0 4px; border-radius:4px; transition:background .6s; }
+  .fns ol { margin:0; padding-left:1.8em; } .fns li { line-height:1.8; padding:0 4px; border-radius:4px; transition:background 1.5s; }
   .fns li.flash { background:var(--paper-2); transition:none; }
-  .verse { transition:background .8s; border-radius:4px; } .verse.flash { background:var(--paper-2); transition:none; }  /* ↩ from a footnote lights the verse briefly */
+  .verse { transition:background 1.5s; border-radius:4px; } .verse.flash { background:var(--paper-2); transition:none; }  /* ↩ from a footnote lights the verse briefly */
   .fns .v { font-family:var(--hand); color:var(--margin); margin-right:6px; } .fns .back { margin-left:6px; color:var(--pen); text-decoration:none; }
   .fn { font-size:.6em; vertical-align:super; color:var(--pen); cursor:pointer; user-select:none; margin:0 1px; font-family:var(--sans); }  /* translator footnote marker */
   .chip { display:inline-block; font-size:.8rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
@@ -395,7 +395,7 @@ $('#detail').addEventListener('pointerdown', e => {
 });
 $('#verses').addEventListener('click', e => {
   // footnote marker ↔ its entry in the 譯註 list: scroll and flash, no popover
-  const jump = (el, flash) => { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); if (flash) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1200); } };
+  const jump = (el, flash) => { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); if (flash) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 3000); } };  // 3 s lit, then a slow fade
   const fn = e.target.closest('.fn'); if (fn) { jump($('#fn-' + fn.dataset.fn), true); return; }
   const back = e.target.closest('.fns .back'); if (back) { e.preventDefault(); jump($(back.getAttribute('href')).closest('.verse'), true); return; }
   const rt = e.target.closest('[data-retry]'); if (rt) { const p = pending.get(rt.dataset.retry); pending.delete(p.id); aiNote(p); return; }
