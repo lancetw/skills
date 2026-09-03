@@ -58,7 +58,7 @@ SYSTEM_APPEND = """你在一個網頁查經工具裡工作。畫面左側顯示 
 
 @app.get("/")
 async def index():
-    return FileResponse(HERE / "static/index.html")
+    return FileResponse(HERE / "static/index.html", headers={"Cache-Control": "no-cache"})  # a reload always revalidates
 
 
 # FHL inlines translator notes "([1.1]本節或譯…)" / "( [ 1.4] …)" and parallel refs "（#太 3:1-12;可 1:1-8|）" into the verse text

@@ -44,8 +44,19 @@
   /* the title bar stays put while the passage scrolls under it */
   /* a solid band edge to edge (negative margins undo the reader's gutters), with a hard rule; no shadow, nothing shows through */
   .top { display:flex; flex-wrap:wrap; row-gap:8px; gap:8px; align-items:center; position:sticky; top:0; z-index:5; margin:0 -32px 14px -24px; padding:14px 32px 12px 24px; background:var(--paper-2); border-bottom:1px solid var(--rule); }
-  .top .brand { font-family:'Noto Serif TC', serif; font-weight:700; letter-spacing:.04em; margin-right:auto; }
-  .top input { flex:1 1 10em; min-width:8em; width:auto; }
+  .top .brand { font-family:'Noto Serif TC', serif; font-weight:700; letter-spacing:.04em; margin-right:auto; white-space:nowrap; }
+  .top .pgrp { display:flex; gap:8px; flex:1 1 22em; min-width:0; }
+  .top .pgrp input { flex:1 1 8em; min-width:6em; width:auto; }
+  .top .pgrp select { flex:0 1 auto; min-width:0; }
+  .top .icons { display:flex; gap:8px; flex:none; }
+  /* narrow reader (chat open, small window): brand, tabs and icons share the first row, the passage controls take the second */
+  #reader { container-type:inline-size; }
+  @container (max-width: 860px) {
+    .top .pgrp { order:9; flex-basis:100%; }
+    .top .icons { margin-left:auto; }
+    .top .brand { margin-right:0; }
+  }
+  @container (max-width: 560px) { .top .brand { display:none; } }
   .page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
   .page::before { content:""; position:absolute; top:0; bottom:0; left:60px; width:1px; background:var(--margin); }   /* the red margin line */
   h1 { font-family:'Noto Serif TC', serif; font-size:1.05rem; font-weight:600; color:var(--ink-2); margin:0 0 14px; }
@@ -189,7 +200,7 @@
 </head>
 <body>
 <section id="reader">
-  <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
+  <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><div class="pgrp"><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button></div><div class="icons"><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></div></form>
   <div id="page" class="page">
     <div class="hrow"><h1 id="ref">載入中…</h1><div class="views" hidden title="切換要看哪一層筆記；手動筆記與 references 每層都顯示"><button type="button" data-view="all">全部</button><button type="button" data-view="eli5">ELI5 <small></small></button><button type="button" data-view="study">深入研讀 <small></small></button></div></div>
     <div class="trow"><div class="actions"><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑 清除自動筆記</button></div><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
