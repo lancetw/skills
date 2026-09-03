@@ -60,9 +60,27 @@ async def index():
     return FileResponse(HERE / "static/index.html")
 
 
+# FHL inlines translator notes "([1.1]本節或譯…)" / "( [ 1.4] …)" and parallel refs "（#太 3:1-12;可 1:1-8|）" into the verse text
+FOOTNOTE = re.compile(r"\s*(?:\(\s*\[\s*\d+\.\d+\s*\]\s*(.*?)\s*\)|（#(.*?)\|?）)")
+
+
+def _split_footnotes(text: str) -> tuple[str, list[dict], list[tuple[int, int]]]:
+    """→ clean text, footnotes [{pos, text}] at their offsets in the clean text, and the cut spans of the original (for re-anchoring)."""
+    clean, fns, cuts, last = "", [], [], 0
+    for m in FOOTNOTE.finditer(text):
+        clean += text[last:m.start()]
+        body = m.group(1) if m.group(1) is not None else "參 " + "; ".join(p.strip() for p in m.group(2).split(";"))
+        fns.append({"pos": len(clean), "text": body.strip()})
+        cuts.append((m.start(), m.end() - m.start()))
+        last = m.end()
+    return clean + text[last:], fns, cuts
+
+
 @app.get("/api/passage")
 async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int = 10, end: int = 17, version: str = "rcuv"):
     r = await asyncio.to_thread(fetch, book, chapter, start, end, version)
+    for v in r.get("verses", []):
+        v["text"], v["footnotes"], v["cuts"] = _split_footnotes(v["text"])
     if r.get("verses"):  # the page asks for end=200 to mean "to the end": that reads "約翰福音 1"; an explicit end is clamped
         last = int(r["verses"][-1]["verse"])
         head = r["reference"].split(":")[0]
@@ -135,7 +153,8 @@ def _save() -> None:
         return
     NOTES_DIR.mkdir(parents=True, exist_ok=True)
     data = {"reference": passage["reference"], "version": passage["version"], "book": passage.get("book", ""),
-            "notes": notes, "hidden": sorted(hidden), "quick": _quick_cache.get(_key()), "quick_cost": _quick_cost.get(_key())}
+            "notes": notes, "hidden": sorted(hidden), "quick": _quick_cache.get(_key()), "quick_cost": _quick_cost.get(_key()),
+            "clean": True}  # anchors are offsets into footnote-stripped text
     tmp = _notes_file().with_suffix(".json.tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=1))
     tmp.replace(_notes_file())  # atomic: a crash mid-write cannot leave a half file
@@ -148,6 +167,16 @@ def _load() -> None:
         return
     d = json.loads(f.read_text())
     notes.extend(d.get("notes", [])); hidden.update(d.get("hidden", []))
+    if not d.get("clean"):  # saved against text that still had "([1.1]…)" inline: shift anchors past the cuts, once
+        for n in notes:
+            a = n.get("anchor")
+            v = next((x for x in passage["verses"] if str(x["verse"]) == str(n["verse"])), None)
+            if a and v:
+                shift = lambda i: i - sum(l for s, l in v.get("cuts", []) if s + l <= i) - sum(i - s for s, l in v.get("cuts", []) if s < i < s + l)
+                a["start"], a["end"] = shift(a["start"]), shift(a["end"])
+                if a["end"] <= a["start"]:
+                    n["anchor"] = None
+        _save()
     if d.get("quick") is not None:
         _quick_cache[_key()] = d["quick"]  # the paid model pass comes back too; the button will not re-spend
         _quick_cost[_key()] = d.get("quick_cost")
@@ -249,7 +278,7 @@ def _short(d: dict) -> str:
 async def run_turn(message: str) -> None:
     try:
         c = await get_client()
-        ctx = "\n".join(f"[{v['verse']}] {v['text']}" for v in passage["verses"])
+        ctx = "\n".join(f"[{v['verse']}] {v['text']}" + "".join(f"\n    （譯註：{f['text']}）" for f in v.get("footnotes", [])) for v in passage["verses"])
         prompt = f"/bible-buddy {message}\n\n[目前畫面] {passage['reference']}（{passage['version']}）\n{ctx}"
         await c.query(prompt)
         async for m in c.receive_response():
