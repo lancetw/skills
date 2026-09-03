@@ -173,10 +173,10 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有 ELI5 筆記">🗑</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程研讀這段，標注畫面並存報告">📝 完整研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有 ELI5 筆記">🗑</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
-  <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
+  <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次深入研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
   <div id="detail" popover></div>
   <div id="selmenu" popover><button type="button" id="selManual">✎ 手動筆記</button><button type="button" id="selAi">✨ AI 筆記</button></div>
 </section>
@@ -188,7 +188,7 @@
     <p><b>agent 可以做什麼</b></p>
     <p>問這段經文的任何問題，agent 會依 bible-buddy 流程查原文、背景與資料來源，並把關鍵發現標在左邊的經文上。</p>
     <p class="ex"><button type="button" data-q="第 1 節逐字原文分析">第 1 節逐字原文分析</button><button type="button" data-q="這段的第一世紀歷史處境">第一世紀歷史處境</button><button type="button" data-q="這段常見的誤讀與翻譯偏差">常見誤讀與翻譯偏差</button><button type="button" data-q="這段的相關經文與引用脈絡">相關經文</button></p>
-    <p><button type="button" id="study2" class="primary">📝 產生完整研讀報告</button><br><small>逐節研讀、標注畫面，報告存到「研讀報告」分頁</small></p>
+    <p><button type="button" id="study2" class="primary">📝 產生深入研讀報告</button><br><small>逐節研讀、標注畫面，報告存到「研讀報告」分頁</small></p>
     <p><b>其他入口</b></p>
     <p>反白經文 → 手動筆記或 AI 筆記。<br>✨ 生成 ELI5 筆記：一次掃整段，寫成淺顯易懂的筆記；「未驗證」的可從卡片請 agent 驗證。<br>對話會保留到你按「清除」；換段經文會重新開始。</p>
   </div>
@@ -545,7 +545,7 @@ $('#sdel').onclick = async () => {
   slot('#sdel').set('刪除中…');
   const r = await (await fetch('/api/study?path=' + encodeURIComponent(path), { method: 'DELETE' })).json();
   slot('#sdel').set('刪除'); slot('#sdel').flash(r.ok ? '已移到垃圾桶' : '失敗', { revertAfter: 2000 });
-  $('#ssel').innerHTML = ''; $('#sbody').className = 'tool'; $('#sbody').textContent = '還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/';
+  $('#ssel').innerHTML = ''; $('#sbody').className = 'tool'; $('#sbody').textContent = '還沒有研讀報告。問 agent 一次深入研讀，報告會存到 ~/Desktop/bible-buddy/';
   loadStudy();
 };
 const tabStudy = document.querySelector('.tabs button[data-tab="study"]');
@@ -562,7 +562,7 @@ $('#guide').hidden = $('#log').children.length > 0;
 $('#guide').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) { $('#q').value = b.dataset.q; $('#q').focus(); } });
 function fullStudy() {
   if (running || !lastRef) return;
-  send(`完整研讀 ${lastRef}：依 bible-buddy 完整流程研讀目前畫面的整段經文，逐節處理原文字義、第一世紀歷史處境、常見誤讀或翻譯偏差、相關經文；每個關鍵發現用 mcp__notes__add_annotation 標在畫面上，最後把研讀報告存成 .md。`);
+  send(`深入研讀 ${lastRef}：依 bible-buddy 完整流程研讀目前畫面的整段經文，逐節處理原文字義、第一世紀歷史處境、常見誤讀或翻譯偏差、相關經文；每個關鍵發現用 mcp__notes__add_annotation 標在畫面上，最後把研讀報告存成 .md。`);
 }
 $('#study').onclick = fullStudy; $('#study2').onclick = fullStudy;
 $('#clear').onclick = () => { if (running) return; $('#log').innerHTML = ''; saveLog(); slot('#status').set(''); studyPath = null; fetch('/api/chat/reset', { method: 'POST' }); };
