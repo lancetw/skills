@@ -350,7 +350,7 @@ function showCard(n, rect, gap) {
   const unverified = n.author === 'quick' && !n.verified;
   const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.style === 'eli5' && 'ELI5', n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`, n.pass_cost != null && `整段 $${n.pass_cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
     + (unverified ? '<span class="tag unv" title="AI 筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
-  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask">追問 →</button></div>`;
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask" ${running ? 'disabled title="agent 忙碌中"' : ''}>追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
   d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
   d.querySelector('#edit').onclick = () => showEditor(n, rect, gap);
@@ -477,6 +477,7 @@ function setRunning(on) {
   running = on;
   $('#q').disabled = on; $('#clear').disabled = on; $('#study').disabled = on; $('#study2').disabled = on;
   $('#quick').disabled = on || quickBusy;  // one model job at a time on the page
+  for (const b of document.querySelectorAll('#detail #ask, #detail #verify')) { b.disabled = on; b.title = on ? 'agent 忙碌中' : ''; }
   $('#send').classList.toggle('stop', on);
   slot('#send').set(on ? '停止' : '送出');
 }
