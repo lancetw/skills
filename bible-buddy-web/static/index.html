@@ -83,12 +83,13 @@
   #detail .meta { display:flex; flex-wrap:wrap; gap:4px 6px; margin:4px 0 8px 18px; font-size:.75rem; color:var(--ink-2); }
   #detail .meta .tag { border:1px solid var(--rule); border-radius:999px; padding:0 7px; line-height:1.5; }
   #detail .meta .tag.unv { color:#b8751a; border-color:#b8751a; cursor:help; }
-  /* per-note register switch: ELI5 or 深入, in the tag row */
-  #detail .meta .ver { display:inline-flex; border:1px solid var(--rule); border-radius:999px; overflow:hidden; margin-left:auto; }
-  #detail .meta .ver button { border:none; border-radius:0; background:transparent; color:var(--ink-2); font-size:.72rem; padding:0 8px; line-height:1.6; }
-  #detail .meta .ver button + button { border-left:1px solid var(--rule); }
-  #detail .meta .ver button.on { background:var(--paper-2); color:var(--pen); }
-  #detail .meta .ver button:disabled { opacity:.5; }
+  /* per-note register switch: ELI5 or 深入, at the right of the title row (the title wraps under it) */
+  #detail .hd .ver { display:inline-flex; flex:none; margin-left:auto; margin-top:.3em; border:1px solid var(--rule); border-radius:999px; overflow:hidden; user-select:none; }
+  #detail .hd .ver button { border:none; border-radius:0; background:transparent; color:var(--ink-2); font-size:.72rem; padding:0 8px; line-height:1.7; font-family:var(--sans); cursor:pointer; }
+  #detail .hd .ver button + button { border-left:1px solid var(--rule); }
+  #detail .hd .ver button.on { background:var(--paper-2); color:var(--pen); }
+  #detail .hd .ver button:disabled { opacity:.5; }
+  #detail .hd b { flex:1; min-width:0; }
   #detail .body { margin-left:18px; }
   #detail .body > :first-child { margin-top:0; } #detail .body > :last-child { margin-bottom:0; }
   #detail .ft { display:flex; gap:2px; margin-top:10px; padding-top:8px; border-top:1px solid var(--rule); }
@@ -387,7 +388,7 @@ function showCard(n, rect, gap) {
   const ver = n.author === 'user' ? '' : `<span class="ver" title="切換這條筆記的版本；沒有的版本第一次會請模型改寫">${['eli5', 'study'].map(s => `<button data-style="${s}" class="${s === cur ? 'on' : ''}" title="${has(s) ? '' : '第一次會請模型改寫'}">${s === 'eli5' ? 'ELI5' : '深入'}${has(s) ? '' : ' ✨'}</button>`).join('')}</span>`;
   const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.style === 'eli5' && 'ELI5', n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`, n.pass_cost != null && `整段 $${n.pass_cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
     + (unverified ? '<span class="tag unv" title="AI 筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
-  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}${ver}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : n.author === 'agent' ? `<button id="rewrite" title="請 agent 重新研讀並重寫這條" ${running ? 'disabled' : ''}>🔄 請 agent 重寫</button>` : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask" ${running ? 'disabled title="agent 忙碌中"' : ''}>追問 →</button></div>`;
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b>${ver}</div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : n.author === 'agent' ? `<button id="rewrite" title="請 agent 重新研讀並重寫這條" ${running ? 'disabled' : ''}>🔄 請 agent 重寫</button>` : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask" ${running ? 'disabled title="agent 忙碌中"' : ''}>追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
   d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
   d.querySelector('#edit').onclick = () => showEditor(n, rect, gap);
