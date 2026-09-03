@@ -51,13 +51,22 @@
   /* note card popover */
   #detail { position:fixed; margin:0; inset:auto; width:min(440px, 90vw); max-height:45vh; overflow:auto; padding:12px 14px; border:1px solid var(--rule); border-radius:10px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); font-size:.9rem; line-height:1.6; }
   #detail::backdrop { background:transparent; }
-  #detail .hd { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-  #detail .hd b { font-family:var(--hand); font-weight:500; font-size:1.05rem; }
-  #detail .dot { width:10px; height:10px; border-radius:50%; background:var(--c); }
-  #detail .hd small { color:var(--ink-2); }
-  #detail .hd .acts { margin-left:auto; display:flex; gap:4px; }
-  #detail .hd .acts button { margin:0; }
-  #detail .hd .acts button.danger { border-color:#c45a38; color:#c45a38; }
+  /* note card: title on its own line, a quiet row of tags, the body, then text-style actions in a footer */
+  #detail .hd { display:flex; align-items:flex-start; gap:8px; }
+  #detail .hd b { font-family:var(--hand); font-weight:500; font-size:1.15rem; line-height:1.35; }
+  #detail .dot { width:10px; height:10px; border-radius:50%; background:var(--c); flex:none; margin-top:.45em; }
+  #detail .meta { display:flex; flex-wrap:wrap; gap:4px 6px; margin:4px 0 8px 18px; font-size:.75rem; color:var(--ink-2); }
+  #detail .meta .tag { border:1px solid var(--rule); border-radius:999px; padding:0 7px; line-height:1.5; }
+  #detail .meta .tag.unv { color:#b8751a; border-color:#b8751a; cursor:help; }
+  #detail .body { margin-left:18px; }
+  #detail .body > :first-child { margin-top:0; } #detail .body > :last-child { margin-bottom:0; }
+  #detail .ft { display:flex; gap:2px; margin-top:10px; padding-top:8px; border-top:1px solid var(--rule); }
+  #detail .ft button { font-size:.8rem; padding:3px 10px; border-color:transparent; background:transparent; color:var(--ink-2); }
+  #detail .ft button:hover { color:var(--pen); background:var(--paper-2); }
+  #detail .ft button.danger:hover { color:#c45a38; }
+  #detail .ft button[data-armed] { color:#c45a38; border-color:#c45a38; }
+  #detail .ft #ask { margin-left:auto; color:var(--pen); }
+  #detail .ed .cap { font-size:.75rem; color:var(--ink-2); }
   /* inline editor: same card, fields stacked */
   #detail form.ed { display:grid; gap:6px; }
   #detail form.ed input, #detail form.ed textarea, #detail form.ed select { width:100%; box-sizing:border-box; }
@@ -93,8 +102,6 @@
   #status { padding:4px 12px; font-size:.8rem; color:var(--ink-2); font-family:var(--sans); min-height:1.6em; }
   form#f button.stop { background:#c45a38; border-color:#c45a38; color:#fff; }
   @media (prefers-reduced-motion: reduce) { .spin, .dots span { animation:none; } }
-  #detail .hd .unv { width:16px; height:16px; border-radius:50%; border:1px solid var(--ink-2); color:var(--ink-2); font-size:.7rem; line-height:14px; text-align:center; cursor:help; font-family:'Noto Sans TC', sans-serif; }
-  #detail .hd button { margin-left:auto; font-size:.8rem; padding:2px 8px; }
   #detail p { margin:.4em 0; }
 
   /* chat = sticky notes column */
@@ -267,7 +274,9 @@ function placeDetail(r, gap = 8) {
 }
 function showCard(n, rect, gap) {
   const d = $('#detail');
-  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b><small>${AUTHOR[n.author]||n.author} · ${n.kind}${n.edited ? ' · 已編輯' : ''}</small>${n.author === 'quick' ? '<span class="unv" title="速讀筆記，未經 bible-buddy 驗證流程">?</span>' : ''}<span class="acts"><button id="ask">追問</button><button id="edit">編輯</button><button id="del" class="danger">刪除</button></span></div>${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}`;
+  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.edited && '已編輯'].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
+    + (n.author === 'quick' ? '<span class="tag unv" title="速讀筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button><button id="ask">追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
   d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
   d.querySelector('#edit').onclick = () => showEditor(n, rect, gap);
@@ -283,7 +292,8 @@ function showCard(n, rect, gap) {
 function showEditor(n, rect, gap) {
   const d = $('#detail'), isNew = !n.id;
   const kinds = Object.keys(KIND_ZH).map(k => `<option value="${k}" ${k === n.kind ? 'selected' : ''}>${KIND_ZH[k]}</option>`).join('');
-  d.innerHTML = `<form class="ed"><input name="label" maxlength="20" placeholder="標籤（≤20 字）" value="${esc(n.label || '')}" required><textarea name="body" placeholder="內文，可用 Markdown">${esc(n.body || '')}</textarea><div class="row"><select name="kind">${kinds}</select><button type="button" id="cancel">取消</button><button class="primary" type="submit">${isNew ? '新增' : '儲存'}</button></div></form>`;
+  const quote = n.anchor ? verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end) : '';
+  d.innerHTML = `<form class="ed"><div class="cap">${isNew ? '新增筆記' : '編輯筆記'} · 第 ${n.verse} 節${quote ? ` · 「${esc(quote)}」` : ''}</div><input name="label" maxlength="20" placeholder="標籤（≤20 字）" value="${esc(n.label || '')}" required><textarea name="body" placeholder="內文，可用 Markdown">${esc(n.body || '')}</textarea><div class="row"><select name="kind">${kinds}</select><button type="button" id="cancel">取消</button><button class="primary" type="submit">${isNew ? '新增' : '儲存'}</button></div></form>`;
   const f = d.querySelector('form');
   f.querySelector('#cancel').onclick = () => isNew ? d.hidePopover() : showCard(n, rect, gap);
   f.onsubmit = async e => {
