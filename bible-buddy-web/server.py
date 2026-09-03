@@ -63,6 +63,10 @@ async def index():
 @app.get("/api/passage")
 async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int = 10, end: int = 17, version: str = "rcuv"):
     r = await asyncio.to_thread(fetch, book, chapter, start, end, version)
+    if r.get("verses"):  # "約翰福音 1:1-200" → "約翰福音 1" for a whole chapter, else clamp the end to the last verse
+        last = int(r["verses"][-1]["verse"])
+        head = r["reference"].split(":")[0]
+        r["reference"] = head if start == 1 and end >= last else f"{head}:{start}-{min(end, last)}" if end != start else f"{head}:{start}"
     changed = (r.get("reference", ""), version) != (passage["reference"], passage["version"])
     passage.update(reference=r.get("reference", ""), version=version, verses=r.get("verses", []), book=book)
     if changed:
