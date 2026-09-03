@@ -159,6 +159,13 @@ async def run_turn(message: str) -> None:
         await events.put({"type": "error", "text": repr(e)})
 
 
+@app.post("/api/chat/stop")
+async def chat_stop():
+    if _client is not None:
+        await _client.interrupt()  # the running turn ends with a ResultMessage, which the SSE loop turns into "done"
+    return {"ok": True}
+
+
 @app.post("/api/chat")
 async def chat(body: dict):
     asyncio.create_task(run_turn(body["message"]))

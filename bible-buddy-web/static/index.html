@@ -4,14 +4,17 @@
 <meta charset="utf-8">
 <title>Bible Buddy Web — PROTOTYPE</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/syabro/neat-annotations/neat-annotations.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@500;600;700&family=Iansui&family=LXGW+WenKai+TC&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@500;600;700&family=Iansui&family=LXGW+WenKai+TC&family=Noto+Sans+Hebrew:wght@400;700&family=Noto+Serif+Hebrew:wght@400;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slot-text@0.3.4/style.css">
 <style>
   /* notebook: ivory paper, red margin rule, serif scripture, handwritten labels. Light by default. */
   :root {
     /* handwriting stack: Shantell Sans covers Latin only, so CJK falls through to Iansui (芫荽), then 霞鶩文楷 */
-    --hand: 'Shantell Sans', 'Iansui', 'LXGW WenKai TC', cursive;
+    --hand: 'Shantell Sans', 'Iansui', 'LXGW WenKai TC', 'Noto Sans Hebrew', cursive;
+    /* Hebrew with niqqud/cantillation needs a font that has them; the CJK faces don't, so every stack ends in Noto Hebrew */
+    --sans: 'Noto Sans TC', 'Noto Sans Hebrew', system-ui, sans-serif;
+    --serif: 'Noto Serif TC', 'Songti TC', 'Noto Serif Hebrew', serif;
     color-scheme: light;
     --paper:#F8F5EC; --paper-2:#F1EDE1; --ink:#2B2A26; --ink-2:#6E6A60; --rule:#DED8C8; --margin:#D9A3A3;
     --pen:#3A5A8C; --card:#FFFDF7; --shadow:0 6px 20px #4a412a22;
@@ -22,7 +25,7 @@
     --pen:#8FB0E0; --card:#2A2823; --shadow:0 6px 20px #00000066;
   }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--paper); color:var(--ink); font-family:'Noto Sans TC', system-ui, sans-serif; display:grid; grid-template-columns:1fr 420px; grid-template-rows:100vh; height:100vh; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); display:grid; grid-template-columns:1fr 420px; grid-template-rows:100vh; height:100vh; }
   #reader, #chat { min-height:0; }   /* grid items default to min-height:auto and would grow past the row */
   button, input, select { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:6px 10px; }
   button { cursor:pointer; } button:hover { border-color:var(--pen); color:var(--pen); }
@@ -36,7 +39,7 @@
   .page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
   .page::before { content:""; position:absolute; top:0; bottom:0; left:60px; width:1px; background:var(--margin); }   /* the red margin line */
   h1 { font-family:'Noto Serif TC', serif; font-size:1.05rem; font-weight:600; color:var(--ink-2); margin:0 0 14px; }
-  .verse { position:relative; font-family:'Noto Serif TC', 'Songti TC', serif; font-size:1.15rem; line-height:2.1; padding:6px 0; }
+  .verse { position:relative; font-family:var(--serif); font-size:1.15rem; line-height:2.1; padding:6px 0; }
   .verse.has-notes { padding-bottom:78px; }
   .verse .n { position:absolute; left:-52px; top:6px; width:32px; text-align:right; font-family:var(--hand); font-size:.8rem; color:var(--margin); line-height:2.1; }
   .ann { --ann-font:var(--hand); cursor:pointer; }
@@ -52,6 +55,20 @@
   #detail .hd b { font-family:var(--hand); font-weight:500; font-size:1.05rem; }
   #detail .dot { width:10px; height:10px; border-radius:50%; background:var(--c); }
   #detail .hd small { color:var(--ink-2); }
+  /* loading states: a banner on the page for passage/quick-notes waits, a pending bubble for agent turns */
+  #banner { position:sticky; top:-22px; z-index:2; display:flex; align-items:center; gap:10px; margin:-22px -28px 14px -78px; padding:10px 16px 10px 78px; background:var(--paper-2); border-bottom:1px solid var(--rule); color:var(--ink); font-size:.92rem; }
+  #banner .t { margin-left:auto; font-variant-numeric:tabular-nums; color:var(--ink-2); }
+  .spin { width:14px; height:14px; border:2px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; flex:none; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .dots span { display:inline-block; width:6px; height:6px; margin-right:4px; border-radius:50%; background:var(--pen); animation:blink 1.2s infinite; }
+  .dots span:nth-child(2) { animation-delay:.2s; } .dots span:nth-child(3) { animation-delay:.4s; }
+  @keyframes blink { 0%,80%,100% { opacity:.2; } 40% { opacity:1; } }
+  #log .msg.pending { border-color:var(--pen); }
+  #log .msg.pending .act { display:flex; align-items:center; gap:10px; color:var(--ink-2); font-size:.85rem; }
+  #log .msg.pending .act .t { margin-left:auto; font-variant-numeric:tabular-nums; }
+  #status { padding:4px 12px; font-size:.8rem; color:var(--ink-2); font-family:var(--sans); min-height:1.6em; }
+  form#f button.stop { background:#c45a38; border-color:#c45a38; color:#fff; }
+  @media (prefers-reduced-motion: reduce) { .spin, .dots span { animation:none; } }
   #detail .hd .unv { width:16px; height:16px; border-radius:50%; border:1px solid var(--ink-2); color:var(--ink-2); font-size:.7rem; line-height:14px; text-align:center; cursor:help; font-family:'Noto Sans TC', sans-serif; }
   #detail .hd button { margin-left:auto; font-size:.8rem; padding:2px 8px; }
   #detail p { margin:.4em 0; }
@@ -67,7 +84,9 @@
   #log .tool { color:var(--ink-2); font-size:.74rem; font-family:ui-monospace, monospace; padding:1px 6px; }
   #log .opts button { display:block; width:100%; margin:4px 0; text-align:left; }
   #study { font-size:1rem; line-height:1.8; }
-  #study blockquote { border-left:3px solid #b8751a; padding-left:10px; color:var(--ink-2); }
+  #study { overflow-wrap:anywhere; }
+  #study blockquote { border-left:3px solid #b8751a; padding-left:10px; color:var(--ink-2); overflow:hidden; }   /* ★ Insight rules are one unbreakable run of ─; clip instead of overflow */
+  #study table { display:block; overflow-x:auto; }
   #study table { border-collapse:collapse; font-size:.9rem; } #study td, #study th { border:1px solid var(--rule); padding:4px 8px; }
   #study #ssel { width:100%; margin-bottom:12px; }
   form#f { display:flex; gap:6px; padding:10px; border-top:1px solid var(--rule); }
@@ -78,6 +97,7 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button></form>
   <div id="page" class="page">
+    <div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div>
     <h1 id="ref">載入中…</h1>
     <div id="verses"></div>
   </div>
@@ -98,6 +118,21 @@ function slot(target, initial) {
   if (!SLOTS.has(el)) { const t = initial ?? el.textContent.trim(); el.textContent = ''; SLOTS.set(el, slotText(el, t)); }
   return SLOTS.get(el);
 }
+// elapsed-seconds ticker into a slot; returns stop()
+function ticker(target) {
+  const t0 = Date.now(), s = slot(target, '0s');
+  const id = setInterval(() => { const n = Math.round((Date.now() - t0) / 1000); s.set(n < 60 ? `${n}s` : `${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`, { stagger: 0 }); }, 1000);
+  return () => clearInterval(id);
+}
+let bannerStop = null;
+function banner(text, { spin = true, timer = false, hideAfter = 0 } = {}) {
+  bannerStop?.(); bannerStop = null;
+  const b = $('#banner'); b.hidden = !text; if (!text) return;
+  b.querySelector('.spin').style.display = spin ? '' : 'none';
+  slot('#bannerText').set(text, { stagger: 20 });
+  if (timer) bannerStop = ticker('#bannerTime'); else slot('#bannerTime', '').set('');
+  if (hideAfter) setTimeout(() => banner(null), hideAfter);
+}
 const MAX_ARROWS = 3, MIN_GAP = 9;
 const COLOR = { lexical:'amber', history:'blue', misread:'red', crossref:'purple', personal:'green' };
 let verses = [], notes = [], studyPath = null, cardSlot = null;
@@ -109,22 +144,27 @@ const $ = s => document.querySelector(s);
 async function loadPassage(refStr, version) {
   const m = (refStr || '').match(/^(\S+)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/);
   const qs = m ? `?book=${encodeURIComponent(m[1])}&chapter=${m[2]}&start=${m[3]||1}&end=${m[4]||m[3]||200}&version=${version||'rcuv'}` : '';
+  banner('載入經文…');
   const r = await (await fetch('/api/passage' + qs)).json();
-  if (r.error) { alert(r.error); return; }
+  if (r.error) { banner(`✗ ${r.error}`, { spin: false, hideAfter: 4000 }); slot('#pload').set('載入'); return; }
   notes = await (await fetch('/api/notes')).json();   // server keeps them unless the passage changed
   verses = r.verses;
   const title = `${r.reference} · ${r.version}`;
   slot('#ref').set(title);
   render();
-  await addAuto('/api/auto-notes/refs');        // instant, from bible-buddy references
-  slot('#ref').set(`${title}　⏳ 速讀筆記產生中…`);
-  await addAuto('/api/auto-notes/quick');       // one cheap model pass, ~20 s
-  slot('#ref').set(title);
+  slot('#pload').set('載入');
+  const before = notes.length;
+  const refsN = await addAuto('/api/auto-notes/refs');        // instant, from bible-buddy references
+  banner(refsN ? `已標 ${refsN} 條已驗證筆記，速讀筆記產生中（約 1 分鐘）` : '速讀筆記產生中（約 1 分鐘）', { timer: true });
+  await addAuto('/api/auto-notes/quick');                     // one cheap model pass, ~75 s
+  banner(`✓ 自動筆記完成，共 ${notes.length - before} 條`, { spin: false, hideAfter: 3000 });
 }
 async function addAuto(url) {
-  const fresh = await (await fetch(url)).json();
+  let fresh = [];
+  try { fresh = await (await fetch(url)).json(); } catch (e) { banner(`✗ 自動筆記失敗：${e.message}`, { spin: false, hideAfter: 5000 }); }
   for (const n of fresh) if (!notes.some(x => x.id === n.id)) notes.push(n);
   render();
+  return fresh.length;
 }
 
 function render() {
@@ -200,11 +240,21 @@ document.addEventListener('mouseup', async () => {
 
 function logLine(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('#log').appendChild(d); $('#log').scrollTop = 1e9; return d; }
 
+let running = false, stopTick = null;
+function setRunning(on) {
+  running = on;
+  $('#q').disabled = on;
+  $('#send').classList.toggle('stop', on);
+  slot('#send').set(on ? '停止' : '送出');
+}
 async function send(text) {
-  slot('#send').set('思考中…'); slot('#status').set('⚙ 送出中…');
+  setRunning(true);
+  slot('#status').set('⚙ agent 啟動中…');
   logLine('msg', `<b>你：</b>${esc(text)}`);
-  const cur = logLine('msg', '');
-  let buf = '';
+  const cur = logLine('msg pending', `<div class="act"><span class="dots"><span></span><span></span><span></span></span><span class="a"></span><span class="t"></span></div>`);
+  const act = slot(cur.querySelector('.a'), 'agent 啟動中…'); stopTick = ticker(cur.querySelector('.t'));
+  let buf = '', finished = false;
+  const finish = () => { finished = true; stopTick?.(); stopTick = null; cur.classList.remove('pending'); cur.querySelector('.act')?.remove(); setRunning(false); };
   const res = await fetch('/api/chat', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ message:text }) });
   const rd = res.body.getReader(), dec = new TextDecoder(); let rest = '';
   while (true) {
@@ -214,14 +264,15 @@ async function send(text) {
       const line = rest.slice(0, i); rest = rest.slice(i + 2);
       if (!line.startsWith('data: ')) continue;
       const ev = JSON.parse(line.slice(6));
-      if (ev.type === 'text') { buf += ev.text + '\n'; cur.innerHTML = marked.parse(buf); slot('#status').set('✍ 撰寫中…'); }
-      else if (ev.type === 'tool') { slot('#status').set(`⚙ ${TOOL_ZH[ev.name] || ev.name}…`); logLine('tool', `⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
+      if (ev.type === 'text') { buf += ev.text + '\n'; const a = cur.querySelector('.act'); cur.innerHTML = marked.parse(buf); if (a) cur.prepend(a); slot('#status').set('✍ 撰寫中…'); act.set('撰寫中…'); }
+      else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); logLine('tool', `⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
       else if (ev.type === 'note') { notes.push(ev.note); render(); }
-      else if (ev.type === 'done') { slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').set('送出'); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(buf); if (studyPath) loadStudy(studyPath); }
-      else if (ev.type === 'error') { slot('#status').set('✗ 出錯'); slot('#send').set('送出'); logLine('tool', `✗ ${esc(ev.text)}`); }
+      else if (ev.type === 'done') { finish(); slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(buf); if (studyPath) loadStudy(studyPath); }
+      else if (ev.type === 'error') { finish(); slot('#status').set('✗ 出錯'); logLine('tool', `✗ ${esc(ev.text)}`); }
       $('#log').scrollTop = 1e9;
     }
   }
+  if (!finished) { finish(); slot('#status').set('✗ 連線中斷，請再送一次'); logLine('tool', '✗ 串流在 done 之前結束（server 重啟？）'); }
 }
 // 「請選擇 (1-N)」→ 按鈕
 function renderOptions(text) {
@@ -250,8 +301,12 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   $('#study').hidden = b.dataset.tab !== 'study';
   if (b.dataset.tab === 'study' && !$('#ssel').options.length) loadStudy();
 });
-$('#f').onsubmit = e => { e.preventDefault(); const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t); };
-$('#pf').onsubmit = async e => { e.preventDefault(); slot('#pload').set('載入中…'); await loadPassage($('#pref').value.trim(), $('#pver').value); slot('#pload').set('載入'); };
+$('#f').onsubmit = e => {
+  e.preventDefault();
+  if (running) { slot('#status').set('⏹ 停止中…'); fetch('/api/chat/stop', { method: 'POST' }); return; }
+  const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t);
+};
+$('#pf').onsubmit = async e => { e.preventDefault(); slot('#pload').set('載入中…'); await loadPassage($('#pref').value.trim(), $('#pver').value); };
 // theme: explicit data-theme, light by default, remembered per browser
 const root = document.documentElement;
 try { root.dataset.theme = localStorage.getItem('theme') || 'light'; } catch {}
