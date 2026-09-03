@@ -34,7 +34,8 @@
   /* reader = a notebook page */
   #reader { overflow:auto; padding:0 32px 40px 24px; }
   /* the title bar stays put while the passage scrolls under it */
-  .top { display:flex; gap:8px; align-items:center; position:sticky; top:0; z-index:5; padding:16px 0 10px; margin-bottom:8px; background:var(--paper); box-shadow:0 10px 12px -12px #0003; }
+  /* a solid band edge to edge (negative margins undo the reader's gutters), with a hard rule; no shadow, nothing shows through */
+  .top { display:flex; gap:8px; align-items:center; position:sticky; top:0; z-index:5; margin:0 -32px 14px -24px; padding:14px 32px 12px 24px; background:var(--paper-2); border-bottom:1px solid var(--rule); }
   .top .brand { font-family:'Noto Serif TC', serif; font-weight:700; letter-spacing:.04em; margin-right:auto; }
   .top input { width:14em; }
   .page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
@@ -55,6 +56,11 @@
   .chip.err { --c:#c45a38; }
   .chip.err button { font-size:.75rem; padding:0 5px; border-color:transparent; background:transparent; color:inherit; }
   .chip.err button:hover { text-decoration:underline; }
+  .fns { margin-top:28px; padding-top:12px; border-top:1px solid var(--rule); font-family:var(--serif); font-size:.9rem; color:var(--ink-2); }
+  .fns h3 { margin:0 0 6px; font-size:.8rem; font-weight:500; letter-spacing:.12em; }
+  .fns ol { margin:0; padding-left:1.8em; } .fns li { line-height:1.8; padding:0 4px; border-radius:4px; transition:background .6s; }
+  .fns li.flash { background:var(--paper-2); transition:none; }
+  .fns .v { font-family:var(--hand); color:var(--margin); margin-right:6px; } .fns .back { margin-left:6px; color:var(--pen); text-decoration:none; }
   .fn { font-size:.6em; vertical-align:super; color:var(--pen); cursor:pointer; user-select:none; margin:0 1px; font-family:var(--sans); }  /* translator footnote marker */
   .chip { display:inline-block; font-size:.8rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
 
@@ -184,8 +190,8 @@ function banner(text, { spin = true, timer = false, hideAfter = 0 } = {}) {
 }
 const MAX_ARROWS = 3, MIN_GAP = 9;
 const COLOR = { lexical:'amber', history:'blue', misread:'red', crossref:'purple', personal:'green' };
-let verses = [], notes = [], studyPath = null, cardSlot = null, lastRef = null;
-const TOOL_ZH = { Bash:'執行抓經文腳本', WebSearch:'搜尋', WebFetch:'讀網頁', Read:'讀參考資料', Grep:'查參考資料', Glob:'找檔案', Write:'寫研讀報告', Edit:'修改報告', Skill:'載入 skill', ToolSearch:'找工具', mcp__notes__add_annotation:'加筆記' };
+let verses = [], notes = [], studyPath = null, cardSlot = null, lastRef = null, fnNum = {};
+const TOOL_ZH = { Bash:'執行抓經文腳本', WebSearch:'搜尋', WebFetch:'讀網頁', Read:'讀參考資料', Grep:'查參考資料', Glob:'找檔案', Write:'寫研讀報告', Edit:'修改報告', Skill:'載入 skill', ToolSearch:'找工具', mcp__notes__add_annotation:'加筆記', mcp__notes__update_annotation:'更新筆記' };
 const DOTC = { amber:'#b8751a', blue:'#3b72c4', green:'#2f8f5b', red:'#c45a38', purple:'#8657c8' };
 const $ = s => document.querySelector(s);
 
@@ -241,6 +247,8 @@ async function addAuto(url) {
 }
 
 function render() {
+  let fnN = 0; fnNum = {}; const fnList = [];  // translator footnotes numbered once across the passage
+  for (const v of verses) for (const [i, f] of (v.footnotes || []).entries()) { fnNum[`${v.verse}:${i}`] = ++fnN; fnList.push({ n: fnN, verse: v.verse, text: f.text }); }
   $('#verses').innerHTML = verses.map(v => {
     const vs = notes.filter(n => n.verse === v.verse && n.anchor).sort((a,b) => a.anchor.start - b.anchor.start);
     let out = '', pos = 0, shown = 0, lastStart = -99;
@@ -256,7 +264,7 @@ function render() {
     const pend = [...pending.values()].filter(p => p.verse === v.verse);
     const chips = rest.length || pend.length ? `<div class="chips">${rest.map(n => `<span class="chip" data-id="${n.id}" style="--c:${DOTC[COLOR[n.kind]]}">${esc(n.label)}</span>`).join('')}${pend.map(pendingChip).join('')}</div>` : '';
     return `<div class="verse ${shown ? 'has-notes' : ''}" data-verse="${v.verse}"><span class="n">${v.verse}</span>${out}<span class="eol">\u200b</span>${chips}</div>`;
-  }).join('');
+  }).join('') + (fnList.length ? `<section class="fns"><h3>譯註</h3><ol>${fnList.map(f => `<li id="fn-${f.n}"><span class="v">${f.verse}</span>${esc(f.text)}<a class="back" href="#fnref-${f.n}" title="回到經文">↩</a></li>`).join('')}</ol></section>` : '');
   demoteWrapped();
 }
 // a slice of the verse text with its footnote markers dropped in at their offsets (the text itself is already clean)
@@ -264,7 +272,8 @@ function seg(v, a, b) {
   let out = '', p = a;
   for (const [i, f] of (v.footnotes || []).entries()) {
     if (f.pos < a || f.pos > b || (f.pos === b && b !== v.text.length)) continue;
-    out += esc(v.text.slice(p, f.pos)) + `<sup class="fn" data-verse="${v.verse}" data-fn="${i}" title="${esc(f.text)}">${i + 1}</sup>`; p = f.pos;
+    const n = fnNum[`${v.verse}:${i}`];
+    out += esc(v.text.slice(p, f.pos)) + `<sup class="fn" id="fnref-${n}" data-fn="${n}" title="${esc(f.text)}">${n}</sup>`; p = f.pos;
   }
   return out + esc(v.text.slice(p, b));
 }
@@ -304,12 +313,19 @@ function placeDetail(r, gap = 8) {
 }
 function showCard(n, rect, gap) {
   const d = $('#detail');
-  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.edited && '已編輯', n.cost != null && `$${n.cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
-    + (n.author === 'quick' ? '<span class="tag unv" title="速讀筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
-  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button><button id="ask">追問 →</button></div>`;
+  const unverified = n.author === 'quick' && !n.verified;
+  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
+    + (unverified ? '<span class="tag unv" title="速讀筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask">追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
   d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
   d.querySelector('#edit').onclick = () => showEditor(n, rect, gap);
+  // hand the quick note to the agent; it answers by calling update_annotation, which comes back as a "note" event
+  d.querySelector('#verify')?.addEventListener('click', () => {
+    const quote = n.anchor ? verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end) : '';
+    d.hidePopover();
+    send(`驗證速讀筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程查證原文字義、歷史背景與資料來源，有誤就改正。完成後呼叫 mcp__notes__update_annotation（id=${n.id}）更新這條筆記：label 20 字內，body 寫查證結論與依據（可用 Markdown）。不要另外新增筆記。`);
+  });
   // delete is two clicks: the first arms it, so a stray click cannot throw away a note
   d.querySelector('#del').onclick = async e => {
     if (!e.target.dataset.armed) { e.target.dataset.armed = '1'; e.target.textContent = '確定刪除？'; return; }
@@ -347,12 +363,10 @@ $('#detail').addEventListener('pointerdown', e => {
   e.preventDefault();
 });
 $('#verses').addEventListener('click', e => {
-  const fn = e.target.closest('.fn');
-  if (fn) {  // translator footnote: same card, no actions
-    const v = verses.find(x => x.verse === fn.dataset.verse), f = v.footnotes[+fn.dataset.fn], d = $('#detail');
-    d.innerHTML = `<div class="hd"><b>譯註 ${+fn.dataset.fn + 1}</b></div><div class="meta"><span class="tag">第 ${v.verse} 節</span><span class="tag">${esc($('#pver').selectedOptions[0].text)}</span></div><div class="body">${esc(f.text)}</div>`;
-    d.showPopover(); placeDetail(fn.getBoundingClientRect()); return;
-  }
+  // footnote marker ↔ its entry in the 譯註 list: scroll and flash, no popover
+  const jump = (el, flash) => { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); if (flash) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1200); } };
+  const fn = e.target.closest('.fn'); if (fn) { jump($('#fn-' + fn.dataset.fn), true); return; }
+  const back = e.target.closest('.fns .back'); if (back) { e.preventDefault(); jump($(back.getAttribute('href'))); return; }
   const rt = e.target.closest('[data-retry]'); if (rt) { const p = pending.get(rt.dataset.retry); pending.delete(p.id); aiNote(p); return; }
   const dm = e.target.closest('[data-dismiss]'); if (dm) { pending.delete(dm.dataset.dismiss); render(); return; }
   const a = e.target.closest('[data-id]'); if (!a) return;
@@ -441,7 +455,7 @@ async function send(text) {
       const ev = JSON.parse(line.slice(6));
       if (ev.type === 'text') { buf += ev.text + '\n'; const a = cur.querySelector('.act'); cur.innerHTML = marked.parse(buf); if (a) cur.prepend(a); slot('#status').set('✍ 撰寫中…'); act.set('撰寫中…'); }
       else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); step(`⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
-      else if (ev.type === 'note') { notes.push(ev.note); render(); }
+      else if (ev.type === 'note') { const i = notes.findIndex(x => x.id === ev.note.id); if (i >= 0) notes[i] = ev.note; else notes.push(ev.note); render(); }
       else if (ev.type === 'done') { finish(); slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(buf); if (studyPath) loadStudy(studyPath); }
       else if (ev.type === 'error') { finish(); slot('#status').set('✗ 出錯'); logLine('tool', `✗ ${esc(ev.text)}`); }
       $('#log').scrollTop = 1e9;
