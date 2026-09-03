@@ -179,7 +179,7 @@ function banner(text, { spin = true, timer = false, hideAfter = 0 } = {}) {
 }
 const MAX_ARROWS = 3, MIN_GAP = 9;
 const COLOR = { lexical:'amber', history:'blue', misread:'red', crossref:'purple', personal:'green' };
-let verses = [], notes = [], studyPath = null, cardSlot = null;
+let verses = [], notes = [], studyPath = null, cardSlot = null, lastRef = null;
 const TOOL_ZH = { Bash:'執行抓經文腳本', WebSearch:'搜尋', WebFetch:'讀網頁', Read:'讀參考資料', Grep:'查參考資料', Glob:'找檔案', Write:'寫研讀報告', Edit:'修改報告', Skill:'載入 skill', ToolSearch:'找工具', mcp__notes__add_annotation:'加筆記' };
 const DOTC = { amber:'#b8751a', blue:'#3b72c4', green:'#2f8f5b', red:'#c45a38', purple:'#8657c8' };
 const $ = s => document.querySelector(s);
@@ -195,6 +195,8 @@ async function loadPassage(refStr, version) {
   notes = await (await fetch('/api/notes')).json();   // server keeps them unless the passage changed
   verses = r.verses;
   const title = `${r.reference} · ${r.version}`;
+  if (lastRef && lastRef !== r.reference) logLine('tool', `📖 切換到 ${esc(r.reference)}，agent 對話重新開始`);  // the server drops the agent session on a passage change
+  lastRef = r.reference;
   slot('#ref').set(title);
   render();
   slot('#pload').set('載入');
@@ -211,12 +213,15 @@ async function runQuick() {
   }, 2000);
   const n = await addAuto('/api/auto-notes/quick');
   clearInterval(poll); b.disabled = false;
-  if (n >= 0) banner(`✓ 速讀筆記 ${notes.filter(x => x.author === 'quick').length} 條`, { spin: false, hideAfter: 3000 });
+  if (n >= 0) banner(`✓ 速讀筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}${usd(lastAuto.cost)}`, { spin: false, hideAfter: 4000 });
 }
+const usd = c => c == null ? '' : ` · $${c.toFixed(3)}`;
+let lastAuto = {};  // the last auto-notes response: cost and cached flag for the banner
 // returns the number of new notes, or -1 on failure (the error stays on the banner until the next action)
 async function addAuto(url) {
   let fresh;
   try { fresh = await (await fetch(url)).json(); } catch (e) { fresh = { error: e.message }; }
+  if (fresh && !Array.isArray(fresh) && Array.isArray(fresh.notes)) { lastAuto = fresh; fresh = fresh.notes; }  // quick pass wraps its list with cost
   if (!Array.isArray(fresh)) {
     const msg = fresh?.error || '伺服器回傳異常';
     $('#banner').title = msg;                      // the pill clips long text; the full error lives in the tooltip
@@ -285,7 +290,7 @@ function placeDetail(r, gap = 8) {
 }
 function showCard(n, rect, gap) {
   const d = $('#detail');
-  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.edited && '已編輯'].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
+  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.edited && '已編輯', n.cost != null && `$${n.cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
     + (n.author === 'quick' ? '<span class="tag unv" title="速讀筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
   d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button><button id="ask">追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
