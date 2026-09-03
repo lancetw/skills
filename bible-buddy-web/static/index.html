@@ -59,6 +59,9 @@
   /* status pill sits in the fixed-height heading row, so showing/hiding it never shifts the verses */
   .hrow { display:flex; align-items:center; gap:12px; min-height:34px; margin:0 0 14px; }
   .hrow h1 { margin:0; }
+  #quick { margin-left:auto; font-size:.82rem; padding:4px 12px; border-radius:999px; }
+  #quick:disabled { opacity:.5; cursor:default; }
+  #quick + #banner { margin-left:0; }
   #banner { margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:4px 12px; border-radius:999px; background:var(--paper-2); border:1px solid var(--rule); color:var(--ink); font-size:.82rem; white-space:nowrap; }
   #banner[hidden] { display:none; }                     /* the display rule above would otherwise beat the hidden attribute */
   #bannerText { min-width:0; overflow:hidden; white-space:nowrap; }
@@ -105,7 +108,7 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1><button type="button" id="quick" title="一次便宜的模型速讀，約 1 分鐘；產生過的段落直接回傳">✨ 速讀筆記</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
@@ -131,14 +134,15 @@ function ticker(target) {
   const id = setInterval(() => { const n = Math.round((Date.now() - t0) / 1000); s.set(n < 60 ? `${n}s` : `${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`, { stagger: 0 }); }, 1000);
   return () => clearInterval(id);
 }
-let bannerStop = null;
+let bannerStop = null, bannerHide = null;
 function banner(text, { spin = true, timer = false, hideAfter = 0 } = {}) {
-  bannerStop?.(); bannerStop = null;
+  bannerStop?.(); bannerStop = null; clearTimeout(bannerHide);  // a stale hideAfter must not wipe a newer error
+  bannerHide = null;
   const b = $('#banner'); b.hidden = !text; if (!text) return;
   b.querySelector('.spin').style.display = spin ? '' : 'none';
   slot('#bannerText').set(text, { stagger: 20 });
   if (timer) bannerStop = ticker('#bannerTime'); else slot('#bannerTime', '').set('');
-  if (hideAfter) setTimeout(() => banner(null), hideAfter);
+  if (hideAfter) bannerHide = setTimeout(() => banner(null), hideAfter);
 }
 const MAX_ARROWS = 3, MIN_GAP = 9;
 const COLOR = { lexical:'amber', history:'blue', misread:'red', crossref:'purple', personal:'green' };
@@ -161,13 +165,27 @@ async function loadPassage(refStr, version) {
   render();
   slot('#pload').set('載入');
   const refsN = await addAuto('/api/auto-notes/refs');        // instant, from bible-buddy references
-  banner(refsN ? `已驗證 ${refsN} 條 · 速讀產生中（約 1 分鐘）` : '速讀筆記產生中（約 1 分鐘）', { timer: true });
-  await addAuto('/api/auto-notes/quick');                     // one cheap model pass, ~75 s
-  banner(`✓ 自動筆記 ${notes.filter(n => n.author === 'refs' || n.author === 'quick').length} 條`, { spin: false, hideAfter: 3000 });
+  banner(refsN ? `✓ 已驗證 ${refsN} 條` : null, { spin: false, hideAfter: 3000 });
 }
+// the model pass is manual: it costs money and a minute, and a 529 on page load used to look like "0 notes"
+async function runQuick() {
+  const b = $('#quick'); b.disabled = true;
+  banner('速讀筆記產生中（約 1 分鐘）', { timer: true });
+  const n = await addAuto('/api/auto-notes/quick');
+  b.disabled = false;
+  if (n >= 0) banner(`✓ 速讀筆記 ${notes.filter(x => x.author === 'quick').length} 條`, { spin: false, hideAfter: 3000 });
+}
+// returns the number of new notes, or -1 on failure (the error stays on the banner until the next action)
 async function addAuto(url) {
-  let fresh = [];
-  try { fresh = await (await fetch(url)).json(); } catch (e) { banner(`✗ 自動筆記失敗：${e.message}`, { spin: false, hideAfter: 5000 }); }
+  let fresh;
+  try { fresh = await (await fetch(url)).json(); } catch (e) { fresh = { error: e.message }; }
+  if (!Array.isArray(fresh)) {
+    const msg = fresh?.error || '伺服器回傳異常';
+    $('#banner').title = msg;                      // the pill clips long text; the full error lives in the tooltip
+    banner(`✗ 自動筆記失敗：${msg.slice(0, 80)}`, { spin: false });
+    return -1;
+  }
+  $('#banner').title = '';
   for (const n of fresh) if (!notes.some(x => x.id === n.id)) notes.push(n);
   render();
   return fresh.length;
@@ -325,6 +343,7 @@ $('#f').onsubmit = e => {
   if (running) { slot('#status').set('⏹ 停止中…'); fetch('/api/chat/stop', { method: 'POST' }); return; }
   const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t);
 };
+$('#quick').onclick = runQuick;
 $('#pf').onsubmit = async e => {
   e.preventDefault(); slot('#pload').set('載入中…');
   try { localStorage.setItem('passage', JSON.stringify({ ref: $('#pref').value.trim(), version: $('#pver').value })); } catch {}
