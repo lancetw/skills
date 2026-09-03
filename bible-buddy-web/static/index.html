@@ -21,8 +21,19 @@
   .verse.has-notes { padding-bottom:78px; }
   .verse .n { font-family:monospace; font-size:.7rem; opacity:.6; margin-right:.5em; vertical-align:super; }
   .ann { --ann-font:'Shantell Sans','Noto Sans TC',cursive; cursor:pointer; }
-  #detail { position:sticky; z-index:10; bottom:0; background:Canvas; border-top:1px solid #8884; padding:10px; font-size:.9rem; max-height:40vh; overflow:auto; }
-  #detail:empty { display:none; }
+  /* notes that didn't get an arrow (cap per verse / too close / no anchor) become chips under the verse */
+  .chips { line-height:1.4; margin-top:2px; }
+  .verse.has-notes .chips { margin-top:72px; }          /* below the hanging labels */
+  .verse.has-notes:has(.chips) { padding-bottom:8px; }
+  .chip { display:inline-block; font-size:.72rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; }
+  /* note card: native popover = top layer + light dismiss; positioned next to the clicked span */
+  #detail { position:fixed; margin:0; inset:auto; width:min(440px, 90vw); max-height:45vh; overflow:auto; padding:12px 14px; border:1px solid #8886; border-radius:10px; background:Canvas; color:CanvasText; box-shadow:0 10px 30px #0005; font-size:.9rem; line-height:1.6; }
+  #detail::backdrop { background:transparent; }
+  #detail .hd { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  #detail .dot { width:10px; height:10px; border-radius:50%; background:var(--c); }
+  #detail .hd small { opacity:.6; }
+  #detail .hd button { margin-left:auto; font-size:.8rem; }
+  #detail p { margin:.4em 0; }
   #study { display:none; padding:12px; overflow:auto; flex:1; font-size:.9rem; }
   #study blockquote { border-left:3px solid #b8751a; padding-left:10px; opacity:.9; }
   h1 { font-size:1.1rem; margin:0 0 12px; opacity:.7; }
@@ -35,7 +46,7 @@
   <form id="pf" style="display:flex;gap:6px;margin-bottom:8px"><input id="pref" value="以賽亞書 7:10-17" style="width:14em"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button>載入</button></form>
   <h1 id="ref">載入中…</h1>
   <div id="verses"></div>
-  <div id="detail"></div>
+  <div id="detail" popover></div>
 </section>
 <aside id="chat">
   <div class="tabs"><button class="on" data-tab="log">對話</button><button data-tab="study">研讀報告</button></div>
@@ -44,17 +55,19 @@
   <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button>送出</button></form>
 </aside>
 <script>
+const MAX_ARROWS = 3, MIN_GAP = 9;
 const COLOR = { lexical:'amber', history:'blue', misread:'red', crossref:'purple', personal:'green' };
 let verses = [], notes = [], studyPath = null;
+const DOTC = { amber:'#b8751a', blue:'#3b72c4', green:'#2f8f5b', red:'#c45a38', purple:'#8657c8' };
 const $ = s => document.querySelector(s);
 
 // 「以賽亞書 7:10-17」「創世記 1」「Matt 5:17」都吃
 async function loadPassage(refStr, version) {
   const m = (refStr || '').match(/^(\S+)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/);
   const qs = m ? `?book=${encodeURIComponent(m[1])}&chapter=${m[2]}&start=${m[3]||1}&end=${m[4]||m[3]||200}&version=${version||'rcuv'}` : '';
-  notes = qs ? [] : await (await fetch('/api/notes')).json();
   const r = await (await fetch('/api/passage' + qs)).json();
   if (r.error) { alert(r.error); return; }
+  notes = await (await fetch('/api/notes')).json();   // server keeps them unless the passage changed
   verses = r.verses;
   $('#ref').textContent = `${r.reference} · ${r.version}`;
   render();
@@ -72,24 +85,36 @@ async function addAuto(url) {
 function render() {
   $('#verses').innerHTML = verses.map(v => {
     const vs = notes.filter(n => n.verse === v.verse && n.anchor).sort((a,b) => a.anchor.start - b.anchor.start);
-    let out = '', pos = 0;
+    let out = '', pos = 0, shown = 0, lastStart = -99;
+    const rest = notes.filter(n => n.verse === v.verse && !n.anchor);
     for (const n of vs) {
-      if (n.anchor.start < pos) continue; // ponytail: overlaps skipped, list only
+      // one arrow per ~9 chars and at most 3 per verse, so labels don't pile up; the rest become chips
+      if (n.anchor.start < pos || shown >= MAX_ARROWS || n.anchor.start - lastStart < MIN_GAP) { rest.push(n); continue; }
       out += esc(v.text.slice(pos, n.anchor.start));
-      out += `<span class="ann ${n.anchor.start === 0 ? 'ann-ne' : 'ann-n'} ann-${COLOR[n.kind]||'amber'}" data-note="${esc(n.label)}" data-id="${n.id}">${esc(v.text.slice(n.anchor.start, n.anchor.end))}</span>`;
-      pos = n.anchor.end;
+      out += `<span class="ann ${n.anchor.start === 0 ? 'ann-nw' : 'ann-n'} ann-${COLOR[n.kind]||'amber'}" data-note="${esc(n.label)}" data-id="${n.id}">${esc(v.text.slice(n.anchor.start, n.anchor.end))}</span>`;
+      pos = n.anchor.end; shown++; lastStart = n.anchor.start;
     }
     out += esc(v.text.slice(pos));
-    const vl = notes.filter(n => n.verse === v.verse && !n.anchor).map(n => `<div class="tool">📌 ${esc(n.label)}</div>`).join('');
-    return `<div class="verse ${vs.length ? 'has-notes' : ''}" data-verse="${v.verse}"><span class="n">${v.verse}</span>${out}${vl}</div>`;
+    const chips = rest.length ? `<div class="chips">${rest.map(n => `<span class="chip" data-id="${n.id}" style="--c:${DOTC[COLOR[n.kind]]}">${esc(n.label)}</span>`).join('')}</div>` : '';
+    return `<div class="verse ${shown ? 'has-notes' : ''}" data-verse="${v.verse}"><span class="n">${v.verse}</span>${out}${chips}</div>`;
   }).join('');
 }
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+const AUTHOR = { agent:'agent 研讀', quick:'速讀', refs:'references', user:'我' };
 $('#verses').addEventListener('click', e => {
-  const a = e.target.closest('.ann'); if (!a) return;
+  const a = e.target.closest('[data-id]'); if (!a) return;
   const n = notes.find(x => x.id === a.dataset.id);
-  $('#detail').innerHTML = `<b>${esc(n.label)}</b> <small>(${n.author} · ${n.kind})</small><div>${marked.parse(n.body || '')}</div>`;
+  const d = $('#detail');
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b>${esc(n.label)}</b><small>${AUTHOR[n.author]||n.author} · ${n.kind}</small><button id="ask">追問</button></div>${marked.parse(n.body || '（沒有內文）')}`;
+  d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
+  d.showPopover();
+  // below the label (label sits ~70px under the span); flip above if it would overflow
+  const r = a.getBoundingClientRect();
+  let top = r.bottom + 78;
+  if (top + d.offsetHeight > innerHeight - 8) top = Math.max(8, r.top - d.offsetHeight - 8);
+  d.style.top = top + 'px';
+  d.style.left = Math.max(8, Math.min(r.left, innerWidth - d.offsetWidth - 8)) + 'px';
 });
 
 // 手動筆記：反白一節內的文字 → prompt 標籤
