@@ -243,14 +243,17 @@ async def add_annotation(args: dict) -> dict:
 
 @tool(
     "update_annotation",
-    "更新一條既有筆記（驗證速讀筆記用）。id 必填；label 20 字內；body 寫查證結論與依據；kind: lexical|history|misread|crossref",
+    "更新一條既有筆記（驗證速讀筆記用）。id 必填；label 20 字內；body 是短筆記：1 到 3 句、100 字內，只寫結論和主要依據，長篇分析留在對話裡；kind: lexical|history|misread|crossref",
     {"id": str, "label": str, "body": str, "kind": str},
 )
 async def update_annotation(args: dict) -> dict:
     n = _find_note(str(args["id"]))
     if not n:
         return {"content": [{"type": "text", "text": f"找不到筆記 {args['id']}"}], "is_error": True}
-    n.update(label=str(args["label"])[:20], body=args.get("body", n.get("body", "")),
+    body = str(args.get("body", n.get("body", "")))
+    if len(body) > 300:  # the tool asks for 1–3 sentences; a runaway body is cut rather than swallowing the card
+        body = body[:300].rstrip() + "…"
+    n.update(label=str(args["label"])[:20], body=body,
              kind=args["kind"] if args.get("kind") in KINDS else n["kind"], author="agent", verified=True)
     _save()
     await events.put({"type": "note", "note": n})

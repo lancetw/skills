@@ -340,7 +340,7 @@ function showCard(n, rect, gap) {
   d.querySelector('#verify')?.addEventListener('click', () => {
     const quote = n.anchor ? verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end) : '';
     d.hidePopover();
-    send(`驗證速讀筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程查證原文字義、歷史背景與資料來源，有誤就改正。完成後呼叫 mcp__notes__update_annotation（id=${n.id}）更新這條筆記：label 20 字內，body 寫查證結論與依據（可用 Markdown）。不要另外新增筆記。`);
+    send(`驗證速讀筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程查證原文字義、歷史背景與資料來源，有誤就改正。完成後呼叫 mcp__notes__update_annotation（id=${n.id}）回填一條短筆記：label 20 字內；body 1 到 3 句、100 字內，只寫結論和主要依據（可用 Markdown）。詳細分析寫在對話裡即可，不要塞進筆記，也不要另外新增筆記。`);
   });
   // delete is two clicks: the first arms it, so a stray click cannot throw away a note
   d.querySelector('#del').onclick = async e => {
