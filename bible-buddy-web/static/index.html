@@ -34,6 +34,9 @@
   #reader, #chat { min-height:0; }   /* grid items default to min-height:auto and would grow past the row */
   button, input, select { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:6px 10px; }
   button { cursor:pointer; } button:hover { border-color:var(--pen); color:var(--pen); }
+  /* anything disabled says so under the mouse: the chat input while a turn runs, the quick / verify buttons */
+  button:disabled, input:disabled { cursor:not-allowed; opacity:.55; } button:disabled:hover { border-color:var(--rule); color:inherit; }
+  form#f:has(#q:disabled) { cursor:not-allowed; }
   button.primary { background:var(--pen); color:var(--paper); border-color:var(--pen); }
 
   /* reader = a notebook page */
@@ -105,7 +108,6 @@
   .hrow { display:flex; align-items:center; gap:12px; min-height:34px; margin:0 0 14px; }
   .hrow h1 { margin:0; }
   #quick { margin-left:auto; font-size:.82rem; padding:4px 12px; border-radius:999px; }
-  #quick:disabled { opacity:.5; cursor:default; }
   #quick + #banner { margin-left:0; }
   .hrow h1 { flex:none; }
   /* the pill can never widen the row: it shrinks and clips, the full text lives in its title tooltip */
