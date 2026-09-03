@@ -30,6 +30,7 @@ HERE = Path(__file__).parent
 SKILL = HERE / ".claude/skills/bible-buddy"
 sys.path.insert(0, str(SKILL / "scripts"))
 from book_names import lookup  # noqa: E402
+from detect_desktop import detect_desktop  # noqa: E402
 from fetch_fhl import fetch  # noqa: E402  bible-buddy's own fetcher, stdlib only
 
 app = FastAPI()
@@ -67,6 +68,15 @@ async def add_user_note(body: dict):
     note = {"id": uuid.uuid4().hex[:8], "author": "user", "kind": "personal", **body}
     notes.append(note)
     return note
+
+
+STUDY_DIR = detect_desktop("bible-buddy")  # where the skill auto-saves its .md reports
+
+
+@app.get("/api/studies")
+async def list_studies():
+    files = sorted(STUDY_DIR.glob("*.md"), key=lambda f: f.stat().st_mtime, reverse=True)[:30]
+    return [{"name": f.name, "path": str(f)} for f in files]
 
 
 @app.get("/api/study", response_class=PlainTextResponse)

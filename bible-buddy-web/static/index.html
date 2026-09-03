@@ -83,7 +83,7 @@
 <aside id="chat">
   <div class="tabs"><button class="on" data-tab="log">對話</button><button data-tab="study">研讀報告</button></div>
   <div id="log"></div>
-  <div id="study"></div>
+  <div id="study"><select id="ssel" style="width:100%;margin-bottom:8px"></select><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
   <div id="status" class="tool"></div>
   <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button class="primary" id="send">送出</button></form>
 </aside>
@@ -215,7 +215,7 @@ async function send(text) {
       if (ev.type === 'text') { buf += ev.text + '\n'; cur.innerHTML = marked.parse(buf); slot('#status').set('✍ 撰寫中…'); }
       else if (ev.type === 'tool') { slot('#status').set(`⚙ ${TOOL_ZH[ev.name] || ev.name}…`); logLine('tool', `⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
       else if (ev.type === 'note') { notes.push(ev.note); render(); }
-      else if (ev.type === 'done') { slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').set('送出'); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(buf); if (studyPath) loadStudy(); }
+      else if (ev.type === 'done') { slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').set('送出'); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(buf); if (studyPath) loadStudy(studyPath); }
       else if (ev.type === 'error') { slot('#status').set('✗ 出錯'); slot('#send').set('送出'); logLine('tool', `✗ ${esc(ev.text)}`); }
       $('#log').scrollTop = 1e9;
     }
@@ -229,17 +229,24 @@ function renderOptions(text) {
   const d = logLine('opts', '');
   for (const [, n, t] of opts) { const b = document.createElement('button'); b.textContent = `${n}. ${t.slice(0,60)}`; b.onclick = () => send(n); d.appendChild(b); }
 }
-async function loadStudy() {
-  const md = await (await fetch('/api/study?path=' + encodeURIComponent(studyPath))).text();
-  $('#study').innerHTML = `<div class="tool">${esc(studyPath)}</div>` + marked.parse(md);
-  slot(tabStudy).flash('報告已生成', { revertAfter: 2500 });
+// 研讀報告 tab lists every .md the skill has saved; newest first, or the one just written
+async function loadStudy(path) {
+  const list = await (await fetch('/api/studies')).json();
+  $('#ssel').innerHTML = list.map(f => `<option value="${esc(f.path)}">${esc(f.name)}</option>`).join('');
+  if (!list.length) return;
+  $('#ssel').value = path && list.some(f => f.path === path) ? path : list[0].path;
+  const md = await (await fetch('/api/study?path=' + encodeURIComponent($('#ssel').value))).text();
+  $('#sbody').className = ''; $('#sbody').innerHTML = marked.parse(md.replace(/^---[\s\S]*?\n---\n/, ''));  // drop YAML frontmatter
+  if (path) slot(tabStudy).flash('報告已生成', { revertAfter: 2500 });
 }
+$('#ssel').onchange = () => loadStudy($('#ssel').value);
 const tabStudy = document.querySelector('.tabs button[data-tab="study"]');
 document.querySelectorAll('.tabs button').forEach(b => slot(b));
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
   $('#log').style.display = b.dataset.tab === 'log' ? '' : 'none';
   $('#study').style.display = b.dataset.tab === 'study' ? 'block' : 'none';
+  if (b.dataset.tab === 'study' && !$('#ssel').options.length) loadStudy();
 });
 $('#f').onsubmit = e => { e.preventDefault(); const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t); };
 $('#pf').onsubmit = async e => { e.preventDefault(); slot('#pload').set('載入中…'); await loadPassage($('#pref').value.trim(), $('#pver').value); slot('#pload').set('載入'); };
