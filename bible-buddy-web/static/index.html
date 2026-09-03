@@ -56,10 +56,13 @@
   #detail .dot { width:10px; height:10px; border-radius:50%; background:var(--c); }
   #detail .hd small { color:var(--ink-2); }
   /* loading states: a banner on the page for passage/quick-notes waits, a pending bubble for agent turns */
-  #banner { position:sticky; top:-22px; z-index:2; display:flex; align-items:center; gap:10px; margin:-22px -28px 14px -78px; padding:10px 16px 10px 78px; background:var(--paper-2); border-bottom:1px solid var(--rule); color:var(--ink); font-size:.92rem; }
-  #banner[hidden] { display:none; }                     /* the display:flex above would otherwise beat the hidden attribute */
-  #bannerText { flex:1 1 auto; min-width:0; overflow:hidden; white-space:nowrap; }   /* never let the rolled chars wrap one per line */
-  #banner .t { margin-left:auto; flex:none; font-variant-numeric:tabular-nums; color:var(--ink-2); }
+  /* status pill sits in the fixed-height heading row, so showing/hiding it never shifts the verses */
+  .hrow { display:flex; align-items:center; gap:12px; min-height:34px; margin:0 0 14px; }
+  .hrow h1 { margin:0; }
+  #banner { margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:4px 12px; border-radius:999px; background:var(--paper-2); border:1px solid var(--rule); color:var(--ink); font-size:.82rem; white-space:nowrap; }
+  #banner[hidden] { display:none; }                     /* the display rule above would otherwise beat the hidden attribute */
+  #bannerText { min-width:0; overflow:hidden; white-space:nowrap; }
+  #banner .t { flex:none; font-variant-numeric:tabular-nums; color:var(--ink-2); }
   .spin { width:14px; height:14px; border:2px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; flex:none; }
   @keyframes spin { to { transform:rotate(360deg); } }
   .dots span { display:inline-block; width:6px; height:6px; margin-right:4px; border-radius:50%; background:var(--pen); animation:blink 1.2s infinite; }
@@ -92,7 +95,8 @@
   #study blockquote.insight > p:first-child { color:#b8751a; font-weight:700; margin-top:0; }
   #study table { display:block; overflow-x:auto; }
   #study table { border-collapse:collapse; font-size:.9rem; } #study td, #study th { border:1px solid var(--rule); padding:4px 8px; }
-  #study #ssel { width:100%; margin-bottom:12px; }
+  #study .srow { display:flex; gap:8px; margin-bottom:12px; } #study #ssel { flex:1; }
+  #study #sdel:hover { border-color:#c45a38; color:#c45a38; }
   form#f { display:flex; gap:6px; padding:10px; border-top:1px solid var(--rule); }
   form#f input { flex:1; }
 </style>
@@ -101,11 +105,10 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button></form>
   <div id="page" class="page">
-    <div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div>
-    <h1 id="ref">載入中…</h1>
+    <div class="hrow"><h1 id="ref">載入中…</h1><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
-  <div id="study" class="page" hidden><select id="ssel"></select><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
+  <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
   <div id="detail" popover></div>
 </section>
 <aside id="chat">
@@ -158,7 +161,7 @@ async function loadPassage(refStr, version) {
   render();
   slot('#pload').set('載入');
   const refsN = await addAuto('/api/auto-notes/refs');        // instant, from bible-buddy references
-  banner(refsN ? `已標 ${refsN} 條已驗證筆記，速讀筆記產生中（約 1 分鐘）` : '速讀筆記產生中（約 1 分鐘）', { timer: true });
+  banner(refsN ? `已驗證 ${refsN} 條 · 速讀產生中（約 1 分鐘）` : '速讀筆記產生中（約 1 分鐘）', { timer: true });
   await addAuto('/api/auto-notes/quick');                     // one cheap model pass, ~75 s
   banner(`✓ 自動筆記 ${notes.filter(n => n.author === 'refs' || n.author === 'quick').length} 條`, { spin: false, hideAfter: 3000 });
 }
@@ -300,6 +303,15 @@ async function loadStudy(path) {
   if (path) slot(tabStudy).flash('報告已生成', { revertAfter: 2500 });
 }
 $('#ssel').onchange = () => loadStudy($('#ssel').value);
+$('#sdel').onclick = async () => {
+  const path = $('#ssel').value; if (!path) return;
+  if (!confirm(`把「${path.split('/').pop()}」移到垃圾桶？（可從垃圾桶復原）`)) return;
+  slot('#sdel').set('刪除中…');
+  const r = await (await fetch('/api/study?path=' + encodeURIComponent(path), { method: 'DELETE' })).json();
+  slot('#sdel').set('刪除'); slot('#sdel').flash(r.ok ? '已移到垃圾桶' : '失敗', { revertAfter: 2000 });
+  $('#ssel').innerHTML = ''; $('#sbody').className = 'tool'; $('#sbody').textContent = '還沒有研讀報告。問 agent 一次完整研讀，報告會存到 ~/Desktop/bible-buddy/';
+  loadStudy();
+};
 const tabStudy = document.querySelector('.tabs button[data-tab="study"]');
 document.querySelectorAll('.tabs button').forEach(b => slot(b));
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
