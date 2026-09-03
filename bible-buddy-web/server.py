@@ -181,6 +181,9 @@ def _load() -> None:
     if d.get("quick") is not None:
         _quick_cache[_key()] = d["quick"]  # the paid model pass comes back too; the button will not re-spend
         _quick_cost[_key()] = d.get("quick_cost")
+        for n in notes:  # files from before pass_cost existed
+            if n.get("author") == "quick" and "pass_cost" not in n and "cost" not in n:
+                n["pass_cost"] = d.get("quick_cost")
 
 
 @app.get("/api/studies")
@@ -556,7 +559,8 @@ async def auto_notes_quick():
         note = {"id": _note_id("quick", key, str(n["verse"]), n["quote"]), "verse": str(n["verse"]),
                 "anchor": None if i < 0 else {"start": i, "end": i + len(n["quote"])},
                 "label": n["label"][:20], "body": n["body"],  # author=quick is what the UI flags as unverified
-                "kind": n["kind"] if n["kind"] in KINDS else "lexical", "author": "quick"}
+                "kind": n["kind"] if n["kind"] in KINDS else "lexical", "author": "quick",
+                "pass_cost": _quick_cost.get(key)}  # the whole pass's USD, carried on each of its notes
         if _add(note):
             out.append(note)
     _save()
