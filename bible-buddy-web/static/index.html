@@ -4,12 +4,14 @@
 <meta charset="utf-8">
 <title>Bible Buddy Web — PROTOTYPE</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/syabro/neat-annotations/neat-annotations.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@500;600;700&family=Iansui&family=LXGW+WenKai+TC&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slot-text@0.3.4/style.css">
 <style>
   /* notebook: ivory paper, red margin rule, serif scripture, handwritten labels. Light by default. */
   :root {
+    /* handwriting stack: Shantell Sans covers Latin only, so CJK falls through to Iansui (芫荽), then 霞鶩文楷 */
+    --hand: 'Shantell Sans', 'Iansui', 'LXGW WenKai TC', cursive;
     color-scheme: light;
     --paper:#F8F5EC; --paper-2:#F1EDE1; --ink:#2B2A26; --ink-2:#6E6A60; --rule:#DED8C8; --margin:#D9A3A3;
     --pen:#3A5A8C; --card:#FFFDF7; --shadow:0 6px 20px #4a412a22;
@@ -35,17 +37,18 @@
   h1 { font-family:'Noto Serif TC', serif; font-size:1.05rem; font-weight:600; color:var(--ink-2); margin:0 0 14px; }
   .verse { position:relative; font-family:'Noto Serif TC', 'Songti TC', serif; font-size:1.15rem; line-height:2.1; padding:6px 0; }
   .verse.has-notes { padding-bottom:78px; }
-  .verse .n { position:absolute; left:-52px; top:6px; width:32px; text-align:right; font-family:'Shantell Sans', cursive; font-size:.8rem; color:var(--margin); line-height:2.1; }
-  .ann { --ann-font:'Shantell Sans','Noto Sans TC',cursive; cursor:pointer; }
-  .chips { line-height:1.4; margin-top:2px; font-family:'Noto Sans TC', sans-serif; }
+  .verse .n { position:absolute; left:-52px; top:6px; width:32px; text-align:right; font-family:var(--hand); font-size:.8rem; color:var(--margin); line-height:2.1; }
+  .ann { --ann-font:var(--hand); cursor:pointer; }
+  .chips { line-height:1.4; margin-top:2px; font-family:var(--hand); }
   .verse.has-notes .chips { margin-top:72px; }
   .verse.has-notes:has(.chips) { padding-bottom:8px; }
-  .chip { display:inline-block; font-size:.72rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
+  .chip { display:inline-block; font-size:.8rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
 
   /* note card popover */
   #detail { position:fixed; margin:0; inset:auto; width:min(440px, 90vw); max-height:45vh; overflow:auto; padding:12px 14px; border:1px solid var(--rule); border-radius:10px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); font-size:.9rem; line-height:1.6; }
   #detail::backdrop { background:transparent; }
   #detail .hd { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  #detail .hd b { font-family:var(--hand); font-weight:500; font-size:1.05rem; }
   #detail .dot { width:10px; height:10px; border-radius:50%; background:var(--c); }
   #detail .hd small { color:var(--ink-2); }
   #detail .hd button { margin-left:auto; font-size:.8rem; padding:2px 8px; }
