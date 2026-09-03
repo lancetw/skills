@@ -51,6 +51,7 @@
   #detail .hd b { font-family:var(--hand); font-weight:500; font-size:1.05rem; }
   #detail .dot { width:10px; height:10px; border-radius:50%; background:var(--c); }
   #detail .hd small { color:var(--ink-2); }
+  #detail .hd .unv { width:16px; height:16px; border-radius:50%; border:1px solid var(--ink-2); color:var(--ink-2); font-size:.7rem; line-height:14px; text-align:center; cursor:help; font-family:'Noto Sans TC', sans-serif; }
   #detail .hd button { margin-left:auto; font-size:.8rem; padding:2px 8px; }
   #detail p { margin:.4em 0; }
 
@@ -170,7 +171,7 @@ $('#verses').addEventListener('click', e => {
   const a = e.target.closest('[data-id]'); if (!a) return;
   const n = notes.find(x => x.id === a.dataset.id);
   const d = $('#detail');
-  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b><small>${AUTHOR[n.author]||n.author} · ${n.kind}</small><button id="ask">追問</button></div>${marked.parse(n.body || '（沒有內文）')}`;
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b><small>${AUTHOR[n.author]||n.author} · ${n.kind}</small>${n.author === 'quick' ? '<span class="unv" title="速讀筆記，未經 bible-buddy 驗證流程">?</span>' : ''}<button id="ask">追問</button></div>${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
   d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
   d.showPopover();
