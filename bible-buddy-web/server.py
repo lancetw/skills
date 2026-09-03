@@ -71,6 +71,8 @@ async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int =
     passage.update(reference=r.get("reference", ""), version=version, verses=r.get("verses", []), book=book)
     if changed:
         _load()  # notes live per passage+version on disk; the previous passage was saved on its last change
+        global _client_stale
+        _client_stale = True  # the agent's history is about the old passage; the next turn starts a fresh session
     return r
 
 
@@ -133,7 +135,7 @@ def _save() -> None:
         return
     NOTES_DIR.mkdir(parents=True, exist_ok=True)
     data = {"reference": passage["reference"], "version": passage["version"], "book": passage.get("book", ""),
-            "notes": notes, "hidden": sorted(hidden), "quick": _quick_cache.get(_key())}
+            "notes": notes, "hidden": sorted(hidden), "quick": _quick_cache.get(_key()), "quick_cost": _quick_cost.get(_key())}
     tmp = _notes_file().with_suffix(".json.tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=1))
     tmp.replace(_notes_file())  # atomic: a crash mid-write cannot leave a half file
@@ -148,6 +150,7 @@ def _load() -> None:
     notes.extend(d.get("notes", [])); hidden.update(d.get("hidden", []))
     if d.get("quick") is not None:
         _quick_cache[_key()] = d["quick"]  # the paid model pass comes back too; the button will not re-spend
+        _quick_cost[_key()] = d.get("quick_cost")
 
 
 @app.get("/api/studies")
@@ -209,10 +212,18 @@ async def add_annotation(args: dict) -> dict:
 
 
 _client: ClaudeSDKClient | None = None
+_client_stale = False
 
 
 async def get_client() -> ClaudeSDKClient:
-    global _client
+    global _client, _client_stale
+    if _client is not None and _client_stale:
+        try:
+            await _client.disconnect()
+        except Exception as e:  # prototype: a dead CLI is fine, we are replacing it anyway
+            print("old agent session:", repr(e), file=sys.stderr)
+        _client = None
+    _client_stale = False
     if _client is None:
         opts = ClaudeAgentOptions(
             cwd=str(HERE),
@@ -381,12 +392,13 @@ QUICK_PROMPT = """你是第一世紀猶太教背景的聖經學者。對下面�
 
 
 _quick_tasks: dict[str, asyncio.Task] = {}
-_quick_status: dict[str, str] = {}  # live progress per passage, e.g. "API 529 重試 2/3"; the page polls it while waiting
+_quick_status: dict[str, str] = {}
+_quick_cost: dict[str, float | None] = {}  # USD of the cached pass, shown next to the note count  # live progress per passage, e.g. "API 529 重試 2/3"; the page polls it while waiting
 QUICK_RETRIES = 3     # the CLI retries 529/5xx itself with backoff; its default (~10) kept the spinner up for minutes
 QUICK_TIMEOUT_S = 180  # hard ceiling on one pass, so the button can never spin forever
 
 
-async def _structured(prompt: str, schema: dict, key: str) -> dict:
+async def _structured(prompt: str, schema: dict, key: str) -> tuple[dict, float | None]:
     """One tool-less model call with a JSON schema. Retries are capped and a ceiling applies, so it always ends;
     an API failure (529 overloaded, timeout) arrives as an error ResultMessage, not an exception, and is raised here."""
     opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
@@ -403,18 +415,20 @@ async def _structured(prompt: str, schema: dict, key: str) -> dict:
                     if m.is_error:
                         raise RuntimeError(m.result or f"API error (HTTP {m.api_error_status})")
                     print("model pass:", key, m.total_cost_usd, "USD", file=sys.stderr)
-                    return m.structured_output or {}
+                    return m.structured_output or {}, m.total_cost_usd
     except TimeoutError:
         raise RuntimeError(f"逾時：{QUICK_TIMEOUT_S}s 內沒有結果（API 可能過載）") from None
     finally:
         _quick_status.pop(key, None)
-    return {}
+    return {}, None
 
 
 async def _quick_run(key: str, ref: str, version: str, verses: list[dict]) -> list[dict]:
     """The model pass itself. Runs as its own Task so a page refresh (client disconnect) cannot cancel it."""
     text = "\n".join(f"[{v['verse']}] {v['text']}" for v in verses)
-    return (await _structured(QUICK_PROMPT.format(ref=ref, version=version, text=text), QUICK_SCHEMA, key)).get("notes", [])
+    data, cost = await _structured(QUICK_PROMPT.format(ref=ref, version=version, text=text), QUICK_SCHEMA, key)
+    _quick_cost[key] = cost
+    return data.get("notes", [])
 
 
 ONE_SCHEMA = {"type": "json_schema", "schema": {
@@ -442,14 +456,14 @@ async def auto_note_one(body: dict):
         return {"error": "選取的字不在該節經文裡"}
     ctx = "\n".join(f"[{v['verse']}] {v['text']}" for v in passage["verses"])
     try:
-        r = await _structured(ONE_PROMPT.format(verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx),
+        r, cost = await _structured(ONE_PROMPT.format(verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx),
                               ONE_SCHEMA, f"one|{verse}|{quote}")
     except Exception as e:
         print("one-note failed:", verse, quote, repr(e), file=sys.stderr)
         return {"error": str(e)}
     note = {"id": uuid.uuid4().hex[:8], "verse": verse, "anchor": {"start": i, "end": i + len(quote)},
             "label": str(r.get("label", quote))[:20], "body": r.get("body", ""),
-            "kind": r["kind"] if r.get("kind") in KINDS else "lexical", "author": "quick"}
+            "kind": r["kind"] if r.get("kind") in KINDS else "lexical", "author": "quick", "cost": cost}
     notes.append(note)
     _save()
     return note
@@ -466,7 +480,8 @@ async def auto_notes_quick():
     """One cheap model pass per passage. Concurrent or repeated callers (a refreshed page) share the same Task.
     A failed pass is not cached: the next call starts a fresh Task, so the button doubles as retry."""
     key = f"{passage['reference']}|{passage['version']}"
-    if key not in _quick_cache:
+    cached = key in _quick_cache
+    if not cached:
         task = _quick_tasks.get(key)
         if task is None or (task.done() and task.exception() is not None):
             task = _quick_tasks[key] = asyncio.create_task(_quick_run(key, passage["reference"], passage["version"], list(passage["verses"])))
@@ -488,4 +503,4 @@ async def auto_notes_quick():
         if _add(note):
             out.append(note)
     _save()
-    return out
+    return {"notes": out, "cost": _quick_cost.get(key), "cached": cached}
