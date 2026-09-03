@@ -63,9 +63,10 @@ async def index():
 @app.get("/api/passage")
 async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int = 10, end: int = 17, version: str = "rcuv"):
     r = await asyncio.to_thread(fetch, book, chapter, start, end, version)
-    if r.get("reference") != passage["reference"]:
-        notes.clear(); hidden.clear()  # notes carry no book/chapter; a new passage means a clean slate
+    changed = (r.get("reference", ""), version) != (passage["reference"], passage["version"])
     passage.update(reference=r.get("reference", ""), version=version, verses=r.get("verses", []), book=book)
+    if changed:
+        _load()  # notes live per passage+version on disk; the previous passage was saved on its last change
     return r
 
 
@@ -78,6 +79,7 @@ async def list_notes():
 async def add_user_note(body: dict):
     note = {"id": uuid.uuid4().hex[:8], "author": "user", "kind": "personal", **body}
     notes.append(note)
+    _save()
     return note
 
 
@@ -95,6 +97,7 @@ async def edit_note(nid: str, body: dict):
         if k in body:
             n[k] = str(body[k])[:20] if k == "label" else body[k]
     n["edited"] = True
+    _save()
     return n
 
 
@@ -104,10 +107,43 @@ async def delete_note(nid: str):
     if n:
         notes.remove(n)
         hidden.add(nid)
+        _save()
     return {"ok": n is not None}
 
 
 STUDY_DIR = detect_desktop("bible-buddy")  # where the skill auto-saves its .md reports
+NOTES_DIR = STUDY_DIR / "notes"           # autosave: one JSON per passage+version, next to the reports
+
+
+def _key() -> str:
+    return f"{passage['reference']}|{passage['version']}"
+
+
+def _notes_file() -> Path:
+    return NOTES_DIR / f"{passage['reference'].replace(':', '.')} ({passage['version']}).json"  # ":" is awkward in macOS filenames
+
+
+def _save() -> None:
+    """Every mutation lands on disk at once, so a restart or a switch of passage loses nothing. Tiny file, sync write."""
+    if not passage["reference"]:
+        return
+    NOTES_DIR.mkdir(parents=True, exist_ok=True)
+    data = {"reference": passage["reference"], "version": passage["version"], "book": passage.get("book", ""),
+            "notes": notes, "hidden": sorted(hidden), "quick": _quick_cache.get(_key())}
+    tmp = _notes_file().with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=1))
+    tmp.replace(_notes_file())  # atomic: a crash mid-write cannot leave a half file
+
+
+def _load() -> None:
+    notes.clear(); hidden.clear()
+    f = _notes_file() if passage["reference"] else None
+    if not f or not f.is_file():
+        return
+    d = json.loads(f.read_text())
+    notes.extend(d.get("notes", [])); hidden.update(d.get("hidden", []))
+    if d.get("quick") is not None:
+        _quick_cache[_key()] = d["quick"]  # the paid model pass comes back too; the button will not re-spend
 
 
 @app.get("/api/studies")
@@ -162,6 +198,7 @@ async def add_annotation(args: dict) -> dict:
         "author": "agent",
     }
     notes.append(note)
+    _save()
     await events.put({"type": "note", "note": note})
     miss = "" if i >= 0 else "（quote 對不上畫面經文，已改為節層級筆記）"
     return {"content": [{"type": "text", "text": f"已加入筆記 {note['id']} {miss}"}]}
@@ -316,6 +353,7 @@ async def auto_notes_refs():
                     "kind": "misread", "author": "refs"}
             if _add(note):
                 out.append(note)
+    _save()
     return out
 
 
@@ -409,6 +447,7 @@ async def auto_note_one(body: dict):
             "label": str(r.get("label", quote))[:20], "body": r.get("body", ""),
             "kind": r["kind"] if r.get("kind") in KINDS else "lexical", "author": "quick"}
     notes.append(note)
+    _save()
     return note
 
 
@@ -432,6 +471,8 @@ async def auto_notes_quick():
         except Exception as e:
             print("quick pass failed:", key, repr(e), file=sys.stderr)
             return {"error": str(e)}
+    if key != _key():
+        return []  # the passage changed while the pass ran; its notes belong to the other file, not this one
     out = []
     for n in _quick_cache[key]:
         text = _verse_text(n["verse"])
@@ -442,4 +483,5 @@ async def auto_notes_quick():
                 "kind": n["kind"] if n["kind"] in KINDS else "lexical", "author": "quick"}
         if _add(note):
             out.append(note)
+    _save()
     return out
