@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>Bible Buddy Web — PROTOTYPE</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/syabro/neat-annotations/neat-annotations.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500&family=Noto+Sans+TC:wght@400;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin:0; font-family:'Noto Sans TC', system-ui, sans-serif; display:grid; grid-template-columns: 1fr 420px; height:100vh; }
+  #reader { overflow:auto; padding:24px 32px; }
+  #chat { border-left:1px solid #8884; display:flex; flex-direction:column; }
+  #log { flex:1; overflow:auto; padding:12px; font-size:.9rem; }
+  #log .tool { color:#888; font-size:.78rem; font-family:monospace; }
+  #log .msg { margin:.5em 0; }
+  #log .opts button { display:block; margin:4px 0; text-align:left; }
+  form { display:flex; gap:6px; padding:10px; border-top:1px solid #8884; }
+  form input { flex:1; padding:8px; }
+  .verse { font-size:1.1rem; line-height:2.1; padding:6px 10px; }
+  .verse.has-notes { padding-bottom:78px; }
+  .verse .n { font-family:monospace; font-size:.7rem; opacity:.6; margin-right:.5em; vertical-align:super; }
+  .ann { --ann-font:'Shantell Sans','Noto Sans TC',cursive; cursor:pointer; }
+  #detail { position:sticky; bottom:0; background:Canvas; border-top:1px solid #8884; padding:10px; font-size:.9rem; max-height:40vh; overflow:auto; }
+  #detail:empty { display:none; }
+  #study { display:none; padding:12px; overflow:auto; flex:1; font-size:.9rem; }
+  #study blockquote { border-left:3px solid #b8751a; padding-left:10px; opacity:.9; }
+  h1 { font-size:1.1rem; margin:0 0 12px; opacity:.7; }
+  .tabs { display:flex; gap:8px; padding:8px 12px 0; }
+  .tabs button.on { font-weight:700; }
+</style>
+</head>
+<body>
+<section id="reader">
+  <h1 id="ref">載入中…</h1>
+  <div id="verses"></div>
+  <div id="detail"></div>
+</section>
+<aside id="chat">
+  <div class="tabs"><button class="on" data-tab="log">對話</button><button data-tab="study">研讀報告</button></div>
+  <div id="log"></div>
+  <div id="study"></div>
+  <form id="f"><input id="q" placeholder="例：以賽亞書 7:14 原文分析" autocomplete="off"><button>送出</button></form>
+</aside>
+<script>
+const COLOR = { lexical:'amber', history:'blue', misread:'red', crossref:'purple', personal:'green' };
+let verses = [], notes = [], studyPath = null;
+const $ = s => document.querySelector(s);
+
+async function loadPassage() {
+  notes = await (await fetch('/api/notes')).json();
+  const r = await (await fetch('/api/passage')).json();
+  verses = r.verses;
+  $('#ref').textContent = `${r.reference} · ${r.version}`;
+  render();
+}
+
+function render() {
+  $('#verses').innerHTML = verses.map(v => {
+    const vs = notes.filter(n => n.verse === v.verse && n.anchor).sort((a,b) => a.anchor.start - b.anchor.start);
+    let out = '', pos = 0;
+    for (const n of vs) {
+      if (n.anchor.start < pos) continue; // ponytail: overlaps skipped, list only
+      out += esc(v.text.slice(pos, n.anchor.start));
+      out += `<span class="ann ann-n ann-${COLOR[n.kind]||'amber'}" data-note="${esc(n.label)}" data-id="${n.id}">${esc(v.text.slice(n.anchor.start, n.anchor.end))}</span>`;
+      pos = n.anchor.end;
+    }
+    out += esc(v.text.slice(pos));
+    const vl = notes.filter(n => n.verse === v.verse && !n.anchor).map(n => `<div class="tool">📌 ${esc(n.label)}</div>`).join('');
+    return `<div class="verse ${vs.length ? 'has-notes' : ''}" data-verse="${v.verse}"><span class="n">${v.verse}</span>${out}${vl}</div>`;
+  }).join('');
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+$('#verses').addEventListener('click', e => {
+  const a = e.target.closest('.ann'); if (!a) return;
+  const n = notes.find(x => x.id === a.dataset.id);
+  $('#detail').innerHTML = `<b>${esc(n.label)}</b> <small>(${n.author} · ${n.kind})</small><div>${marked.parse(n.body || '')}</div>`;
+});
+
+// 手動筆記：反白一節內的文字 → prompt 標籤
+document.addEventListener('mouseup', async () => {
+  const sel = window.getSelection(); if (!sel || sel.isCollapsed) return;
+  const q = sel.toString().trim(); if (!q) return;
+  const vEl = sel.anchorNode.parentElement.closest('.verse'); if (!vEl) return;
+  const v = verses.find(x => x.verse === vEl.dataset.verse);
+  const start = v.text.indexOf(q); if (start < 0) return;
+  const label = window.prompt(`筆記標籤（≤20 字）：「${q}」`); if (!label) return;
+  const note = await (await fetch('/api/notes', { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({ verse: v.verse, anchor:{start, end:start+q.length}, label: label.slice(0,20), body:'' }) })).json();
+  notes.push(note); sel.removeAllRanges(); render();
+});
+
+function logLine(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('#log').appendChild(d); $('#log').scrollTop = 1e9; return d; }
+
+async function send(text) {
+  logLine('msg', `<b>你：</b>${esc(text)}`);
+  const cur = logLine('msg', '');
+  let buf = '';
+  const res = await fetch('/api/chat', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ message:text }) });
+  const rd = res.body.getReader(), dec = new TextDecoder(); let rest = '';
+  while (true) {
+    const { value, done } = await rd.read(); if (done) break;
+    rest += dec.decode(value, { stream:true });
+    let i; while ((i = rest.indexOf('\n\n')) >= 0) {
+      const line = rest.slice(0, i); rest = rest.slice(i + 2);
+      if (!line.startsWith('data: ')) continue;
+      const ev = JSON.parse(line.slice(6));
+      if (ev.type === 'text') { buf += ev.text + '\n'; cur.innerHTML = marked.parse(buf); }
+      else if (ev.type === 'tool') { logLine('tool', `⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
+      else if (ev.type === 'note') { notes.push(ev.note); render(); }
+      else if (ev.type === 'done') { logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(buf); if (studyPath) loadStudy(); }
+      else if (ev.type === 'error') logLine('tool', `✗ ${esc(ev.text)}`);
+      $('#log').scrollTop = 1e9;
+    }
+  }
+}
+// 「請選擇 (1-N)」→ 按鈕
+function renderOptions(text) {
+  if (!/請選擇\s*\(1-\d\)/.test(text)) return;
+  const opts = [...text.matchAll(/^\s*(\d)[\.、．]\s*(.+)$/gm)].slice(-6);
+  if (!opts.length) return;
+  const d = logLine('opts', '');
+  for (const [, n, t] of opts) { const b = document.createElement('button'); b.textContent = `${n}. ${t.slice(0,60)}`; b.onclick = () => send(n); d.appendChild(b); }
+}
+async function loadStudy() {
+  const md = await (await fetch('/api/study?path=' + encodeURIComponent(studyPath))).text();
+  $('#study').innerHTML = `<div class="tool">${esc(studyPath)}</div>` + marked.parse(md);
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  $('#log').style.display = b.dataset.tab === 'log' ? '' : 'none';
+  $('#study').style.display = b.dataset.tab === 'study' ? 'block' : 'none';
+});
+$('#f').onsubmit = e => { e.preventDefault(); const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t); };
+loadPassage();
+</script>
+</body>
+</html>
