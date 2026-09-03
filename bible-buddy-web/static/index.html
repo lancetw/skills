@@ -95,7 +95,6 @@
   #detail .ft button { font-size:.8rem; padding:3px 10px; border-color:transparent; background:transparent; color:var(--ink-2); }
   #detail .ft button:hover { color:var(--pen); background:var(--paper-2); }
   #detail .ft button.danger:hover { color:#c45a38; }
-  #detail .ft button[data-armed] { color:#c45a38; border-color:#c45a38; }
   #detail .ft #ask { margin-left:auto; color:var(--pen); }
   #detail .ed .cap { font-size:.75rem; color:var(--ink-2); }
   #detail .hd, #detail .ed .cap { cursor:move; user-select:none; touch-action:none; }  /* drag handles */
@@ -113,7 +112,11 @@
   /* status pill sits in the fixed-height heading row, so showing/hiding it never shifts the verses */
   .hrow { display:flex; align-items:center; gap:12px; min-height:34px; margin:0 0 14px; }
   .hrow h1 { margin:0; }
-  #quick { margin-left:auto; font-size:.82rem; padding:4px 12px; border-radius:999px; }
+  /* passage actions: one group of identical pills at the right of the heading row */
+  .actions { margin-left:auto; display:inline-flex; gap:6px; flex:none; }
+  .actions button { font-size:.82rem; padding:4px 12px; border-radius:999px; background:var(--paper-2); }
+  .actions button:hover { background:var(--card); }
+  .actions #quickClear:hover { border-color:#c45a38; color:#c45a38; }
   /* note layers: ELI5 (model) and 深入研讀 (agent) would crowd the same verse, so they are viewed one at a time or together */
   .views { display:inline-flex; border:1px solid var(--rule); border-radius:999px; overflow:hidden; font-size:.78rem; flex:none; }
   .views[hidden] { display:none; }
@@ -121,9 +124,8 @@
   .views button + button { border-left:1px solid var(--rule); }
   .views button.on { background:var(--paper-2); color:var(--pen); }
   .views small { opacity:.7; font-variant-numeric:tabular-nums; }
-  #quickClear, #study { margin-left:0; font-size:.82rem; padding:4px 12px; border-radius:999px; }
-  #quickClear[hidden] { display:none; } #quickClear.armed { border-color:#c45a38; color:#c45a38; }
-  #study + #banner { margin-left:0; }
+  #quickClear[hidden] { display:none; }
+  .actions + #banner { margin-left:0; }
   .hrow h1 { flex:none; }
   /* the pill can never widen the row: it shrinks and clips, the full text lives in its title tooltip */
   #banner { min-width:0; max-width:min(55%, 520px); }
@@ -186,7 +188,7 @@
 <section id="reader">
   <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><div class="views" hidden title="切換要看哪一層筆記；手動筆記與 references 每層都顯示"><button type="button" data-view="all">全部</button><button type="button" data-view="eli5">ELI5 <small></small></button><button type="button" data-view="study">深入研讀 <small></small></button></div><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1><div class="views" hidden title="切換要看哪一層筆記；手動筆記與 references 每層都顯示"><button type="button" data-view="all">全部</button><button type="button" data-view="eli5">ELI5 <small></small></button><button type="button" data-view="study">深入研讀 <small></small></button></div><div class="actions"><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑 清除自動筆記</button></div><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
   <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次深入研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
@@ -410,9 +412,8 @@ function showCard(n, rect, gap) {
     d.hidePopover();
     send(`驗證 AI 筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：${n.style === 'eli5' ? '（這條是 ELI5 淺白風格，回填也要同樣淺白）' : ''}\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程查證原文字義、歷史背景與資料來源，有誤就改正。完成後呼叫 mcp__notes__update_annotation（id=${n.id}）回填。回填的口氣與格式要跟原筆記一樣：label 20 字內，原文字義類寫「希伯來/希臘字 音譯＝意思」；body 1 到 3 句、100 字內，直接陳述結論與主要依據，像原本那條筆記的寫法，不要寫「經查證」「已驗證」「原筆記正確」這類過程描述，不要教會式應用。詳細分析寫在對話裡即可，不要塞進筆記，也不要另外新增筆記。`);
   });
-  // delete is two clicks: the first arms it, so a stray click cannot throw away a note
-  d.querySelector('#del').onclick = async e => {
-    if (!e.target.dataset.armed) { e.target.dataset.armed = '1'; e.target.textContent = '確定刪除？'; return; }
+  d.querySelector('#del').onclick = async () => {
+    if (!confirm(`確定刪除這條筆記「${n.label}」？無法復原。`)) return;
     await api('/api/notes/' + n.id, 'DELETE');
     notes = notes.filter(x => x.id !== n.id); d.hidePopover(); render();
   };
@@ -645,12 +646,10 @@ $('#f').onsubmit = e => {
 $('#quick').onclick = runQuick;
 // the button itself shows what the pass for this passage cost, so the number does not vanish with the banner
 function quickLabel() { slot('#quick').set(notes.some(x => x.author === 'quick') ? '✨ ELI5 筆記 ✓' : '✨ 生成 ELI5 筆記'); $('#quickClear').hidden = !notes.some(x => x.author !== 'user'); }  // cost stays on the cards and the banner
-// delete every automatic note of the passage (ELI5, agent, references): first click arms, second deletes
-let clearArm = null;
+// delete every automatic note of the passage (ELI5, agent, references) after a native confirm
 $('#quickClear').onclick = async () => {
-  const b = $('#quickClear');
-  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = '確定刪除全部自動筆記？'; clearArm = setTimeout(() => { b.classList.remove('armed'); b.textContent = '🗑'; }, 4000); return; }
-  clearTimeout(clearArm); b.classList.remove('armed'); b.textContent = '🗑';
+  const n = notes.filter(x => x.author !== 'user').length;
+  if (!confirm(`確定刪除這段全部 ${n} 條自動筆記（ELI5、agent 標注、references）？\n手動筆記會保留。這個動作無法復原。`)) return;
   const r = await api('/api/notes/quick', 'DELETE');
   notes = notes.filter(x => x.author === 'user'); render(); quickLabel();
   banner(`✓ 已刪除 ${r.removed} 條自動筆記`, { spin: false, hideAfter: 3000 });
