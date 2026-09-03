@@ -92,11 +92,33 @@ async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int =
         _load()  # notes live per passage+version on disk; the previous passage was saved on its last change
         global _client_stale
         _client_stale = True  # the agent's history is about the old passage; the next turn starts a fresh session
+    if r.get("verses"):
+        NOTES_DIR.mkdir(parents=True, exist_ok=True)
+        _LAST_FILE().write_text(json.dumps({"book": book, "chapter": chapter, "start": start, "end": end, "version": version}, ensure_ascii=False))
     return r
+
+
+def _LAST_FILE() -> Path:
+    return NOTES_DIR / ".last-passage.json"
+
+
+async def _ensure_passage() -> bool:
+    """The passage is memory state and a server restart empties it while the page still shows it. Before anything that
+    depends on it (chat, ELI5, notes), reload the last passage the page asked for."""
+    if passage["reference"]:
+        return True
+    f = _LAST_FILE()
+    if f.is_file():
+        try:
+            await get_passage(**json.loads(f.read_text()))
+        except Exception as e:  # network or bad file: fall through to "no passage"
+            print("restore passage failed:", repr(e), file=sys.stderr)
+    return bool(passage["reference"])
 
 
 @app.get("/api/notes")
 async def list_notes():
+    await _ensure_passage()
     return notes
 
 
@@ -317,6 +339,9 @@ def _short(d: dict) -> str:
 
 async def run_turn(message: str) -> None:
     try:
+        if not await _ensure_passage():
+            await events.put({"type": "error", "text": "尚未載入經文：請先在上方載入一段經文再問"})
+            return
         c = await get_client()
         ctx = "\n".join(f"[{v['verse']}] {v['text']}" + "".join(f"\n    （譯註：{f['text']}）" for f in v.get("footnotes", [])) for v in passage["verses"])
         prompt = f"/bible-buddy {message}\n\n[目前畫面] {passage['reference']}（{passage['version']}）\n{ctx}"
@@ -417,6 +442,7 @@ def _verses_in(ref: str) -> list[str]:
 @app.get("/api/auto-notes/refs")
 async def auto_notes_refs():
     """Instant, verified: rows from bible-buddy's own reference tables that hit the loaded passage."""
+    await _ensure_passage()
     out = []
     for cells in _table_rows(REFS / "translation-bias.md"):
         if len(cells) < 5 or cells[3].startswith("Same as"):
@@ -531,6 +557,7 @@ ONE_PROMPT = """你是第一世紀猶太教背景的聖經學者。針對下面�
 async def auto_note_one(body: dict):
     """A model note for one selected phrase. Not cached: the user asked for exactly this one.
     With "replace": <id> it rewrites that note in place, told what the old one said."""
+    await _ensure_passage()
     verse, quote = str(body["verse"]), str(body["quote"]).strip()
     text = _verse_text(verse)
     i = text.find(quote)
@@ -571,6 +598,8 @@ async def auto_notes_quick_status(key: str | None = None):
 async def auto_notes_quick():
     """One cheap model pass per passage. Concurrent or repeated callers (a refreshed page) share the same Task.
     A failed pass is not cached: the next call starts a fresh Task, so the button doubles as retry."""
+    if not await _ensure_passage():
+        return {"error": "尚未載入經文"}
     key = f"{passage['reference']}|{passage['version']}"
     cached = key in _quick_cache
     if not cached:
