@@ -54,6 +54,10 @@ async def _lifespan(_app):
     """The page is the deliverable, so open it as soon as the server can serve it.
     uvicorn owns the port, not us: read it back off the command line (default 8765).
     BIBLE_BUDDY_NO_OPEN=1 for a headless run."""
+    if ref := os.environ.get("BIBLE_BUDDY_PASSAGE", "").strip():
+        # seeded before the browser opens, so the page's first fetch is the requested passage —
+        # no flash of whatever chapter this browser last had in localStorage
+        display.update(rev=1, ref=ref, version=os.environ.get("BIBLE_BUDDY_VERSION", "").strip() or "rcuv")
     if not os.environ.get("BIBLE_BUDDY_NO_OPEN"):
         port = "8765"
         if "--port" in sys.argv:

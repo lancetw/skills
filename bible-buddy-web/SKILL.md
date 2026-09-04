@@ -48,6 +48,17 @@ uv sync --directory {WEB}
 uv run --directory {WEB} uvicorn server:app --port 8765
 ```
 
+**The user named a passage** (`/bible-buddy-web 路加福音`)? Two cases, and neither is "launch and
+let them type it in":
+
+- Server not running yet → put it in the launch environment. The page then opens straight on that
+  passage; without this it opens on whatever the browser last read and flips a second later.
+  ```bash
+  BIBLE_BUDDY_PASSAGE='路加福音' uv run --directory {WEB} uvicorn server:app --port 8765
+  ```
+  `BIBLE_BUDDY_VERSION` sets the translation (default `rcuv`).
+- Server already running → `POST /api/display`, below.
+
 Run it **in the background** and leave it running — the page is the deliverable, and the
 agent turns it serves take minutes. The server opens the page in the default browser once it
 is ready; still give the user the URL (`http://127.0.0.1:8765`) in case the browser is not
@@ -80,7 +91,8 @@ curl -s -X POST http://127.0.0.1:8765/api/display \
 - `version` — `rcuv` / `lcc` / `bhs` / `nt`. Omit it to keep the one on screen; omit `ref` to
   change only the version.
 - The response echoes `rev`, a counter in server memory. `GET /api/display` reads it back.
-  A page opened *after* the command still obeys it, because rev survives until the server exits.
+  A page opened *after* the command still obeys it: the page asks `/api/display` before it falls
+  back to the passage in its own localStorage, so a pending command wins on first paint.
 
 The command changes the passage, which restarts the agent session and switches the notes file,
 exactly as if the user had pressed 載入.

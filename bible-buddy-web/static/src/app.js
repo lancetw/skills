@@ -35,6 +35,7 @@ function App() {
   const notesRef = useRef(notes); notesRef.current = notes;
   const parRef = useRef(par); parRef.current = par;
   const readerRef = useRef(null);
+  const seenRev = useRef(null);   // last /api/display rev this page has obeyed
   useFootnoteJump(readerRef);
 
   // ── banner ──────────────────────────────────────────────────────────────────
@@ -223,12 +224,26 @@ function App() {
     setNudge(n => n + 1);
   };
 
-  // a refresh must come back to the same passage, or it would switch the server's passage
-  // and drop the running quick pass
+  // A refresh must come back to the same passage, or it would switch the server's passage and drop the
+  // running quick pass — unless the CLI asked for something else (a launch argument, or a command sent
+  // while no page was open). Asking the server first is what keeps the old passage off the screen.
   useEffect(() => {
     const w = +local.get('chatW', 0);
     if (w) document.body.style.setProperty('--chat-w', w + 'px');
-    loadPassage(savedPassage?.ref ?? pref, savedPassage?.version ?? pver).then(() => chatRef.current.reattach());
+    (async () => {
+      let d = null;
+      try { d = await api('/api/display'); } catch {}
+      seenRev.current = d?.rev ?? null;
+      const ref = d?.ref || savedPassage?.ref || pref;
+      const version = (d?.ref ? d.version : savedPassage?.version) || pver;
+      if (d?.ref) {
+        setPref(ref);
+        setPver(version);
+        local.set('passage', JSON.stringify({ ref, version }));
+      }
+      await loadPassage(ref, version);
+      chatRef.current.reattach();
+    })();
   }, []);
 
   const submitPassage = () => {
@@ -238,8 +253,7 @@ function App() {
   };
 
   // Claude Code drives the page: POST /api/display bumps rev, and the next poll loads what it asked for.
-  // rev lives in server memory, so rev 0 (or an unchanged rev) means there is nothing to obey.
-  const seenRev = useRef(null);
+  // The boot effect already recorded the rev in force, so this only fires on commands sent since.
   useEffect(() => {
     const t = setInterval(async () => {
       let d;
