@@ -321,13 +321,8 @@ async def list_notes():
 @app.post("/api/notes")
 async def add_user_note(body: dict):
     note = {"id": uuid.uuid4().hex[:8], "author": "user", "kind": "personal", **body}
-    notes.append(note)
-    _save()
+    _add(note)
     return note
-
-
-def _find_note(nid: str) -> dict | None:
-    return next((n for n in notes if n["id"] == nid), None)
 
 
 @app.delete("/api/notes/quick")
@@ -349,26 +344,13 @@ async def delete_quick_notes():
 
 @app.put("/api/notes/{nid}")
 async def edit_note(nid: str, body: dict):
-    """Works on any note, auto or manual: the anchor stays, only label/body/kind change."""
-    n = _find_note(nid)
-    if not n:
-        return {"error": "not found"}
-    for k in ("label", "body", "kind", "doodle"):
-        if k in body:
-            n[k] = _short_label(body[k]) if k == "label" else body[k]
-    n["edited"] = True
-    _save()
-    return n
+    n = _edit(nid, edited=True, **{k: body[k] for k in ("label", "body", "kind", "doodle") if k in body})
+    return n or {"error": "not found"}
 
 
 @app.delete("/api/notes/{nid}")
 async def delete_note(nid: str):
-    n = _find_note(nid)
-    if n:
-        notes.remove(n)
-        hidden.add(nid)
-        _save()
-    return {"ok": n is not None}
+    return {"ok": _drop(nid)}
 
 
 NOTES_DIR = detect_desktop("bible-buddy") / "notes"  # autosave: one JSON per passage+version
@@ -423,28 +405,106 @@ def _load() -> None:
                 n["pass_cost"] = d.get("quick_cost")
 
 
+# ── the note ledger ───────────────────────────────────────────────────────────
+# Every note on the passage is minted, kept and persisted here. Four things had to happen in the
+# right order for a note to be correct — anchor the quote, clip the label, check the enums, land on
+# disk — and each of the five note sources used to write all four out again. One of them forgetting
+# the save lost the note silently, which is why they go through one interface now.
+
+
+def _verse_text(verse: str) -> str:
+    v = next((x for x in passage["verses"] if str(x["verse"]) == str(verse)), None)
+    return v["text"] if v else ""
+
+
+def _one_of(v, allowed, fallback):
+    """A model picks these; a name outside the vocabulary must not reach the page."""
+    return v if v in allowed else fallback
+
+
+def _anchor(verse: str, quote: str) -> dict | None:
+    """Where `quote` sits in the verse, or None if it is not there — a wrong anchor underlines the
+    wrong words, so a note the page cannot place becomes a verse-level chip instead."""
+    i = _verse_text(verse).find(quote) if quote else -1
+    return None if i < 0 else {"start": i, "end": i + len(quote)}
+
+
+def _mint(verse, quote: str = "", *, id: str | None = None, label: str = "", **fields) -> dict:
+    """A note ready to be added. `id` is given only by the sources that derive a stable one (the
+    reference tables, the cached ELI5 pass) so a note deleted once cannot come back under a new id."""
+    return {
+        "id": id or uuid.uuid4().hex[:8],
+        "verse": str(verse),
+        "anchor": _anchor(verse, quote),
+        "label": _short_label(label or quote),
+        "kind": _one_of(fields.pop("kind", None), KINDS, "lexical"),
+        **({"doodle": _one_of(fields.pop("doodle", None), DOODLES, None)} if "doodle" in fields else {}),
+        **fields,
+    }
+
+
+def _add(note: dict) -> dict | None:
+    """Add a note and persist. None means it was already there or the reader deleted it — the auto
+    passes are cached and re-offer their notes on every load."""
+    if note["id"] in hidden or any(n["id"] == note["id"] for n in notes):
+        return None
+    notes.append(note)
+    _save()   # one small file per passage; a write per note is cheaper than a note lost to a missed save
+    return note
+
+
+def _find_note(nid: str) -> dict | None:
+    return next((n for n in notes if n["id"] == nid), None)
+
+
+def _edit(nid: str, **patch) -> dict | None:
+    """Change fields on a note in place, on any note, auto or manual. The anchor stays: the note
+    still points at the same words. A caller passing None for a field leaves it as it was."""
+    n = _find_note(nid)
+    if n is None:
+        return None
+    if "label" in patch:
+        patch["label"] = _short_label(patch["label"])
+    if "kind" in patch:
+        patch["kind"] = _one_of(patch["kind"], KINDS, n["kind"])
+    if "doodle" in patch:
+        patch["doodle"] = _one_of(patch["doodle"], DOODLES, n.get("doodle"))
+    n.update(patch)
+    _save()
+    return n
+
+
+def _replace(old: dict, note: dict) -> dict:
+    """A rewrite takes the old note's place and hides its id, so a cached pass cannot put the old one
+    back beside the new one."""
+    notes[notes.index(old)] = note
+    hidden.add(old["id"])
+    _save()
+    return note
+
+
+def _drop(nid: str) -> bool:
+    """Remove a note and remember the id, so a cached pass cannot resurrect it."""
+    n = _find_note(nid)
+    if not n:
+        return False
+    notes.remove(n)
+    hidden.add(nid)
+    _save()
+    return True
+
+
 @tool(
     "add_annotation",
     "在網頁經文閱讀區加一條筆記。quote 必須是 [目前畫面] 中該節經文的逐字子字串；label 20 個中文字寬（拉丁音譯算半形，兩個字母當一個中文字）；長分析放 body。kind: lexical|history|misread|crossref",
     {"verse": int, "quote": str, "label": str, "body": str, "kind": str},
 )
 async def add_annotation(args: dict) -> dict:
-    v = next((x for x in passage["verses"] if str(x["verse"]) == str(args["verse"])), None)
-    text = v["text"] if v else ""
-    i = text.find(args["quote"])
-    note = {
-        "id": uuid.uuid4().hex[:8],
-        "verse": str(args["verse"]),
-        "anchor": None if i < 0 else {"start": i, "end": i + len(args["quote"])},
-        "label": _short_label(args["label"]),
-        "body": args.get("body", ""),
-        "kind": args.get("kind", "lexical"),
-        "author": "agent",
-    }
-    notes.append(note)
-    _save()
+    note = _mint(args["verse"], args["quote"], label=args["label"],
+                 body=args.get("body", ""), kind=args.get("kind"), author="agent")
+    _add(note)
     await events.put({"type": "note", "note": note})
-    miss = "" if i >= 0 else "（quote 對不上畫面經文，已改為節層級筆記）"
+    miss = "" if note["anchor"] else "（quote 對不上畫面經文，已改為節層級筆記）"
     return {"content": [{"type": "text", "text": f"已加入筆記 {note['id']} {miss}"}]}
 
 
@@ -454,15 +514,13 @@ async def add_annotation(args: dict) -> dict:
     {"id": str, "label": str, "body": str, "kind": str},
 )
 async def update_annotation(args: dict) -> dict:
-    n = _find_note(str(args["id"]))
-    if not n:
+    old = _find_note(str(args["id"]))
+    if old is None:
         return {"content": [{"type": "text", "text": f"找不到筆記 {args['id']}"}], "is_error": True}
-    body = str(args.get("body", n.get("body", "")))
+    body = str(args.get("body", old.get("body", "")))
     if len(body) > 300:  # the tool asks for 1–3 sentences; a runaway body is cut rather than swallowing the card
         body = body[:300].rstrip() + "…"
-    n.update(label=_short_label(args["label"]), body=body,
-             kind=args["kind"] if args.get("kind") in KINDS else n["kind"], author="agent", verified=True)
-    _save()
+    n = _edit(old["id"], label=args["label"], body=body, kind=args.get("kind"), author="agent", verified=True)
     await events.put({"type": "note", "note": n})
     return {"content": [{"type": "text", "text": f"已更新筆記 {n['id']}"}]}
 
@@ -609,18 +667,6 @@ def _note_id(*parts: str) -> str:
     return hashlib.sha1("|".join(parts).encode()).hexdigest()[:8]
 
 
-def _verse_text(verse: str) -> str:
-    v = next((x for x in passage["verses"] if str(x["verse"]) == str(verse)), None)
-    return v["text"] if v else ""
-
-
-def _add(note: dict) -> dict | None:
-    if note["id"] in hidden or any(n["id"] == note["id"] for n in notes):
-        return None
-    notes.append(note)
-    return note
-
-
 def _table_rows(path: Path):
     for line in path.read_text().splitlines():
         if not line.startswith("| ") or line.startswith("| Scripture") or line.startswith("|---"):
@@ -689,15 +735,13 @@ async def auto_notes_refs():
         for v in _verses_in(ref):
             text = _verse_text(v)
             if phrase:                                     # a bias row underlines the Chinese phrase it is about
-                i = text.find(phrase)
-                anchor = None if i < 0 else {"start": i, "end": i + len(phrase)}
+                anchor = _anchor(v, phrase)
             else:                                          # a misread row hangs its arrow off the first clause
                 head = re.split(r"[，：「。；]", text)[0][:8]
                 anchor = {"start": 0, "end": len(head)} if head else None
             note = {**fields, **zh.get(fields["id"], {}), "verse": v, "anchor": anchor}
             if _add(note):
                 out.append(note)
-    _save()
     return out
 
 
@@ -798,9 +842,7 @@ async def auto_note_one(body: dict):
     With "replace": <id> it rewrites that note in place, told what the old one said."""
     await _ensure_passage()
     verse, quote = str(body["verse"]), str(body["quote"]).strip()
-    text = _verse_text(verse)
-    i = text.find(quote)
-    if not quote or i < 0:
+    if _anchor(verse, quote) is None:
         return {"error": "選取的字不在該節經文裡"}
     old = _find_note(str(body["replace"])) if body.get("replace") else None
     ctx = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" for v in passage["verses"])
@@ -815,16 +857,10 @@ async def auto_note_one(body: dict):
     except Exception as e:
         print("one-note failed:", verse, quote, repr(e), file=sys.stderr)
         return {"error": str(e)}
-    note = {"id": uuid.uuid4().hex[:8], "verse": verse, "anchor": {"start": i, "end": i + len(quote)},
-            "label": _short_label(r.get("label", quote)), "body": r.get("body", ""),
-            "kind": r["kind"] if r.get("kind") in KINDS else "lexical", "author": "quick", "cost": cost,
-            "doodle": r.get("doodle") if r.get("doodle") in DOODLES else None, **({"style": "eli5"} if eli5 else {})}
-    if old and old in notes:
-        notes[notes.index(old)] = note
-        hidden.add(old["id"])  # a cached pass must not bring the old one back beside the rewrite
-    else:
-        notes.append(note)
-    _save()
+    note = _mint(verse, quote, label=r.get("label", quote), body=r.get("body", ""),
+                 kind=r.get("kind"), doodle=r.get("doodle"), author="quick", cost=cost,
+                 **({"style": "eli5"} if eli5 else {}))
+    _replace(old, note) if old and old in notes else _add(note)
     return note
 
 
@@ -855,15 +891,10 @@ async def auto_notes_quick():
         return []  # the passage changed while the pass ran; its notes belong to the other file, not this one
     out = []
     for n in _quick_cache[key]:
-        text = _verse_text(n["verse"])
-        i = text.find(n["quote"])
-        note = {"id": _note_id("quick", key, str(n["verse"]), n["quote"]), "verse": str(n["verse"]),
-                "anchor": None if i < 0 else {"start": i, "end": i + len(n["quote"])},
-                "label": _short_label(n["label"]), "body": n["body"],  # author=quick is what the UI flags as unverified
-                "kind": n["kind"] if n["kind"] in KINDS else "lexical", "author": "quick", "style": "eli5",
-                "doodle": n.get("doodle") if n.get("doodle") in DOODLES else None,
-                "pass_cost": _quick_cost.get(key)}  # the whole pass's USD, carried on each of its notes
+        note = _mint(n["verse"], n["quote"], id=_note_id("quick", key, str(n["verse"]), n["quote"]),
+                     label=n["label"], body=n["body"], kind=n["kind"], doodle=n.get("doodle"),
+                     author="quick",   # what the UI flags as unverified
+                     style="eli5", pass_cost=_quick_cost.get(key))  # the whole pass's USD, carried on each of its notes
         if _add(note):
             out.append(note)
-    _save()
     return {"notes": out, "cost": _quick_cost.get(key), "cached": cached}
