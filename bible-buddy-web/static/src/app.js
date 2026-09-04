@@ -237,6 +237,24 @@ function App() {
     loadPassage(pref.trim(), pver);
   };
 
+  // Claude Code drives the page: POST /api/display bumps rev, and the next poll loads what it asked for.
+  // rev lives in server memory, so rev 0 (or an unchanged rev) means there is nothing to obey.
+  const seenRev = useRef(null);
+  useEffect(() => {
+    const t = setInterval(async () => {
+      let d;
+      try { d = await api('/api/display'); } catch { return; }
+      if (!d?.ref || d.rev === seenRev.current) return;
+      seenRev.current = d.rev;
+      setPref(d.ref);
+      setPver(d.version);
+      setLoadLabel('載入中…');
+      local.set('passage', JSON.stringify({ ref: d.ref, version: d.version }));   // a refresh stays where it was sent
+      loadPassage(d.ref, d.version);
+    }, 2000);
+    return () => clearInterval(t);
+  }, [loadPassage]);
+
   const hasQuick = notes.some(x => x.author === 'quick');
   const hasAuto = notes.some(x => x.author !== 'user');
 
