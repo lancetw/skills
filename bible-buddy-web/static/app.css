@@ -77,6 +77,8 @@
   h1 { font-family:'Noto Serif TC', serif; font-size:1.05rem; font-weight:600; color:var(--ink-2); margin:0 0 14px; }
   .verse { position:relative; font-family:var(--serif); font-size:1.15rem; line-height:2.1; padding:6px 0; }
   .verse.has-notes { padding-bottom:78px; }
+  .verse.merged { padding:2px 0; line-height:1.8; }  /* 併節：只留節號與一個小記號 */
+  .verse.merged .mg { font-family:var(--hand); font-size:.8rem; color:var(--margin); }
   .verse .n { position:absolute; left:-52px; top:6px; width:32px; text-align:right; font-family:var(--hand); font-size:.8rem; color:var(--margin); line-height:2.1; }
   .ann { --ann-font:var(--hand); cursor:pointer; }
   .chips { line-height:1.4; margin-top:2px; font-family:var(--hand); }
