@@ -198,7 +198,7 @@ function App() {
   // ── chrome ──────────────────────────────────────────────────────────────────
   useEffect(() => { document.documentElement.dataset.theme = theme; local.set('theme', theme); }, [theme]);
   useEffect(() => { document.getElementById('root').classList.toggle('chat-hidden', !chatOn); }, [chatOn]);
-  useSelection(versesRef, setSel);
+  useSelection(versesRef, setSel, quickBusy);
 
   const onGutterDown = e => {
     const g = e.currentTarget;
