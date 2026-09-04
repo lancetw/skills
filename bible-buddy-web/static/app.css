@@ -87,7 +87,7 @@
   /* AI note in flight: a dashed chip in the verse's own chip row, where the note will land; red with actions on failure */
   .chip.pending, .chip.err { display:inline-flex; align-items:center; gap:5px; cursor:default; opacity:1; }
   .chip.pending { --c:var(--ink-2); border-style:dashed; }
-  .chip.pending .spin { width:10px; height:10px; border-width:1.5px; }
+  .chip.pending .spin { width:10px; height:10px; border-width:1.5px; margin-right:0; }  /* the chip is a flex row with its own gap */
   .chip.pending .t { font-variant-numeric:tabular-nums; opacity:.7; }
   .chip.err { --c:#c45a38; }
   .chip.err button { font-size:.75rem; padding:0 5px; border-color:transparent; background:transparent; color:inherit; }
@@ -212,7 +212,8 @@
   #banner .icon { color:var(--ink-2); }
   #banner.ok { border-color:#2f8f5b; } #banner.ok .icon { color:#2f8f5b; }
   #banner.err { border-color:#c45a38; } #banner.err .icon { color:#c45a38; }
-  .spin { width:14px; height:14px; border:2px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; flex:none; }
+  /* inline-block, not inline: outside a flex row (.lex, .inter) an inline span ignores the size and the circle collapses to a sliver against the label */
+  .spin { display:inline-block; vertical-align:-2px; margin-right:6px; width:14px; height:14px; border:2px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; flex:none; }
   @keyframes spin { to { transform:rotate(360deg); } }
   /* thinking-orbs paints a canvas and sizes itself; only 20 and 64 have presets, so 20 it is everywhere */
   .orb { flex:none; }
