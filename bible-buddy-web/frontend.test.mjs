@@ -184,10 +184,6 @@ test('nothing at all still says something', () => {
   assert.ok(apiErrorText('').length > 0);
 });
 
-// ── one list of notes, one set of rules ───────────────────────────────────────
-// Seven call sites each wrote their own "merge a note into the list", with different answers to the
-// same question, and one of them was another module holding App's raw state setter.
-
 // ── what the reader typed ─────────────────────────────────────────────────────
 // A reference the parser misreads loads the wrong passage silently, so each shape is pinned.
 
@@ -216,47 +212,175 @@ test('nothing typed is not a reference', () => {
   assert.equal(parseRef(null), null);
 });
 
-const L = await import('./static/src/notelist.js');
+// ── one list of notes, one set of rules, one failure policy ───────────────────
+// The rules were tested here on their own while the verb that earns each one, and what happens when
+// that verb fails, stayed at six call sites in two files. That is where the bug was: 刪除 in the note
+// card dropped the note whether or not the server had agreed, so a failed delete disappeared and came
+// back on the next load. These drive the store, not the rules, so the pairing is what is pinned.
+
+const { makeNotes } = await import('./static/src/notes-store.js');
 
 const n = (id, extra = {}) => ({ id, verse: '4', label: id, ...extra });
 
-test('a note the list has not seen is appended', () => {
-  assert.deepEqual(L.upsert([n('a')], n('b')).map(x => x.id), ['a', 'b']);
+// A store over a recorded server. `routes` is keyed "METHOD url", or just the url for a GET.
+const desk = (list, routes = {}) => {
+  const calls = [];
+  let cur = list;
+  const api = async (url, method = 'GET', body) => {
+    calls.push(`${method} ${url}`);
+    const r = routes[`${method} ${url}`] ?? routes[url];
+    return typeof r === 'function' ? r(body) : r;
+  };
+  return { ...makeNotes({ api, apply: fn => { cur = fn(cur); } }), calls, list: () => cur };
+};
+
+// ── deleting ──────────────────────────────────────────────────────────────────
+
+test('a delete the server never answered keeps the note on screen', async () => {
+  // the note is still on the server, so taking it off the screen only hides it until the next load
+  const d = desk([n('a'), n('b')], { 'DELETE /api/notes/a': { error: '連線失敗：network' } });
+  const r = await d.remove('a');
+  assert.match(r.error, /連線失敗/);
+  assert.deepEqual(d.list().map(x => x.id), ['a', 'b']);
 });
 
-test('a note the list already has is replaced in place, not duplicated', () => {
-  const out = L.upsert([n('a'), n('b')], n('a', { label: 'newer' }));
-  assert.deepEqual(out.map(x => x.id), ['a', 'b'], 'order is kept, so an arrow does not jump');
-  assert.equal(out[0].label, 'newer');
+test('a delete the server confirms takes the note off screen', async () => {
+  const d = desk([n('a'), n('b')], { 'DELETE /api/notes/a': { ok: true } });
+  assert.deepEqual(await d.remove('a'), { ok: true });
+  assert.deepEqual(d.list().map(x => x.id), ['b']);
 });
 
-test('an automatic pass adds only what is new', () => {
-  const out = L.mergeNew([n('a')], [n('a', { label: 'stale' }), n('b')]);
-  assert.deepEqual(out.map(x => x.id), ['a', 'b']);
-  assert.equal(out[0].label, 'a', 'a note already on screen is not overwritten by a cached pass');
+test('a note the server no longer has leaves the screen too', async () => {
+  // ok:false is "already gone", not "the request failed": keeping it would show a note nobody holds
+  const d = desk([n('a')], { 'DELETE /api/notes/a': { ok: false } });
+  assert.ok(!(await d.remove('a')).error);
+  assert.deepEqual(d.list(), []);
 });
 
-test('a rewrite takes the old note position', () => {
-  const out = L.replaceOrAdd([n('a'), n('b')], 'a', n('c'));
-  assert.deepEqual(out.map(x => x.id), ['c', 'b']);
-});
-
-test('a fresh note with nothing to replace is appended', () => {
-  assert.deepEqual(L.replaceOrAdd([n('a')], null, n('c')).map(x => x.id), ['a', 'c']);
-});
-
-test('removing a note leaves the rest alone', () => {
-  assert.deepEqual(L.without([n('a'), n('b')], 'a').map(x => x.id), ['b']);
-});
-
-test('clearing automatic notes keeps only what the reader wrote', () => {
+test('clearing automatic notes keeps only what the reader wrote', async () => {
   const list = [n('a', { author: 'quick' }), n('b', { author: 'user' }), n('c', { author: 'refs' }), n('d', { author: 'agent' })];
-  assert.deepEqual(L.onlyMine(list).map(x => x.id), ['b']);
+  const d = desk(list, { 'DELETE /api/notes/quick': { ok: true, removed: 3 } });
+  assert.deepEqual(await d.clearAuto(), { removed: 3 });
+  assert.deepEqual(d.list().map(x => x.id), ['b']);
 });
 
-test('every rule returns a new list, so React sees the change', () => {
-  const list = [n('a')];
-  for (const out of [L.upsert(list, n('b')), L.mergeNew(list, []), L.replaceOrAdd(list, 'a', n('c')), L.without(list, 'a'), L.onlyMine(list)]) {
-    assert.notEqual(out, list);
+test('a clear the server refused keeps every note', async () => {
+  const d = desk([n('a', { author: 'quick' })], { 'DELETE /api/notes/quick': { error: '伺服器錯誤 500' } });
+  assert.ok((await d.clearAuto()).error);
+  assert.deepEqual(d.list().map(x => x.id), ['a']);
+});
+
+// ── saving ────────────────────────────────────────────────────────────────────
+
+test('an edit the server refused keeps the note as it was', async () => {
+  const d = desk([n('a', { label: 'old' })], { 'PUT /api/notes/a': { error: 'not found' } });
+  assert.equal((await d.save(n('a'), { label: 'new' })).error, 'not found');
+  assert.equal(d.list()[0].label, 'old');
+});
+
+test('an edit lands in the old note position, as the server returned it', async () => {
+  const saved = n('a', { label: 'server said this' });
+  const d = desk([n('a'), n('b')], { 'PUT /api/notes/a': saved });
+  await d.save(n('a'), { label: 'what the form said' });
+  assert.deepEqual(d.list().map(x => x.id), ['a', 'b'], 'order is kept, so the arrow does not jump');
+  assert.equal(d.list()[0].label, 'server said this', 'the saved note lands, not the patch');
+});
+
+test('a note with no id yet is created and appended', async () => {
+  const d = desk([n('a')], { 'POST /api/notes': body => ({ ...body, id: 'fresh' }) });
+  await d.save({ verse: '4' }, { label: 'mine' });
+  assert.deepEqual(d.list().map(x => x.id), ['a', 'fresh']);
+  assert.deepEqual(d.calls, ['POST /api/notes']);
+});
+
+test('a save answered with something that is not a note is a failure', async () => {
+  const d = desk([n('a')], { 'PUT /api/notes/a': { removed: 1 } });
+  assert.ok((await d.save(n('a'), { label: 'x' })).error);
+  assert.equal(d.list()[0].label, 'a');
+});
+
+// ── automatic passes ──────────────────────────────────────────────────────────
+
+test('a pass adds only what is new', async () => {
+  const d = desk([n('a')], { '/api/auto-notes/refs': [n('a', { label: 'stale' }), n('b')] });
+  assert.equal((await d.applyPass('/api/auto-notes/refs')).added, 2);
+  assert.deepEqual(d.list().map(x => x.id), ['a', 'b']);
+  assert.equal(d.list()[0].label, 'a', 'a note already on screen is not overwritten by a cached pass');
+});
+
+test('the quick pass wraps its list, and it is still merged', async () => {
+  const d = desk([], { '/api/auto-notes/quick': { notes: [n('a')], cost: 0.4, cached: true } });
+  assert.deepEqual(await d.applyPass('/api/auto-notes/quick'), { added: 1, cached: true, cost: 0.4 });
+  assert.deepEqual(d.list().map(x => x.id), ['a']);
+});
+
+test('a pass that failed does not touch the list', async () => {
+  const d = desk([n('a')], { '/api/auto-notes/quick': { error: 'API Error: 529 Overloaded' } });
+  assert.match((await d.applyPass('/api/auto-notes/quick')).error, /529/);
+  assert.deepEqual(d.list().map(x => x.id), ['a']);
+});
+
+// ── notes that arrive without being asked for ─────────────────────────────────
+
+test('an agent note replaces its own earlier version in place', () => {
+  const d = desk([n('a'), n('b')]);
+  d.applyServer(n('a', { label: 'verified' }));
+  assert.deepEqual(d.list().map(x => x.id), ['a', 'b']);
+  assert.equal(d.list()[0].label, 'verified');
+});
+
+test('an agent note the list has not seen is appended', () => {
+  const d = desk([n('a')]);
+  d.applyServer(n('b'));
+  assert.deepEqual(d.list().map(x => x.id), ['a', 'b']);
+});
+
+test('a rewritten selection note takes the old one position', () => {
+  const d = desk([n('a'), n('b')]);
+  d.applyOne(n('c'), 'a');
+  assert.deepEqual(d.list().map(x => x.id), ['c', 'b']);
+});
+
+test('a selection note with nothing to replace is appended', () => {
+  const d = desk([n('a')]);
+  d.applyOne(n('c'), undefined);
+  assert.deepEqual(d.list().map(x => x.id), ['a', 'c']);
+});
+
+// ── switching passage ─────────────────────────────────────────────────────────
+
+test('a refresh replaces the list with what the server holds', async () => {
+  const d = desk([n('old')], { '/api/notes': [n('a'), n('b')] });
+  assert.deepEqual(await d.refresh(), { count: 2 });
+  assert.deepEqual(d.list().map(x => x.id), ['a', 'b']);
+});
+
+test('a refresh that failed still clears the previous passage notes', async () => {
+  // they belong to verses that are no longer on screen; leaving them would anchor them onto new text
+  const d = desk([n('old')], { '/api/notes': { error: '伺服器錯誤 500' } });
+  assert.ok((await d.refresh()).error);
+  assert.deepEqual(d.list(), []);
+});
+
+// ── React only re-renders on a new list ───────────────────────────────────────
+
+test('every change hands back a new list, so React sees it', async () => {
+  const start = [n('a', { author: 'quick' })];
+  const routes = {
+    '/api/notes': [n('z')],
+    '/api/auto-notes/refs': [n('b')],
+    'PUT /api/notes/a': n('a', { label: 'new' }),
+    'DELETE /api/notes/a': { ok: true },
+    'DELETE /api/notes/quick': { ok: true, removed: 1 },
+  };
+  for (const act of [
+    d => d.refresh(), d => d.applyPass('/api/auto-notes/refs'), d => d.save(n('a'), {}),
+    d => d.remove('a'), d => d.clearAuto(),
+    async d => d.applyServer(n('b')), async d => d.applyOne(n('c'), 'a'),
+  ]) {
+    const d = desk(start, routes);
+    await act(d);
+    assert.notEqual(d.list(), start);
   }
+  assert.deepEqual(start.map(x => x.id), ['a'], 'and none of them mutated the list they were given');
 });
