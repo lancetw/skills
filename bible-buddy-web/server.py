@@ -119,11 +119,25 @@ def _split_footnotes(text: str) -> tuple[str, list[dict], list[tuple[int, int]]]
     return clean + text[last:], fns, cuts
 
 
+# A verse whose wording a version folded into an earlier verse (和合本2010 路 1:2-3, 太 19:5) comes back
+# from FHL as the single letter "a". It is a marker, not text — never render or quote it.
+MERGED_MARK = "a"
+MERGED_NOTE = "（本節經文併入前一節，此版本無獨立內容）"
+
+
+def _normalize(v: dict) -> dict:
+    if v["text"].strip() == MERGED_MARK:
+        v.update(text="", footnotes=[], cuts=[], merged=True)
+    else:
+        v["text"], v["footnotes"], v["cuts"] = _split_footnotes(v["text"])
+    return v
+
+
 @app.get("/api/passage")
 async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int = 10, end: int = 17, version: str = "rcuv"):
     r = await asyncio.to_thread(fetch, book, chapter, start, end, version)
     for v in r.get("verses", []):
-        v["text"], v["footnotes"], v["cuts"] = _split_footnotes(v["text"])
+        _normalize(v)
     if r.get("verses"):  # the page asks for end=200 to mean "to the end": that reads "約翰福音 1"; an explicit end is clamped
         last = int(r["verses"][-1]["verse"])
         head = r["reference"].split(":")[0]
@@ -254,7 +268,7 @@ async def side(book: str, chapter: int, start: int = 1, end: int = 200, version:
         version = "bhs" if (_bid(book) or 1) <= 39 else "fhlwh"
     r = await asyncio.to_thread(fetch, book, chapter, start, end, version)
     for v in r.get("verses", []):
-        v["text"] = _split_footnotes(v["text"])[0]
+        _normalize(v)
     return {"version": r.get("version", version), "code": version, "verses": r.get("verses", []), "error": r.get("error")}
 
 
@@ -480,7 +494,7 @@ async def run_turn(message: str) -> None:
             await events.put({"type": "error", "text": "尚未載入經文：請先在上方載入一段經文再問"})
             return
         c = await get_client()
-        ctx = "\n".join(f"[{v['verse']}] {v['text']}" + "".join(f"\n    （譯註：{f['text']}）" for f in v.get("footnotes", [])) for v in passage["verses"])
+        ctx = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" + "".join(f"\n    （譯註：{f['text']}）" for f in v.get("footnotes", [])) for v in passage["verses"])
         ctx = ctx.replace("<<<PASSAGE", "＜＜＜PASSAGE").replace(">>>", "＞＞＞")  # verse text must not be able to close its own fence
         prompt = (f"/bible-buddy {message}\n\n[目前畫面] {passage['reference']}（{passage['version']}）\n"
                   f"<<<PASSAGE\n{ctx}\n>>>")  # fenced: the system prompt tells the agent this block is data, not instructions
@@ -732,7 +746,7 @@ async def _structured(prompt: str, schema: dict, key: str) -> tuple[dict, float 
 
 async def _quick_run(key: str, ref: str, version: str, verses: list[dict]) -> list[dict]:
     """The model pass itself. Runs as its own Task so a page refresh (client disconnect) cannot cancel it."""
-    text = "\n".join(f"[{v['verse']}] {v['text']}" for v in verses)
+    text = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" for v in verses)
     data, cost = await _structured(QUICK_PROMPT.format(ref=ref, version=version, text=text), QUICK_SCHEMA, key)
     _quick_cost[key] = cost
     return data.get("notes", [])
@@ -766,7 +780,7 @@ async def auto_note_one(body: dict):
     if not quote or i < 0:
         return {"error": "選取的字不在該節經文裡"}
     old = _find_note(str(body["replace"])) if body.get("replace") else None
-    ctx = "\n".join(f"[{v['verse']}] {v['text']}" for v in passage["verses"])
+    ctx = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" for v in passage["verses"])
     prompt = ONE_PROMPT.format(verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx)
     eli5 = bool(body.get("eli5")) or (old or {}).get("style") == "eli5"  # a rewrite keeps the note's register
     if eli5:

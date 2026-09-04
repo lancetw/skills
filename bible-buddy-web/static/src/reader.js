@@ -158,6 +158,14 @@ export function Verses({ verses, notes, pending, par, inter, handlers }) {
   return html`
     <div id="verses" ref=${box} className=${par.on ? 'par' : ''}>
       ${verses.map(v => {
+        // 併節：這一節的字被譯本併進前一節（FHL 回傳 "a"）。留一行維持節號與對照欄的對齊，但沒有可標註的經文
+        if (v.merged) return html`
+          <${Fragment} key=${v.verse}>
+            <div className="verse merged" data-verse=${v.verse}>
+              <span className="n">${v.verse}</span><span className="mg">併入上節</span>
+            </div>
+            ${par.on ? html`<div className="parv" dir=${par.rtl ? 'rtl' : undefined}>${par.map[v.verse] || ''}</div>` : null}
+          <//>`;
         const { arrows, chips } = arrange(v, notes, demoted);
         const pend = Object.values(pending).filter(p => p.verse === v.verse);
         // every note on this verse that picked a doodle, stacked down the margin in note order
