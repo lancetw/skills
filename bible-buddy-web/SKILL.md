@@ -67,6 +67,25 @@ fetched from FHL. `以賽亞書 7` (no verses) loads the whole chapter. Translat
 split out of the verse text into a 譯註 list, and note anchors are offsets into the *stripped*
 text.
 
+**🔍 全本搜尋** — keyword search across all 66 books (FHL `se.php`), in whichever version the bar
+has selected. A hit loads that whole chapter and scrolls to the verse. The search index carries
+some versions in their Strong's-number edition, so hit previews are stripped before display;
+an original-language version finds nothing for a Chinese keyword.
+
+**原文** — two views, both off by default:
+
+- **「原」 in the verse gutter** expands FHL's word analysis (`qp.php`, one verse per call — a
+  whole chapter errors out) under that verse: the original verse, every word with its 字形分析
+  and 中文字義, and a 直譯 line. Hebrew renders RTL, Greek LTR. Clicking a word opens its Strong's
+  entry (`sd.php`) in the note card — transliteration, 欽定本 counts, gloss tree. Plain text,
+  escaped, never run through the markdown renderer.
+- **⇄ 雙欄對照** puts a second version in a right-hand column, verse-aligned. `原文` picks BHS or
+  NT 希臘文 by testament. It reads through `/api/side`, which deliberately does **not** touch the
+  server's passage state or restart the agent session the way `/api/passage` does.
+
+Both survive `render()` (which rebuilds `#verses` on every note change) because the open verses
+and their fetched data live in module state, not in the DOM.
+
 **Notes land on the words.** Four sources, each tagged on its card:
 
 | Author | Where it comes from | Cost |
