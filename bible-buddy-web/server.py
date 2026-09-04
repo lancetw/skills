@@ -5,8 +5,6 @@ Run:  uv run uvicorn server:app --port 8765   then open http://127.0.0.1:8765
 """
 import asyncio
 import hashlib
-import shutil
-import subprocess
 import json
 import os
 import re
@@ -27,7 +25,7 @@ from claude_agent_sdk import (
     tool,
 )
 from fastapi import FastAPI
-from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 # A package-manager guard (pmg) launches `uv run` behind a short-lived loopback proxy and exports it
 # (HTTPS_PROXY=http://127.0.0.1:NNNNN, NODE_USE_ENV_PROXY=1). The Claude CLI we spawn would inherit
@@ -175,8 +173,7 @@ async def delete_note(nid: str):
     return {"ok": n is not None}
 
 
-STUDY_DIR = detect_desktop("bible-buddy")  # where the skill auto-saves its .md reports
-NOTES_DIR = STUDY_DIR / "notes"           # autosave: one JSON per passage+version, next to the reports
+NOTES_DIR = detect_desktop("bible-buddy") / "notes"  # autosave: one JSON per passage+version
 
 
 def _key() -> str:
@@ -223,39 +220,6 @@ def _load() -> None:
         for n in notes:  # files from before pass_cost existed
             if n.get("author") == "quick" and "pass_cost" not in n and "cost" not in n:
                 n["pass_cost"] = d.get("quick_cost")
-
-
-@app.get("/api/studies")
-async def list_studies():
-    files = sorted(STUDY_DIR.glob("*.md"), key=lambda f: f.stat().st_mtime, reverse=True)[:30]
-    return [{"name": f.name, "path": str(f)} for f in files]
-
-
-def _study_file(path: str) -> Path | None:
-    p = Path(path).expanduser().resolve()
-    return p if p.suffix == ".md" and p.parent == STUDY_DIR.resolve() and p.is_file() else None
-
-
-@app.get("/api/study", response_class=PlainTextResponse)
-async def read_study(path: str):
-    p = _study_file(path)
-    return p.read_text() if p else "not allowed"
-
-
-@app.delete("/api/study")
-async def delete_study(path: str):
-    """Move the report (and its .html twin) to the Trash, never rm: a study is minutes of agent work."""
-    p = _study_file(path)
-    if not p:
-        return {"ok": False, "error": "not allowed"}
-    targets = [f for f in (p, p.with_suffix(".html")) if f.exists()]
-    if shutil.which("trash"):
-        subprocess.run(["trash", *map(str, targets)], check=True)
-    else:  # ponytail: no trash CLI → park under .trash/ next to the reports
-        bin_ = STUDY_DIR / ".trash"; bin_.mkdir(exist_ok=True)
-        for f in targets:
-            f.rename(bin_ / f.name)
-    return {"ok": True, "trashed": [f.name for f in targets]}
 
 
 @tool(
@@ -586,58 +550,6 @@ ONE_PROMPT = """你是第一世紀猶太教背景的聖經學者。針對下面�
 
 {ref}（{version}）
 {text}"""
-
-
-STUDY_RULES = """- 寫給有背景的讀者：第一世紀猶太教學者的口吻，用語精確；原文字義類 label 寫成「希伯來/希臘字 音譯＝意思」。"""
-
-VERSION_PROMPT = """你是第一世紀猶太教背景的聖經學者。把下面這條關於 {ref} 第 {verse} 節{quote}的筆記改寫成{target}版本。
-規則：
-- 保持同樣的論點與事實，不要新增未經驗證的主張；原本標「（待驗證）」的維持。
-- label：台灣繁體中文，14 字以內。
-- body：2 到 3 句、120 字內。
-{rules}
-- kind 維持 {kind}。
-- 不要教會式應用，不要靈意化。
-
-原筆記：「{label}」：{body}
-
-經文：
-{text}"""
-
-
-def _style_of(n: dict) -> str:
-    return "eli5" if n.get("style") == "eli5" else "study"
-
-
-@app.post("/api/notes/{nid}/version")
-async def note_version(nid: str, body: dict):
-    """Show this note in the other register. The first request for a register the note lacks has the model rewrite it
-    (same claims, plain or scholarly); both versions stay on the note, so later switches are instant."""
-    await _ensure_passage()
-    n = _find_note(nid)
-    style = body.get("style")
-    if not n or style not in ("eli5", "study"):
-        return {"error": "not found"}
-    cur = _style_of(n)
-    versions = n.setdefault("versions", {})
-    versions[cur] = {"label": n["label"], "body": n.get("body", "")}  # snapshot what is shown now
-    if style not in versions:
-        text = _verse_text(n["verse"])
-        quote = text[n["anchor"]["start"]:n["anchor"]["end"]] if n.get("anchor") else ""
-        ctx = "\n".join(f"[{v['verse']}] {v['text']}" for v in passage["verses"])
-        prompt = VERSION_PROMPT.format(ref=passage["reference"], verse=n["verse"], quote=f"「{quote}」" if quote else "",
-                                       target="ELI5 淺白" if style == "eli5" else "深入", rules=ELI5_RULES if style == "eli5" else STUDY_RULES,
-                                       kind=n["kind"], label=n["label"], body=n.get("body", ""), text=ctx)
-        try:
-            r, cost = await _structured(prompt, ONE_SCHEMA, f"ver|{nid}")
-        except Exception as e:
-            print("version failed:", nid, style, repr(e), file=sys.stderr)
-            return {"error": str(e)}
-        versions[style] = {"label": str(r.get("label", n["label"]))[:20], "body": r.get("body", "")}
-        n["cost"] = round((n.get("cost") or 0) + (cost or 0), 6)
-    n["label"], n["body"], n["style"] = versions[style]["label"], versions[style]["body"], style
-    _save()
-    return n
 
 
 @app.post("/api/auto-notes/one")
