@@ -49,7 +49,13 @@
   /* the title bar stays put while the passage scrolls under it */
   /* a solid band edge to edge (negative margins undo the reader's gutters), with a hard rule; no shadow, nothing shows through */
   .top { display:flex; flex-wrap:wrap; row-gap:8px; gap:8px; align-items:center; position:sticky; top:0; z-index:5; margin:0 -32px 14px -24px; padding:14px 32px 12px 24px; background:var(--paper-2); border-bottom:1px solid var(--rule); }
-  .top .brand { font-family:'Noto Serif TC', serif; font-weight:700; letter-spacing:.04em; margin-right:auto; white-space:nowrap; }
+  /* brand: a drawn mark, the name, and ELI5 demoted to a subtitle so the name reads first */
+  .top .brand { display:flex; align-items:center; gap:9px; margin-right:auto; white-space:nowrap; }
+  .top .brand .bdood { width:30px; height:30px; flex:none; color:var(--doodle); opacity:.85; }
+  .top .brand .bt { display:flex; flex-direction:column; line-height:1.15; }
+  .top .brand b { font-family:'Noto Serif TC', serif; font-weight:700; letter-spacing:.04em; }
+  /* the handwriting face and the wide tracking keep it a caption, not a second name */
+  .top .brand .sub { font-family:var(--hand); font-size:.62rem; letter-spacing:.22em; color:var(--ink-2); }
   .top .pgrp { display:flex; gap:8px; flex:1 1 22em; min-width:0; }
   .top .pgrp input { flex:1 1 8em; min-width:6em; width:auto; }
   .top .pgrp select { flex:0 1 auto; min-width:0; }
@@ -221,8 +227,11 @@
   /* 塗鴉：ELI5 筆記自己挑的那張小圖（src/doodles.js）。頁邊一節一張，卡片上一張大的。 */
   /* the margin copy sits under the 「原」 button, in the strip the verse numbers already own */
   /* the doodle takes the note's own colour, so it reads as the same pen that drew that verse's arrow */
-  .verse .vdood { position:absolute; left:-60px; top:56px; width:44px; color:var(--c); opacity:.9; pointer-events:none; }
-  .verse .vdood .doodle { width:34px; height:34px; margin-left:6px; }
+  .verse .vdood { position:absolute; left:-60px; top:56px; width:44px; display:flex; flex-direction:column;
+                  align-items:center; gap:3px; }
+  /* 28px, not the 34 a lone doodle could afford: two notes on one verse is the common case and the
+     stack has to stay inside the verse's own block or it lands on the next verse's number */
+  .verse .vdood .doodle { width:28px; height:28px; color:var(--c); opacity:.9; }
   /* the card copy is the note's own colour, sitting opposite the label so the two frame the title */
   #detail .hd .cdood { flex:none; width:38px; height:38px; color:var(--c); opacity:.9; margin:-2px -2px 0 auto; }
   /* the ink lands as if drawn: one dash long enough for the longest path here, offset then wound back */

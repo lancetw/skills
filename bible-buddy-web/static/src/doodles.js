@@ -9,9 +9,13 @@
 // reads as pen marks in a notebook rather than a toolbar.
 import { html } from './lib.js';
 
-const doodle = children => props => html`
-  <svg className="doodle" viewBox="0 0 40 40" width="40" height="40" aria-hidden="true" focusable="false"
+// `title` is lifted out of the props: SVG shows a tooltip from a <title> child, not from the
+// attribute an HTML element would use, and a titled doodle is no longer purely decorative.
+const doodle = children => ({ title, ...props }) => html`
+  <svg className="doodle" viewBox="0 0 40 40" width="40" height="40" focusable="false"
+       aria-hidden=${title ? undefined : 'true'} role=${title ? 'img' : undefined}
        fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" ...${props}>
+    ${title ? html`<title>${title}</title>` : null}
     ${children}
   </svg>`;
 
@@ -76,6 +80,14 @@ export const DOODLES = Object.assign(Object.create(null), {
     <path d="M13.4 14.6c-.2-4.2 2.8-7 6.8-7 3.8 0 6.6 2.4 6.6 5.8 0 4.6-6.2 5-6.2 9.8v1.8" />
     <path d="M20.5 32v.2" />`),
 });
+
+// The brand mark. Deliberately not in DOODLES: it is the one doodle that means the app rather than
+// something a note says, and a model offered it would start picking it for verses about books.
+export const Book = doodle(html`
+  <path d="M20 12.4C16.8 9.4 12.4 8 6.6 8.2v20.4c5.8-.2 10.2 1.2 13.4 4.2 3.2-3 7.6-4.4 13.4-4.2V8.2c-5.8-.2-10.2 1.2-13.4 4.2Z" />
+  <path d="M20 12.6v20.2" />
+  <path d="M10.4 15.2c2.6-.3 4.9.1 6.9 1.2M10.4 21.4c2.6-.3 4.9.1 6.9 1.2" />
+  <path d="M29.6 15.2c-2.6-.3-4.9.1-6.9 1.2M29.6 21.4c-2.6-.3-4.9.1-6.9 1.2" />`);
 
 export const DOODLE_NAMES = Object.keys(DOODLES);
 
