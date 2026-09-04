@@ -5,6 +5,7 @@ import {
   Slot, MAX_ARROWS, MIN_GAP, COLOR, DOTC, useTicker, ThinkingOrb,
 } from './lib.js';
 import { Search, Columns, Moon, Sun, Chat, Close, Back, Check, Alert } from './icons.js';
+import { Doodle, DOODLES } from './doodles.js';
 
 // ── verse text ────────────────────────────────────────────────────────────────
 // A slice of the verse text with its footnote markers dropped in at their offsets
@@ -154,6 +155,9 @@ export function Verses({ verses, notes, pending, par, inter, nudge, handlers }) 
       ${verses.map(v => {
         const { arrows, chips } = arrange(v, notes, demoted);
         const pend = Object.values(pending).filter(p => p.verse === v.verse);
+        // one doodle per verse, not one per note: the margin holds 32px and a stack of them would
+        // read as a legend. First note wins, which is the one nearest the top of the verse.
+        const dood = notes.find(n => n.verse === v.verse && DOODLES[n.doodle]);
         const body = [];
         let pos = 0;
         for (const n of arrows) {
@@ -173,6 +177,10 @@ export function Verses({ verses, notes, pending, par, inter, nudge, handlers }) 
               <span className="n">${v.verse}</span>
               <button type="button" className=${`ob${inter.open.has(v.verse) ? ' on' : ''}`} title="原文逐字分析"
                       onClick=${() => handlers.toggleInter(v.verse)}>原</button>
+              ${dood ? html`
+                <span className="vdood" title=${dood.label} style=${{ '--c': DOTC[COLOR[dood.kind]] }}>
+                  <${Doodle} name=${dood.doodle} />
+                </span>` : null}
               ${body}
               <span className="eol">${'​'}</span>
               ${chips.length || pend.length ? html`

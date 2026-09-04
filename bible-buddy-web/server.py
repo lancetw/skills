@@ -290,7 +290,7 @@ async def edit_note(nid: str, body: dict):
     n = _find_note(nid)
     if not n:
         return {"error": "not found"}
-    for k in ("label", "body", "kind"):
+    for k in ("label", "body", "kind", "doodle"):
         if k in body:
             n[k] = str(body[k])[:20] if k == "label" else body[k]
     n["edited"] = True
@@ -614,12 +614,22 @@ async def auto_notes_refs():
     return out
 
 
+# 塗鴉 vocabulary. The model picks a name, never a drawing: raw SVG from a model folds in on itself
+# at 26px and nothing here could check it before it reached the page. Keys must match DOODLES in
+# static/src/doodles.js — a name that doesn't just draws nothing, which is why the enum is pinned here.
+DOODLES = ["scroll", "lamp", "lens", "crown", "water", "fire", "mountain", "path", "door", "hand", "star", "sprout", "question"]
+DOODLE_RULE = """- doodle：從這組裡挑一個當這條筆記的塗鴉，挑最貼近筆記講的那件事，不要每條都挑同一個：
+  scroll（文本、引用、用字）、lamp（看懂了、關鍵在這）、lens（值得細看的字）、crown（王、寶座）、
+  water（海、河、洪水）、fire（火、審判）、mountain（山、高處）、path（路、遷徙、被擄）、
+  door（門、入口）、hand（施行、賜下）、star（記號、應許）、sprout（新生、餘民）、question（一般讀法其實讀錯了）。"""
+
 QUICK_SCHEMA = {"type": "json_schema", "schema": {
     "type": "object", "required": ["notes"],
     "properties": {"notes": {"type": "array", "items": {
-        "type": "object", "required": ["verse", "quote", "label", "body", "kind"],
+        "type": "object", "required": ["verse", "quote", "label", "body", "kind", "doodle"],
         "properties": {"verse": {"type": "integer"}, "quote": {"type": "string"}, "label": {"type": "string"},
-                       "body": {"type": "string"}, "kind": {"type": "string", "enum": KINDS}}}}}}}
+                       "body": {"type": "string"}, "kind": {"type": "string", "enum": KINDS},
+                       "doodle": {"type": "string", "enum": DOODLES}}}}}}}
 
 ELI5_RULES = """- 寫給完全沒有背景的人看（ELI5：像對聰明的 12 歲孩子解釋）：日常用語、短句，先說「這是什麼」再說「為什麼值得注意」，可用一個生活比喻。
 - 專有名詞或原文字出現時，緊接著用五個字內的白話解釋；不要堆術語。"""
@@ -631,6 +641,7 @@ QUICK_PROMPT = """你是第一世紀猶太教背景的聖經學者。對下面�
 - body：2 到 3 句、120 字內；不確定的寫「（待驗證）」。
 """ + ELI5_RULES + """
 - kind：lexical（原文字義）、history（歷史處境）、misread（常見誤讀或翻譯偏差）、crossref（相關經文）。
+""" + DOODLE_RULE + """
 - 不要教會式應用，不要靈意化，不要說教。
 
 {ref}（{version}）
@@ -678,14 +689,16 @@ async def _quick_run(key: str, ref: str, version: str, verses: list[dict]) -> li
 
 
 ONE_SCHEMA = {"type": "json_schema", "schema": {
-    "type": "object", "required": ["label", "body", "kind"],
-    "properties": {"label": {"type": "string"}, "body": {"type": "string"}, "kind": {"type": "string", "enum": KINDS}}}}
+    "type": "object", "required": ["label", "body", "kind", "doodle"],
+    "properties": {"label": {"type": "string"}, "body": {"type": "string"}, "kind": {"type": "string", "enum": KINDS},
+                   "doodle": {"type": "string", "enum": DOODLES}}}}
 
 ONE_PROMPT = """你是第一世紀猶太教背景的聖經學者。針對下面經文第 {verse} 節中的「{quote}」寫一條筆記。
 規則：
 - label：台灣繁體中文，14 字以內；原文字義類寫成「希伯來/希臘字 音譯＝意思」，例「עַלְמָה almah＝年輕女子」。
 - body：1 到 3 句，說明為什麼重要；不確定的寫「（待驗證）」。
 - kind：lexical（原文字義）、history（歷史處境）、misread（常見誤讀或翻譯偏差）、crossref（相關經文）。
+""" + DOODLE_RULE + """
 - 不要教會式應用，不要靈意化。
 
 {ref}（{version}）
@@ -717,7 +730,8 @@ async def auto_note_one(body: dict):
         return {"error": str(e)}
     note = {"id": uuid.uuid4().hex[:8], "verse": verse, "anchor": {"start": i, "end": i + len(quote)},
             "label": str(r.get("label", quote))[:20], "body": r.get("body", ""),
-            "kind": r["kind"] if r.get("kind") in KINDS else "lexical", "author": "quick", "cost": cost, **({"style": "eli5"} if eli5 else {})}
+            "kind": r["kind"] if r.get("kind") in KINDS else "lexical", "author": "quick", "cost": cost,
+            "doodle": r.get("doodle") if r.get("doodle") in DOODLES else None, **({"style": "eli5"} if eli5 else {})}
     if old and old in notes:
         notes[notes.index(old)] = note
         hidden.add(old["id"])  # a cached pass must not bring the old one back beside the rewrite
@@ -760,6 +774,7 @@ async def auto_notes_quick():
                 "anchor": None if i < 0 else {"start": i, "end": i + len(n["quote"])},
                 "label": n["label"][:20], "body": n["body"],  # author=quick is what the UI flags as unverified
                 "kind": n["kind"] if n["kind"] in KINDS else "lexical", "author": "quick", "style": "eli5",
+                "doodle": n.get("doodle") if n.get("doodle") in DOODLES else None,
                 "pass_cost": _quick_cost.get(key)}  # the whole pass's USD, carried on each of its notes
         if _add(note):
             out.append(note)

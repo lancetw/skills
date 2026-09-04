@@ -8,11 +8,15 @@
     color-scheme: light;
     --paper:#F8F5EC; --paper-2:#F1EDE1; --ink:#2B2A26; --ink-2:#6E6A60; --rule:#DED8C8; --margin:#D9A3A3;
     --pen:#3A5A8C; --card:#FFFDF7; --shadow:0 6px 20px #4a412a22;
+    /* the decorative doodles get their own two tones: --margin and --rule are right on ivory paper but
+       both sink into the dark card, so dark redefines these without touching the rules they belong to */
+    --doodle:#D9A3A3; --doodle-quiet:#CFC7B2;
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
     --paper:#1E1D1A; --paper-2:#26241F; --ink:#E6E1D6; --ink-2:#A39E92; --rule:#36332C; --margin:#7A4A4A;
     --pen:#8FB0E0; --card:#2A2823; --shadow:0 6px 20px #00000066;
+    --doodle:#D89A94; --doodle-quiet:#7E7768;
   }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); }
@@ -213,6 +217,40 @@
   form#f button.stop { background:#c45a38; border-color:#c45a38; color:#fff; }
   @media (prefers-reduced-motion: reduce) { .spin { animation:none; } }
   #detail p { margin:.4em 0; }
+
+  /* 塗鴉：ELI5 筆記自己挑的那張小圖（src/doodles.js）。頁邊一節一張，卡片上一張大的。 */
+  /* the margin copy sits under the 「原」 button, in the strip the verse numbers already own */
+  /* the doodle takes the note's own colour, so it reads as the same pen that drew that verse's arrow */
+  .verse .vdood { position:absolute; left:-60px; top:56px; width:44px; color:var(--c); opacity:.9; pointer-events:none; }
+  .verse .vdood .doodle { width:34px; height:34px; margin-left:6px; }
+  /* the card copy is the note's own colour, sitting opposite the label so the two frame the title */
+  #detail .hd .cdood { flex:none; width:38px; height:38px; color:var(--c); opacity:.9; margin:-2px -2px 0 auto; }
+  /* the ink lands as if drawn: one dash long enough for the longest path here, offset then wound back */
+  .doodle path, .doodle circle { stroke-dasharray:220; stroke-dashoffset:220; animation:ink 1.1s ease-out forwards; }
+  @keyframes ink { to { stroke-dashoffset:0; } }
+  @media (prefers-reduced-motion: reduce) { .doodle path, .doodle circle { animation:none; stroke-dashoffset:0; } }
+  /* the same vocabulary used as plain decoration, where the page has nothing to say: the empty agent
+     panel, a passage that hasn't loaded, and the end of one. Tilted and unevenly sized on purpose —
+     a straight row of them at one size reads as a toolbar, not as something drawn in a margin. */
+  .dood { display:flex; justify-content:center; align-items:flex-end; gap:8px; color:var(--doodle); pointer-events:none; }
+  .dood .doodle { opacity:.8; }
+  #guide .dood { margin:4px 0 16px; }
+  #guide .dood .doodle:nth-child(1) { transform:rotate(-5deg); }
+  #guide .dood .doodle:nth-child(2) { width:46px; height:46px; transform:rotate(3deg) translateY(2px); }
+  #guide .dood .doodle:nth-child(3) { transform:rotate(7deg); }
+  /* the sign-off under the last verse: quieter than the margin rule, it is a full stop, not a note */
+  .dood.foot { margin-top:24px; gap:2px; color:var(--doodle-quiet); }
+  .dood.foot .doodle:nth-child(1) { width:22px; height:22px; transform:rotate(-8deg); }
+  .dood.foot .doodle:nth-child(2) { width:34px; height:34px; }
+  .dood.foot .doodle:nth-child(3) { width:18px; height:18px; transform:rotate(10deg) translateY(-4px); }
+  /* nothing loaded yet: one bigger doodle holds the empty page open */
+  .dood.blank { padding:36px 0 8px; }
+  .dood.blank .doodle { width:84px; height:84px; opacity:.55; }
+  /* the row draws itself left to right, the way you'd actually scribble it */
+  .dood .doodle:nth-child(2) path, .dood .doodle:nth-child(2) circle { animation-delay:.18s; }
+  .dood .doodle:nth-child(3) path, .dood .doodle:nth-child(3) circle { animation-delay:.36s; }
+  /* 對照 mode halves the reader: the margin strip is the first thing to go */
+  @container (max-width: 700px) { .verse .vdood { display:none; } }
 
   /* chat = sticky notes column */
   #chat { position:relative; min-width:0; border-left:1px solid var(--rule); background:var(--paper-2); display:flex; flex-direction:column; }

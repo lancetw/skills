@@ -6,6 +6,7 @@ import {
   Slot, mdHtml, local, useTicker, TOOL_ZH, Fragment, ThinkingOrb, BorderBeam,
 } from './lib.js';
 import { Check, Alert, Stop } from './icons.js';
+import { Doodle } from './doodles.js';
 
 const LOG_KEY = 'chatlog2';     // v1 stored raw innerHTML; this one stores messages
 let seq = 0;
@@ -201,6 +202,9 @@ export function Chat({ chat, theme, onGutterDown }) {
         ${chat.messages.map(m => html`<${Message} key=${m.id} m=${m} theme=${theme} onFold=${chat.toggleFold} onOption=${chat.send} />`)}
       </div>
       <div id="guide" hidden=${!empty}>
+        <div className="dood" aria-hidden="true">
+          <${Doodle} name="scroll" /><${Doodle} name="lens" /><${Doodle} name="lamp" />
+        </div>
         <p><b>agent 可以做什麼</b></p>
         <p>問這段經文的任何問題，agent 會依 bible-buddy 流程查原文、背景與資料來源，並把關鍵發現標在左邊的經文上。</p>
         <p className="ex">
