@@ -5,6 +5,7 @@ import {
   Slot, mdHtml, AUTHOR, KIND_ZH, DOTC, COLOR, Fragment,
 } from './lib.js';
 import { api } from './api.js';
+import { replaceOrAdd, without } from './notelist.js';
 import { offsetOf, trimSpan } from './anchor.js';
 import { Refresh, BadgeCheck, ArrowRight, Pencil, Sparkle, Alert } from './icons.js';
 import { Doodle } from './doodles.js';
@@ -132,7 +133,7 @@ export function Detail({ detail, setDetail, running, verses, notes, setNotes, se
       onSave=${async patch => {
         const saved = n.id ? await api('/api/notes/' + n.id, 'PUT', patch) : await api('/api/notes', 'POST', { ...n, ...patch });
         if (saved.error) { banner(saved.error, { spin: false, tone: 'err', hideAfter: 4000 }); return; }
-        setNotes(cur => (n.id ? cur.map(x => (x.id === n.id ? { ...x, ...saved } : x)) : [...cur, saved]));
+        setNotes(cur => replaceOrAdd(cur, n.id, saved));
         setDetail(null);
       }} />`;
   } else if (detail?.mode === 'card') {
@@ -142,7 +143,7 @@ export function Detail({ detail, setDetail, running, verses, notes, setNotes, se
       del: async () => {
         if (!confirm(`確定刪除這條筆記「${n.label}」？無法復原。`)) return;
         await api('/api/notes/' + n.id, 'DELETE');
-        setNotes(cur => cur.filter(x => x.id !== n.id));
+        setNotes(cur => without(cur, n.id));
         setDetail(null);
       },
       ask: () => { setDetail(null); prefillInput(`針對「${n.label}」追問：`); },

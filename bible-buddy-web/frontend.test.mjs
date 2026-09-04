@@ -183,3 +183,52 @@ test('nothing at all still says something', () => {
   assert.ok(apiErrorText(undefined).length > 0);
   assert.ok(apiErrorText('').length > 0);
 });
+
+// ── one list of notes, one set of rules ───────────────────────────────────────
+// Seven call sites each wrote their own "merge a note into the list", with different answers to the
+// same question, and one of them was another module holding App's raw state setter.
+
+const L = await import('./static/src/notelist.js');
+
+const n = (id, extra = {}) => ({ id, verse: '4', label: id, ...extra });
+
+test('a note the list has not seen is appended', () => {
+  assert.deepEqual(L.upsert([n('a')], n('b')).map(x => x.id), ['a', 'b']);
+});
+
+test('a note the list already has is replaced in place, not duplicated', () => {
+  const out = L.upsert([n('a'), n('b')], n('a', { label: 'newer' }));
+  assert.deepEqual(out.map(x => x.id), ['a', 'b'], 'order is kept, so an arrow does not jump');
+  assert.equal(out[0].label, 'newer');
+});
+
+test('an automatic pass adds only what is new', () => {
+  const out = L.mergeNew([n('a')], [n('a', { label: 'stale' }), n('b')]);
+  assert.deepEqual(out.map(x => x.id), ['a', 'b']);
+  assert.equal(out[0].label, 'a', 'a note already on screen is not overwritten by a cached pass');
+});
+
+test('a rewrite takes the old note position', () => {
+  const out = L.replaceOrAdd([n('a'), n('b')], 'a', n('c'));
+  assert.deepEqual(out.map(x => x.id), ['c', 'b']);
+});
+
+test('a fresh note with nothing to replace is appended', () => {
+  assert.deepEqual(L.replaceOrAdd([n('a')], null, n('c')).map(x => x.id), ['a', 'c']);
+});
+
+test('removing a note leaves the rest alone', () => {
+  assert.deepEqual(L.without([n('a'), n('b')], 'a').map(x => x.id), ['b']);
+});
+
+test('clearing automatic notes keeps only what the reader wrote', () => {
+  const list = [n('a', { author: 'quick' }), n('b', { author: 'user' }), n('c', { author: 'refs' }), n('d', { author: 'agent' })];
+  assert.deepEqual(L.onlyMine(list).map(x => x.id), ['b']);
+});
+
+test('every rule returns a new list, so React sees the change', () => {
+  const list = [n('a')];
+  for (const out of [L.upsert(list, n('b')), L.mergeNew(list, []), L.replaceOrAdd(list, 'a', n('c')), L.without(list, 'a'), L.onlyMine(list)]) {
+    assert.notEqual(out, list);
+  }
+});
