@@ -3,6 +3,7 @@
 // render()/innerHTML page, not the server.
 import { React, html, useState, useEffect, useRef, useCallback, Slot, local, ThinkingOrb } from './lib.js';
 import { api, apiErrorText } from './api.js';
+import { upsert, mergeNew, replaceOrAdd, onlyMine } from './notelist.js';
 import { createRoot } from '../vendor/react-dom-client.mjs';
 import { TopBar, Banner, Verses, SearchPopover, useFootnoteJump } from './reader.js';
 import { Sparkle, Trash, Check } from './icons.js';
@@ -48,10 +49,7 @@ function App() {
 
   // ── chat ────────────────────────────────────────────────────────────────────
   const openChat = useCallback(() => { setChatOn(true); local.set('chat', '1'); }, []);
-  const onNote = useCallback(n => setNotes(cur => {
-    const i = cur.findIndex(x => x.id === n.id);
-    return i >= 0 ? cur.map(x => (x.id === n.id ? n : x)) : [...cur, n];
-  }), []);
+  const onNote = useCallback(n => setNotes(cur => upsert(cur, n)), []);
   const chat = useChat({ openChat, onNote });
   const chatRef = useRef(chat); chatRef.current = chat;
   const interRef = useRef(inter); interRef.current = inter;   // toggleInter has to read the cache without waiting for a re-render
@@ -94,7 +92,7 @@ function App() {
       banner(`ELI5 筆記失敗：${apiErrorText(msg)}`, { spin: false, title: msg });   // the pill clips; the full error lives in the tooltip
       return -1;
     }
-    setNotes(cur => [...cur, ...fresh.filter(n => !cur.some(x => x.id === n.id))]);
+    setNotes(cur => mergeNew(cur, fresh));
     return fresh.length;
   }, [banner]);
 
@@ -156,7 +154,7 @@ function App() {
       return;
     }
     setPending(cur => { const { [id]: _, ...rest } = cur; return rest; });
-    setNotes(cur => (s.replace ? cur.map(x => (x.id === s.replace ? r : x)) : [...cur, r]));
+    setNotes(cur => replaceOrAdd(cur, s.replace, r));
   }, []);
 
   // the model pass is manual: it costs money and a minute, and a 529 on page load used to look like "0 notes"
@@ -181,7 +179,7 @@ function App() {
     if (!confirm(`確定刪除這段全部 ${n} 條自動筆記（ELI5、agent 標注、references）？\n手動筆記會保留。這個動作無法復原。`)) return;
     const r = await api('/api/notes/quick', 'DELETE');
     if (r.error) { banner(`刪除失敗：${apiErrorText(r.error)}`, { spin: false, tone: 'err', hideAfter: 4000, title: r.error }); return; }
-    setNotes(cur => cur.filter(x => x.author === 'user'));
+    setNotes(onlyMine);
     banner(`已刪除 ${r.removed} 條自動筆記`, { spin: false, tone: 'ok', hideAfter: 3000 });
   }, [notes, banner]);
 
