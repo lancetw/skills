@@ -18,7 +18,9 @@ export const {
 // one arrow per ~9 chars and at most 3 per verse, so labels don't pile up; the rest become chips
 export const MAX_ARROWS = 3, MIN_GAP = 9;
 export const COLOR = { lexical: 'amber', history: 'blue', misread: 'red', crossref: 'purple', personal: 'green' };
-export const DOTC = { amber: '#b8751a', blue: '#3b72c4', green: '#2f8f5b', red: '#c45a38', purple: '#8657c8' };
+// the five note hues live in app.css as --c-*: a single hex cannot clear 4.5:1 against both the ivory
+// and the near-black paper, so each theme defines its own set and these just point at whichever is active
+export const DOTC = { amber: 'var(--c-amber)', blue: 'var(--c-blue)', green: 'var(--c-green)', red: 'var(--c-red)', purple: 'var(--c-purple)' };
 export const KIND_ZH = { lexical: '原文字義', history: '歷史背景', misread: '誤讀/翻譯', crossref: '相關經文', personal: '個人' };
 export const AUTHOR = { agent: 'agent', quick: 'AI', refs: 'references', user: '我' };
 export const TOOL_ZH = {
