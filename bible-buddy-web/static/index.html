@@ -2,7 +2,7 @@
 <html lang="zh-Hant" data-theme="light">
 <head>
 <meta charset="utf-8">
-<title>Bible Buddy Web — PROTOTYPE</title>
+<title>Bible Buddy ELI5</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/syabro/neat-annotations/neat-annotations.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@500;600;700&family=Iansui&family=LXGW+WenKai+TC&family=Noto+Sans+Hebrew:wght@400;700&family=Noto+Serif+Hebrew:wght@400;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -49,7 +49,7 @@
   .top .pgrp input { flex:1 1 8em; min-width:6em; width:auto; }
   .top .pgrp select { flex:0 1 auto; min-width:0; }
   .top .icons { display:flex; gap:8px; flex:none; }
-  /* narrow reader (chat open, small window): brand, tabs and icons share the first row, the passage controls take the second */
+  /* narrow reader (chat open, small window): brand and icons share the first row, the passage controls take the second */
   #reader { container-type:inline-size; }
   @container (max-width: 860px) {
     .top .pgrp { order:9; flex-basis:100%; }
@@ -94,13 +94,6 @@
   #detail .meta { display:flex; flex-wrap:wrap; gap:4px 6px; margin:4px 0 8px 18px; font-size:.75rem; color:var(--ink-2); }
   #detail .meta .tag { border:1px solid var(--rule); border-radius:999px; padding:0 7px; line-height:1.5; }
   #detail .meta .tag.unv { color:#b8751a; border-color:#b8751a; cursor:help; }
-  /* per-note register switch: ELI5 or 深入, at the right of the title row (the title wraps under it) */
-  #detail .hd .ver { display:inline-flex; flex:none; margin-left:auto; margin-top:.3em; border:1px solid var(--rule); border-radius:999px; overflow:hidden; user-select:none; }
-  #detail .hd .ver button { border:none; border-radius:0; background:transparent; color:var(--ink-2); font-size:.72rem; padding:0 8px; line-height:1.7; font-family:var(--sans); cursor:pointer; }
-  #detail .hd .ver button + button { border-left:1px solid var(--rule); }
-  #detail .hd .ver button.on { background:var(--paper-2); color:var(--pen); }
-  #detail .hd .ver button:disabled { opacity:.5; }
-  #detail .hd b { flex:1; min-width:0; }
   #detail .body { margin-left:18px; }
   #detail .body > :first-child { margin-top:0; } #detail .body > :last-child { margin-bottom:0; }
   #detail .ft { display:flex; gap:2px; margin-top:10px; padding-top:8px; border-top:1px solid var(--rule); }
@@ -131,13 +124,6 @@
   .actions button { font-size:.82rem; padding:4px 12px; border-radius:999px; background:var(--paper-2); }
   .actions button:hover { background:var(--card); }
   .actions #quickClear:hover { border-color:#c45a38; color:#c45a38; }
-  /* note layers: ELI5 (model) and 深入研讀 (agent) would crowd the same verse, so they are viewed one at a time or together */
-  .views { display:inline-flex; border:1px solid var(--rule); border-radius:999px; overflow:hidden; font-size:.78rem; flex:none; }
-  .views[hidden] { display:none; }
-  .views button { border:none; border-radius:0; background:transparent; color:var(--ink-2); padding:3px 10px; }
-  .views button + button { border-left:1px solid var(--rule); }
-  .views button.on { background:var(--paper-2); color:var(--pen); }
-  .views small { opacity:.7; font-variant-numeric:tabular-nums; }
   #quickClear[hidden] { display:none; }
   .actions + #banner { margin-left:0; }
 
@@ -164,9 +150,6 @@
   /* chat = sticky notes column */
   #chat { position:relative; min-width:0; border-left:1px solid var(--rule); background:var(--paper-2); display:flex; flex-direction:column; }
   #log { min-height:0; }   /* flex children only scroll when allowed to shrink below content height */
-  .tabs { display:flex; gap:2px; border:1px solid var(--rule); border-radius:6px; padding:2px; background:var(--card); }
-  .tabs button { border:none; background:transparent; color:var(--ink-2); padding:4px 10px; }
-  .tabs button.on { background:var(--pen); color:var(--paper); }
   #chat .chead { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid var(--rule); font-size:.82rem; color:var(--ink-2); }
   #chat .chead button { font-size:.78rem; padding:2px 10px; }
   #log { flex:1; overflow:auto; padding:12px; font-size:.9rem; }
@@ -185,28 +168,18 @@
   #log .msg.me .more { border:none; background:transparent; color:var(--pen); font-size:.78rem; padding:2px 0 0; }
   #log .tool { color:var(--ink-2); font-size:.74rem; font-family:ui-monospace, monospace; padding:1px 6px; }
   #log .opts button { display:block; width:100%; margin:4px 0; text-align:left; }
-  #study { font-size:1rem; line-height:1.8; }
-  #study { overflow-wrap:anywhere; }
-  #study blockquote { border-left:3px solid var(--rule); padding-left:10px; color:var(--ink-2); }
-  #study blockquote.insight { border:1px solid #b8751a; border-left-width:3px; border-radius:6px; padding:8px 14px; background:color-mix(in oklch, #b8751a 6%, transparent); color:var(--ink); }
-  #study blockquote.insight > p:first-child { color:#b8751a; font-weight:700; margin-top:0; }
-  #study table { display:block; overflow-x:auto; }
-  #study table { border-collapse:collapse; font-size:.9rem; } #study td, #study th { border:1px solid var(--rule); padding:4px 8px; }
-  #study .srow { display:flex; gap:8px; margin-bottom:12px; } #study #ssel { flex:1; }
-  #study #sdel:hover { border-color:#c45a38; color:#c45a38; }
   form#f { display:flex; gap:6px; padding:10px; border-top:1px solid var(--rule); }
   form#f input { flex:1; }
 </style>
 </head>
 <body>
 <section id="reader">
-  <form id="pf" class="top"><span class="brand">Bible Buddy 筆記本</span><div class="tabs"><button type="button" class="on" data-tab="page">經文</button><button type="button" data-tab="study">研讀報告</button></div><div class="pgrp"><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button></div><div class="icons"><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></div></form>
+  <form id="pf" class="top"><span class="brand">Bible Buddy ELI5</span><div class="pgrp"><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button></div><div class="icons"><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></div></form>
   <div id="page" class="page">
-    <div class="hrow"><h1 id="ref">載入中…</h1><div class="views" hidden title="切換要看哪一層筆記；手動筆記與 references 每層都顯示"><button type="button" data-view="all">全部</button><button type="button" data-view="eli5">ELI5 <small></small></button><button type="button" data-view="study">深入研讀 <small></small></button></div></div>
-    <div class="trow"><div class="actions"><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="study" title="請 agent 依 bible-buddy 完整流程深入研讀這段，標注畫面並存報告">📝 深入研讀</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑 清除自動筆記</button></div><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
+    <div class="hrow"><h1 id="ref">載入中…</h1></div>
+    <div class="trow"><div class="actions"><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑 清除自動筆記</button></div><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
-  <div id="study" class="page" hidden><div class="srow"><select id="ssel"></select><button type="button" id="sdel">刪除</button></div><div id="sbody" class="tool">還沒有研讀報告。問 agent 一次深入研讀，報告會存到 ~/Desktop/bible-buddy/</div></div>
   <div id="detail" popover></div>
   <div id="selmenu" popover><button type="button" id="selManual">✎ 手動筆記</button><button type="button" id="selAi" title="用模型針對這幾個字寫一條淺顯易懂的筆記">✨ ELI5 筆記</button></div>
 </section>
@@ -218,7 +191,6 @@
     <p><b>agent 可以做什麼</b></p>
     <p>問這段經文的任何問題，agent 會依 bible-buddy 流程查原文、背景與資料來源，並把關鍵發現標在左邊的經文上。</p>
     <p class="ex"><button type="button" data-q="第 1 節逐字原文分析">第 1 節逐字原文分析</button><button type="button" data-q="這段的第一世紀歷史處境">第一世紀歷史處境</button><button type="button" data-q="這段常見的誤讀與翻譯偏差">常見誤讀與翻譯偏差</button><button type="button" data-q="這段的相關經文與引用脈絡">相關經文</button></p>
-    <p><button type="button" id="study2" class="primary">📝 產生深入研讀報告</button><br><small>逐節研讀、標注畫面，報告存到「研讀報告」分頁</small></p>
     <p><b>其他入口</b></p>
     <p>反白經文 → 手動筆記或 ELI5 筆記。<br>✨ 生成 ELI5 筆記：一次掃整段，寫成淺顯易懂的筆記；「未驗證」的可從卡片請 agent 驗證。<br>對話會保留到你按「清除」；換段經文會重新開始。</p>
   </div>
@@ -252,8 +224,8 @@ function banner(text, { spin = true, timer = false, hideAfter = 0 } = {}) {
 }
 const MAX_ARROWS = 3, MIN_GAP = 9;
 const COLOR = { lexical:'amber', history:'blue', misread:'red', crossref:'purple', personal:'green' };
-let verses = [], notes = [], studyPath = null, cardSlot = null, lastRef = null, fnNum = {};
-const TOOL_ZH = { Bash:'執行抓經文腳本', WebSearch:'搜尋', WebFetch:'讀網頁', Read:'讀參考資料', Grep:'查參考資料', Glob:'找檔案', Write:'寫研讀報告', Edit:'修改報告', Skill:'載入 skill', ToolSearch:'找工具', mcp__notes__add_annotation:'加筆記', mcp__notes__update_annotation:'更新筆記' };
+let verses = [], notes = [], cardSlot = null, lastRef = null, fnNum = {};
+const TOOL_ZH = { Bash:'執行抓經文腳本', WebSearch:'搜尋', WebFetch:'讀網頁', Read:'讀參考資料', Grep:'查參考資料', Glob:'找檔案', Write:'寫檔案', Edit:'修改檔案', Skill:'載入 skill', ToolSearch:'找工具', mcp__notes__add_annotation:'加筆記', mcp__notes__update_annotation:'更新筆記' };
 const DOTC = { amber:'#b8751a', blue:'#3b72c4', green:'#2f8f5b', red:'#c45a38', purple:'#8657c8' };
 const $ = s => document.querySelector(s);
 
@@ -287,7 +259,6 @@ async function runQuick() {
   }, 2000);
   const n = await addAuto('/api/auto-notes/quick');
   clearInterval(poll); quickBusy = false; b.disabled = running;
-  if (n > 0 && view === 'study') setView('eli5');
   if (n >= 0) banner(`✓ ELI5 筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}${usd(lastAuto.cost)}`, { spin: false, hideAfter: 4000 });
   quickLabel();
 }
@@ -311,29 +282,13 @@ async function addAuto(url) {
   return fresh.length;
 }
 
-// which layer a note belongs to: model notes, agent annotations, or the base that always shows (manual, references)
-const LAYER = n => n.author === 'quick' ? 'eli5' : n.author === 'agent' ? 'study' : 'base';
-let view = 'all'; try { view = localStorage.getItem('view') || 'all'; } catch {}
-function setView(v) { view = v; try { localStorage.setItem('view', v); } catch {} render(); }
-function inView(n) {
-  const c = { eli5: notes.some(x => LAYER(x) === 'eli5'), study: notes.some(x => LAYER(x) === 'study') };
-  const eff = view !== 'all' && !c[view] ? 'all' : view;  // a view with nothing in it falls back to everything
-  return eff === 'all' || LAYER(n) === 'base' || LAYER(n) === eff;
-}
-function paintViews() {
-  const c = { eli5: notes.filter(x => LAYER(x) === 'eli5').length, study: notes.filter(x => LAYER(x) === 'study').length };
-  const el = document.querySelector('.views'); el.hidden = !(c.eli5 && c.study);
-  for (const b of el.querySelectorAll('button')) { b.classList.toggle('on', b.dataset.view === view); const s = b.querySelector('small'); if (s) s.textContent = c[b.dataset.view] || ''; }
-}
-document.querySelector('.views').addEventListener('click', e => { const b = e.target.closest('[data-view]'); if (b) setView(b.dataset.view); });
 function render() {
-  paintViews();
   let fnN = 0; fnNum = {}; const fnList = [];  // translator footnotes numbered once across the passage
   for (const v of verses) for (const [i, f] of (v.footnotes || []).entries()) { fnNum[`${v.verse}:${i}`] = ++fnN; fnList.push({ n: fnN, verse: v.verse, text: f.text }); }
   $('#verses').innerHTML = verses.map(v => {
-    const vs = notes.filter(n => inView(n) && n.verse === v.verse && n.anchor).sort((a,b) => a.anchor.start - b.anchor.start);
+    const vs = notes.filter(n => n.verse === v.verse && n.anchor).sort((a,b) => a.anchor.start - b.anchor.start);
     let out = '', pos = 0, shown = 0, lastStart = -99;
-    const rest = notes.filter(n => inView(n) && n.verse === v.verse && !n.anchor);
+    const rest = notes.filter(n => n.verse === v.verse && !n.anchor);
     for (const n of vs) {
       // one arrow per ~9 chars and at most 3 per verse, so labels don't pile up; the rest become chips
       if (n.anchor.start < pos || shown >= MAX_ARROWS || n.anchor.start - lastStart < MIN_GAP) { rest.push(n); continue; }
@@ -381,7 +336,7 @@ function demoteWrapped() {
 addEventListener('resize', render);
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-const AUTHOR = { agent:'agent 研讀', quick:'AI', refs:'references', user:'我' };
+const AUTHOR = { agent:'agent', quick:'AI', refs:'references', user:'我' };
 const KIND_ZH = { lexical:'原文字義', history:'歷史背景', misread:'誤讀/翻譯', crossref:'相關經文', personal:'個人' };
 const api = (url, method, body) => fetch(url, { method, headers:{'content-type':'application/json'}, body: body && JSON.stringify(body) }).then(r => r.json());
 // place the card below a rect (labels hang ~70px under a span, so a span rect gets extra room); flip above if it would overflow
@@ -395,23 +350,12 @@ function placeDetail(r, gap = 8) {
 function showCard(n, rect, gap) {
   const d = $('#detail');
   const unverified = n.author === 'quick' && !n.verified;
-  const cur = n.style === 'eli5' ? 'eli5' : 'study', has = s => s === cur || !!n.versions?.[s];
-  const ver = n.author === 'user' ? '' : `<span class="ver" title="切換這條筆記的版本；沒有的版本第一次會請模型改寫">${['eli5', 'study'].map(s => `<button data-style="${s}" class="${s === cur ? 'on' : ''}" title="${has(s) ? '' : '第一次會請模型改寫'}">${s === 'eli5' ? 'ELI5' : '深入'}${has(s) ? '' : ' ✨'}</button>`).join('')}</span>`;
   const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.style === 'eli5' && 'ELI5', n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`, n.pass_cost != null && `整段 $${n.pass_cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
     + (unverified ? '<span class="tag unv" title="AI 筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
-  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b>${ver}</div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : n.author === 'agent' ? `<button id="rewrite" title="請 agent 重新研讀並重寫這條" ${running ? 'disabled' : ''}>🔄 請 agent 重寫</button>` : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask" ${running ? 'disabled title="agent 忙碌中"' : ''}>追問 →</button></div>`;
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : n.author === 'agent' ? `<button id="rewrite" title="請 agent 重新查證並重寫這條" ${running ? 'disabled' : ''}>🔄 請 agent 重寫</button>` : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask" ${running ? 'disabled title="agent 忙碌中"' : ''}>追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
-  d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」再深入：`; $('#q').focus(); };
+  d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」追問：`; $('#q').focus(); };
   d.querySelector('#edit').onclick = () => showEditor(n, rect, gap);
-  d.querySelector('.ver')?.addEventListener('click', async e => {
-    const b = e.target.closest('[data-style]'); if (!b || b.classList.contains('on')) return;
-    const gen = !n.versions?.[b.dataset.style];
-    for (const x of d.querySelectorAll('.ver button')) x.disabled = true;
-    if (gen) { b.innerHTML = '<span class="spin" style="width:9px;height:9px;border-width:1.5px;display:inline-block;vertical-align:-1px"></span> 改寫中'; }
-    const r = await api(`/api/notes/${n.id}/version`, 'POST', { style: b.dataset.style });
-    if (r.error) { banner(`✗ 改寫失敗：${r.error.slice(0, 60)}`, { spin: false, hideAfter: 5000 }); showCard(n, rect, gap); return; }
-    Object.assign(n, r); render(); showCard(n, rect, gap);
-  });
   d.querySelector('#regen')?.addEventListener('click', () => {
     const quote = verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end);
     d.hidePopover(); aiNote({ verse: n.verse, quote, replace: n.id });
@@ -419,7 +363,7 @@ function showCard(n, rect, gap) {
   d.querySelector('#rewrite')?.addEventListener('click', () => {
     const quote = n.anchor ? verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end) : '';
     d.hidePopover();
-    send(`重寫筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程重新研讀這個點，修正錯誤或換更精確、更有價值的角度，然後呼叫 mcp__notes__update_annotation（id=${n.id}）回填：label 20 字內；body 1 到 3 句、100 字內，口氣與格式跟原筆記一樣${n.style === 'eli5' ? '（ELI5 淺白）' : ''}。詳細分析寫在對話裡即可，不要另外新增筆記。`);
+    send(`重寫筆記 ${n.id}（第 ${n.verse} 節「${quote}」）：\nlabel：${n.label}\nbody：${n.body}\n請依 bible-buddy 流程重新查證這個點，修正錯誤或換更精確、更有價值的角度，然後呼叫 mcp__notes__update_annotation（id=${n.id}）回填：label 20 字內；body 1 到 3 句、100 字內，口氣與格式跟原筆記一樣${n.style === 'eli5' ? '（ELI5 淺白）' : ''}。詳細分析寫在對話裡即可，不要另外新增筆記。`);
   });
   // hand the quick note to the agent; it answers by calling update_annotation, which comes back as a "note" event
   d.querySelector('#verify')?.addEventListener('click', () => {
@@ -523,7 +467,6 @@ async function aiNote(s) {
   pending.delete(p.id);
   const i = s.replace ? notes.findIndex(x => x.id === s.replace) : -1;
   if (i >= 0) notes.splice(i, 1, r); else notes.push(r);
-  if (view === 'study') view = 'eli5';
   render(); quickLabel();
 }
 
@@ -538,7 +481,7 @@ $('#log').addEventListener('click', e => {  // fold / unfold toggles must work o
 let running = false, stopTick = null, stepSink = () => {};
 function setRunning(on) {
   running = on;
-  $('#q').disabled = on; $('#clear').disabled = on; $('#study').disabled = on; $('#study2').disabled = on;
+  $('#q').disabled = on; $('#clear').disabled = on;
   $('#quick').disabled = on || quickBusy;  // one model job at a time on the page
   for (const b of document.querySelectorAll('#detail #ask, #detail #verify, #detail #rewrite')) { b.disabled = on; b.title = on ? 'agent 忙碌中' : ''; }
   $('#send').classList.toggle('stop', on);
@@ -594,9 +537,9 @@ async function consume(res, cur, act, finish, setBuf, getBuf) {
       if (!line.startsWith('data: ')) continue;
       const ev = JSON.parse(line.slice(6));
       if (ev.type === 'text') { setBuf(getBuf() + ev.text + '\n'); const a = cur.querySelector('.act'); cur.innerHTML = marked.parse(getBuf()); if (a) cur.prepend(a); slot('#status').set('✍ 撰寫中…'); act.set('撰寫中…'); }
-      else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); stepSink(`⚙ ${esc(ev.name)} ${esc(ev.input)}`); const m = ev.input.match(/file_path[^"]*"([^"]+\.md)"/); if (ev.name === 'Write' && m) studyPath = m[1]; }
-      else if (ev.type === 'note') { const i = notes.findIndex(x => x.id === ev.note.id); if (i >= 0) notes[i] = ev.note; else { notes.push(ev.note); if (view === 'eli5') view = 'study'; } render(); }
-      else if (ev.type === 'done') { end(); slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(getBuf()); if (studyPath) loadStudy(studyPath); }
+      else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); stepSink(`⚙ ${esc(ev.name)} ${esc(ev.input)}`); }
+      else if (ev.type === 'note') { const i = notes.findIndex(x => x.id === ev.note.id); if (i >= 0) notes[i] = ev.note; else notes.push(ev.note); render(); }
+      else if (ev.type === 'done') { end(); slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(getBuf()); }
       else if (ev.type === 'error') { end(); slot('#status').set('✗ 出錯'); logLine('tool', `✗ ${esc(ev.text)}`); }
       $('#log').scrollTop = 1e9;
     }
@@ -611,48 +554,11 @@ function renderOptions(text) {
   const d = logLine('opts', '');
   for (const [, n, t] of opts) { const b = document.createElement('button'); b.textContent = `${n}. ${t.slice(0,60)}`; b.onclick = () => send(n); d.appendChild(b); }
 }
-// 研讀報告 tab lists every .md the skill has saved; newest first, or the one just written
-async function loadStudy(path) {
-  const list = await (await fetch('/api/studies')).json();
-  $('#ssel').innerHTML = list.map(f => `<option value="${esc(f.path)}">${esc(f.name)}</option>`).join('');
-  if (!list.length) return;
-  $('#ssel').value = path && list.some(f => f.path === path) ? path : list[0].path;
-  const md = await (await fetch('/api/study?path=' + encodeURIComponent($('#ssel').value))).text();
-  const clean = md.replace(/^---[\s\S]*?\n---\n/, '')            // drop YAML frontmatter
-    .replace(/^> ★ Insight ─+ *$/gm, '> ★ Insight\n>')             // the ─ rules are one unbreakable run; the box below replaces them; blank quote line splits the title off the body
-    .replace(/^> ─+ *$/gm, '>');
-  $('#sbody').className = ''; $('#sbody').innerHTML = marked.parse(clean);
-  for (const bq of $('#sbody').querySelectorAll('blockquote')) if (bq.textContent.trim().startsWith('★ Insight')) bq.classList.add('insight');
-  if (path) slot(tabStudy).flash('報告已生成', { revertAfter: 2500 });
-}
-$('#ssel').onchange = () => loadStudy($('#ssel').value);
-$('#sdel').onclick = async () => {
-  const path = $('#ssel').value; if (!path) return;
-  if (!confirm(`把「${path.split('/').pop()}」移到垃圾桶？（可從垃圾桶復原）`)) return;
-  slot('#sdel').set('刪除中…');
-  const r = await (await fetch('/api/study?path=' + encodeURIComponent(path), { method: 'DELETE' })).json();
-  slot('#sdel').set('刪除'); slot('#sdel').flash(r.ok ? '已移到垃圾桶' : '失敗', { revertAfter: 2000 });
-  $('#ssel').innerHTML = ''; $('#sbody').className = 'tool'; $('#sbody').textContent = '還沒有研讀報告。問 agent 一次深入研讀，報告會存到 ~/Desktop/bible-buddy/';
-  loadStudy();
-};
-const tabStudy = document.querySelector('.tabs button[data-tab="study"]');
-document.querySelectorAll('.tabs button').forEach(b => slot(b));
-document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
-  $('#page').hidden = b.dataset.tab !== 'page';
-  $('#study').hidden = b.dataset.tab !== 'study';
-  if (b.dataset.tab === 'study' && !$('#ssel').options.length) loadStudy();
-});
 // guide fills the panel until the first message; example buttons only fill the input
 new MutationObserver(() => $('#guide').hidden = $('#log').children.length > 0).observe($('#log'), { childList: true });
 $('#guide').hidden = $('#log').children.length > 0;
 $('#guide').addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (b) { $('#q').value = b.dataset.q; $('#q').focus(); } });
-function fullStudy() {
-  if (running || !lastRef) return;
-  send(`深入研讀 ${lastRef}：依 bible-buddy 完整流程研讀目前畫面的整段經文，逐節處理原文字義、第一世紀歷史處境、常見誤讀或翻譯偏差、相關經文；每個關鍵發現用 mcp__notes__add_annotation 標在畫面上，最後把研讀報告存成 .md。`);
-}
-$('#study').onclick = fullStudy; $('#study2').onclick = fullStudy;
-$('#clear').onclick = () => { if (running) return; $('#log').innerHTML = ''; saveLog(); slot('#status').set(''); studyPath = null; fetch('/api/chat/reset', { method: 'POST' }); };
+$('#clear').onclick = () => { if (running) return; $('#log').innerHTML = ''; saveLog(); slot('#status').set(''); fetch('/api/chat/reset', { method: 'POST' }); };
 $('#f').onsubmit = e => {
   e.preventDefault();
   if (running) { slot('#status').set('⏹ 停止中…'); fetch('/api/chat/stop', { method: 'POST' }); return; }
@@ -693,7 +599,7 @@ try { root.dataset.theme = localStorage.getItem('theme') || 'light'; } catch {}
 const paintTheme = () => slot('#theme').set(root.dataset.theme === 'dark' ? '☀' : '☾');
 $('#theme').onclick = () => { root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'; try { localStorage.setItem('theme', root.dataset.theme); } catch {} paintTheme(); };
 paintTheme();
-slot('.brand', '').set('Bible Buddy 筆記本', { stagger: 30 });
+slot('.brand', '').set('Bible Buddy ELI5', { stagger: 30 });
 slot('#ref', '').set('載入中…');
 slot('#pload'); slot('#send'); slot('#status', '');
 // a refresh must come back to the same passage, or it would switch the server's passage and drop the running quick pass
