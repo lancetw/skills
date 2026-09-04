@@ -16,6 +16,7 @@ Taiwan Traditional Chinese (繁體中文) skills for AI coding agents.
 | [bible-buddy](bible-buddy/SKILL.md) | First-century Hebrew scripture interpretation from Yeshua's Jewish perspective |
 | [bible-fact-check](bible-fact-check/SKILL.md) | 10-point quality checklist for biblical content review |
 | [bible-bread](bible-bread/SKILL.md) | Daily devotional / QT guide with first-century Jewish pedagogy for mainstream Christians (requires bible-buddy) |
+| [bible-buddy-web](bible-buddy-web/SKILL.md) | Prototype local web reader — passage on screen, ELI5 notes on the words, agent verification (requires bible-buddy) |
 
 See each skill's `SKILL.md` for details.
 
