@@ -366,6 +366,9 @@ def _load() -> None:
         return
     d = json.loads(f.read_text())
     notes.extend(d.get("notes", [])); hidden.update(d.get("hidden", []))
+    zh = _zh_refs()  # a passage first read while the tables were still English gets its refs notes translated here
+    for n in notes:
+        n.update(zh.get(n["id"], {}))
     if not d.get("clean"):  # saved against text that still had "([1.1]…)" inline: shift anchors past the cuts, once
         for n in notes:
             a = n.get("anchor")
@@ -605,36 +608,56 @@ def _verses_in(ref: str) -> list[str]:
     return [v for v in loaded if lo <= int(v) <= hi]
 
 
+def _ref_notes():
+    """Every row of bible-buddy's reference tables as a verse-independent template:
+    (scripture reference, phrase to underline or None, note fields). translate_refs.py walks the same
+    function, so the ids it writes into zh-notes.json are exactly the ids served below."""
+    for cells in _table_rows(REFS / "translation-bias.md"):
+        if len(cells) < 5 or cells[3].startswith("Same as"):
+            continue
+        bold = re.search(r"\*\*(.+?)\*\*", cells[1])
+        term = re.match(r"^(\S+) \((\w+)\)", cells[3])
+        label = f"{bold.group(1)}＝{term.group(1)} {term.group(2)}" if bold and term else cells[3][:20]
+        yield cells[0], (bold.group(1) if bold else None), {
+            "id": _note_id("bias", cells[0], cells[1]), "label": label[:20],
+            "body": f"**中譯：** {cells[2]}\n\n**原文：** {cells[3]}\n\n**影響：** {cells[4]}",
+            "kind": "misread", "author": "refs"}
+    for cells in _table_rows(REFS / "commonly-misread-passages.md"):
+        if len(cells) < 4:
+            continue
+        yield cells[0], None, {
+            "id": _note_id("misread", cells[0], cells[3]),
+            "label": f"誤讀 · {cells[3].replace('*', '')[:14]}",
+            "body": f"**常見誤讀：** {cells[1]}\n\n**第一世紀脈絡：** {cells[2]}",
+            "kind": "misread", "author": "refs"}
+
+
+ZH_REFS = HERE / "references/zh-notes.json"  # the tables are English; this is their label/body in Chinese, by note id
+
+
+def _zh_refs() -> dict:
+    """Missing file or missing id is not an error: that row simply serves in English."""
+    try:
+        return json.loads(ZH_REFS.read_text())
+    except Exception:
+        return {}
+
+
 @app.get("/api/auto-notes/refs")
 async def auto_notes_refs():
     """Instant, verified: rows from bible-buddy's own reference tables that hit the loaded passage."""
     await _ensure_passage()
-    out = []
-    for cells in _table_rows(REFS / "translation-bias.md"):
-        if len(cells) < 5 or cells[3].startswith("Same as"):
-            continue
-        for v in _verses_in(cells[0]):
-            bold = re.search(r"\*\*(.+?)\*\*", cells[1])
+    zh, out = _zh_refs(), []
+    for ref, phrase, fields in _ref_notes():
+        for v in _verses_in(ref):
             text = _verse_text(v)
-            i = text.find(bold.group(1)) if bold else -1
-            term = re.match(r"^(\S+) \((\w+)\)", cells[3])
-            label = f"{bold.group(1)}＝{term.group(1)} {term.group(2)}" if bold and term else cells[3][:20]
-            note = {"id": _note_id("bias", cells[0], cells[1]), "verse": v,
-                    "anchor": None if i < 0 else {"start": i, "end": i + len(bold.group(1))},
-                    "label": label[:20], "body": f"**中譯：** {cells[2]}\n\n**原文：** {cells[3]}\n\n**影響：** {cells[4]}",
-                    "kind": "misread", "author": "refs"}
-            if _add(note):
-                out.append(note)
-    for cells in _table_rows(REFS / "commonly-misread-passages.md"):
-        if len(cells) < 4:
-            continue
-        for v in _verses_in(cells[0]):
-            text = _verse_text(v)
-            head = re.split(r"[，：「。；]", text)[0][:8]  # arrow on the verse's first clause
-            note = {"id": _note_id("misread", cells[0], cells[3]), "verse": v,
-                    "anchor": {"start": 0, "end": len(head)} if head else None,
-                    "label": f"誤讀 · {cells[3].replace('*', '')[:14]}", "body": f"**常見誤讀：** {cells[1]}\n\n**第一世紀脈絡：** {cells[2]}",
-                    "kind": "misread", "author": "refs"}
+            if phrase:                                     # a bias row underlines the Chinese phrase it is about
+                i = text.find(phrase)
+                anchor = None if i < 0 else {"start": i, "end": i + len(phrase)}
+            else:                                          # a misread row hangs its arrow off the first clause
+                head = re.split(r"[，：「。；]", text)[0][:8]
+                anchor = {"start": 0, "end": len(head)} if head else None
+            note = {**fields, **zh.get(fields["id"], {}), "verse": v, "anchor": anchor}
             if _add(note):
                 out.append(note)
     _save()
