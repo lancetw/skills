@@ -37,7 +37,9 @@
   /* icons are drawn inline (src/icons.js) at 16px on the text's own colour; a button holding one
      becomes a row so the glyph and the label share a baseline instead of stacking odd whitespace */
   .icon { width:16px; height:16px; flex:none; }
-  button:has(> .icon), a:has(> .icon) { display:inline-flex; align-items:center; gap:6px; }
+  /* .orb counts as an icon here: the ELI5 button swaps its svg for a canvas while the pass runs, and
+     without it the button drops out of flex mid-job and the label falls under the orb. */
+  button:has(> .icon), button:has(> .orb), a:has(> .icon) { display:inline-flex; align-items:center; gap:6px; }
   /* icon-only controls are square: the padding that suits a label makes a lone 16px glyph look lost */
   .top .icons button { width:34px; height:34px; padding:0; justify-content:center; }
   .top .icons button:hover { background:var(--card); }
@@ -193,7 +195,7 @@
      the label is the same one the banner shows, so one job never reads as two different waits.
      Written at id strength so it beats the accent rules above. */
   .actions #quick.busy, .actions #quick.busy:hover { border-style:dashed; border-color:var(--rule); color:var(--ink-2); background:var(--paper-2); opacity:1; cursor:progress; }
-  .actions #quick.busy .orb { margin:-5px 0; }
+  .actions #quick.busy .orb { margin:-5px -3px; }   /* a 20px canvas in a 14px icon's slot: trim both axes so the pill does not resize mid-job */
   .actions #quick .icon.done { color:#2f8f5b; margin-left:-1px; }
   .actions button .icon { width:14px; height:14px; }
   .actions #quickClear:hover { border-color:#c45a38; color:#c45a38; }
