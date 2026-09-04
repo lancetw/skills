@@ -1,9 +1,10 @@
 // The reading desk: passage state, notes, and the wiring between the page, the note card and the
 // agent panel. Everything below the API boundary is unchanged — this file replaces the imperative
 // render()/innerHTML page, not the server.
-import { React, html, useState, useEffect, useRef, useCallback, Slot, api, local } from './lib.js';
+import { React, html, useState, useEffect, useRef, useCallback, Slot, api, local, ThinkingOrb } from './lib.js';
 import { createRoot } from '../vendor/react-dom-client.mjs';
 import { TopBar, Banner, Verses, SearchPopover, useFootnoteJump } from './reader.js';
+import { Sparkle, Trash, Check } from './icons.js';
 import { Detail, SelectionMenu, useSelection } from './notes.js';
 import { useChat, Chat } from './chat.js';
 
@@ -37,10 +38,10 @@ function App() {
 
   // ── banner ──────────────────────────────────────────────────────────────────
   const hideAt = useRef(null);
-  const banner = useCallback((text, { spin = true, timer = false, hideAfter = 0, title = '' } = {}) => {
+  const banner = useCallback((text, { spin = true, timer = false, hideAfter = 0, title = '', tone = '' } = {}) => {
     clearTimeout(hideAt.current);                     // a stale hideAfter must not wipe a newer error
     hideAt.current = null;
-    setBannerState(text ? { text, spin, timer, title, t0: Date.now() } : null);
+    setBannerState(text ? { text, spin, timer, title, tone, t0: Date.now() } : null);
     if (text && hideAfter) hideAt.current = setTimeout(() => setBannerState(null), hideAfter);
   }, []);
 
@@ -52,13 +53,14 @@ function App() {
   }), []);
   const chat = useChat({ openChat, onNote });
   const chatRef = useRef(chat); chatRef.current = chat;
+  const interRef = useRef(inter); interRef.current = inter;   // toggleInter has to read the cache without waiting for a re-render
 
   // ── passage ─────────────────────────────────────────────────────────────────
   // 「以賽亞書 7:10-17」「創世記 1」「Matt 5:17」「約翰福音」（= 第 1 章）都吃
   const loadPassage = useCallback(async (refStr, version) => {
     const m = (refStr || '').trim().match(/^(\S+?)\s*(\d+)?(?::(\d+)(?:-(\d+))?)?$/);
     if (!m || /^\d/.test(m[1])) {
-      banner('✗ 看不懂的經文位置，例：約翰福音 3:16', { spin: false, hideAfter: 4000 });
+      banner('看不懂的經文位置，例：約翰福音 3:16', { spin: false, tone: 'err', hideAfter: 4000 });
       setLoadLabel('載入');
       return;
     }
@@ -66,19 +68,19 @@ function App() {
     const q = lastQ.current;
     banner('載入經文…');
     const r = await (await fetch(`/api/passage?book=${encodeURIComponent(q.book)}&chapter=${q.chapter}&start=${q.start}&end=${q.end}&version=${version || 'rcuv'}`)).json();
-    if (r.error) { banner(`✗ ${r.error}`, { spin: false, hideAfter: 4000 }); setLoadLabel('載入'); return; }
+    if (r.error) { banner(r.error, { spin: false, tone: 'err', hideAfter: 4000 }); setLoadLabel('載入'); return; }
     const fresh = await (await fetch('/api/notes')).json();   // server keeps them unless the passage changed
     setNotes(Array.isArray(fresh) ? fresh : []);
     setVerses(r.verses);
     setInter({ open: new Set(), cache: {} });                 // the 原文 blocks belong to the verses we just replaced
     // the server drops the agent session on a passage change
-    if (lastRef.current && lastRef.current !== r.reference) chatRef.current.note(`📖 切換到 ${r.reference}，agent 對話重新開始`);
+    if (lastRef.current && lastRef.current !== r.reference) chatRef.current.note(`切換到 ${r.reference}，agent 對話重新開始`);
     lastRef.current = r.reference;
     setReference(`${r.reference} · ${r.version}`);
     setLoadLabel('載入');
     if (parRef.current.on) loadSide();                        // not awaited: the 對照 column fills in on its own
     const n = await addAuto('/api/auto-notes/refs');          // instant, from bible-buddy references
-    banner(n ? `✓ 已驗證 ${n} 條` : null, { spin: false, hideAfter: 3000 });
+    banner(n ? `已驗證 ${n} 條` : null, { spin: false, tone: 'ok', hideAfter: 3000 });
   }, [banner]);
 
   // returns the number of new notes, or -1 on failure (the error stays on the banner until the next action)
@@ -89,7 +91,7 @@ function App() {
     if (!Array.isArray(fresh)) {
       const msg = fresh?.error || '伺服器回傳異常';
       const code = msg.match(/API Error: (\d+)/);   // "API Error: 529 Overloaded. This is a server-side…" → one short line
-      banner(`✗ ELI5 筆記失敗：${code ? `API ${code[1]} ${code[1] === '529' ? '過載' : '錯誤'}，稍後再點一次` : msg.slice(0, 60)}`,
+      banner(`ELI5 筆記失敗：${code ? `API ${code[1]} ${code[1] === '529' ? '過載' : '錯誤'}，稍後再點一次` : msg.slice(0, 60)}`,
         { spin: false, title: msg });               // the pill clips long text; the full error lives in the tooltip
       return -1;
     }
@@ -103,7 +105,7 @@ function App() {
     if (!q) return;
     const r = await api(`/api/side?book=${encodeURIComponent(q.book)}&chapter=${q.chapter}&start=${q.start}&end=${q.end}&version=${parRef.current.version}`);
     setPar(p => ({ ...p, map: Object.fromEntries((r.verses || []).map(v => [v.verse, v.text])), rtl: r.code === 'bhs', autoLabel: r.error ? '原文' : `原文（${r.version}）` }));
-    if (r.error) banner(`✗ 對照譯本載入失敗：${r.error}`, { spin: false, hideAfter: 4000 });
+    if (r.error) banner(`對照譯本載入失敗：${r.error}`, { spin: false, tone: 'err', hideAfter: 4000 });
   }, [banner]);
 
   // ⇄ 雙欄對照：開關與譯本選擇都記在 localStorage，重新整理回到同一個畫面
@@ -118,11 +120,14 @@ function App() {
 
   // 原文逐字分析：一節一次（qp.php 整章會失敗），抓回來就留著，之後開合都不再打網路
   const toggleInter = useCallback(async vn => {
-    let willFetch = false;
+    // read the decision off the ref, not out of the updater: React only runs an updater eagerly when
+    // the fiber's queue is empty, so a queued update left the fetch silently skipped and the block spinning
+    const { open: cur, cache } = interRef.current;
+    const willFetch = !cur.has(vn) && !(vn in cache);
     setInter(s => {
       const open = new Set(s.open);
       if (open.has(vn)) open.delete(vn);
-      else { open.add(vn); willFetch = !(vn in s.cache); }
+      else open.add(vn);
       return { ...s, open };
     });
     if (!willFetch) return;
@@ -175,7 +180,7 @@ function App() {
     const n = await addAuto('/api/auto-notes/quick');
     clearInterval(poll);
     setQuickBusy(false);
-    if (n >= 0) banner(`✓ ELI5 筆記 ${notesRef.current.filter(x => x.author === 'quick').length} 條${lastAuto.current.cached ? '（快取）' : ''}`, { spin: false, hideAfter: 4000 });
+    if (n >= 0) banner(`ELI5 筆記 ${notesRef.current.filter(x => x.author === 'quick').length} 條${lastAuto.current.cached ? '（快取）' : ''}`, { spin: false, tone: 'ok', hideAfter: 4000 });
   }, [addAuto, banner]);
 
   // delete every automatic note of the passage (ELI5, agent, references) after a native confirm
@@ -184,7 +189,7 @@ function App() {
     if (!confirm(`確定刪除這段全部 ${n} 條自動筆記（ELI5、agent 標注、references）？\n手動筆記會保留。這個動作無法復原。`)) return;
     const r = await api('/api/notes/quick', 'DELETE');
     setNotes(cur => cur.filter(x => x.author === 'user'));
-    banner(`✓ 已刪除 ${r.removed} 條自動筆記`, { spin: false, hideAfter: 3000 });
+    banner(`已刪除 ${r.removed} 條自動筆記`, { spin: false, tone: 'ok', hideAfter: 3000 });
   }, [notes, banner]);
 
   // ── chrome ──────────────────────────────────────────────────────────────────
@@ -232,21 +237,19 @@ function App() {
           par=${par} togglePar=${() => parallel(!par.on)} setParVersion=${v => parallel(true, v)}
           onSearch=${() => setSearchOpen(true)}
           theme=${theme} toggleTheme=${() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
-          chatOn=${chatOn} toggleChat=${() => { const on = !chatOn; setChatOn(on); local.set('chat', on ? '1' : '0'); setNudge(n => n + 1); }} />
-        <div id="page" className="page">
-          <div className="hrow"><h1 id="ref"><${Slot} text=${reference} /></h1></div>
-          <div className="trow">
+          chatOn=${chatOn} toggleChat=${() => { const on = !chatOn; setChatOn(on); local.set('chat', on ? '1' : '0'); setNudge(n => n + 1); }}
+          actions=${html`
             <div className="actions">
               <button type="button" id="quick" className=${quickBusy ? 'busy' : ''} disabled=${quickBusy || chat.running}
                       title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳" onClick=${runQuick}>
-                <${Slot} text=${hasQuick ? '✨ ELI5 筆記 ✓' : '✨ 生成 ELI5 筆記'} />
+                ${quickBusy ? html`<${ThinkingOrb} state="shaping" size=${20} className="orb" />` : html`<${Sparkle} />`}<${Slot} text=${hasQuick ? 'ELI5 筆記' : '生成 ELI5 筆記'} />${hasQuick ? html`<${Check} className="icon done" />` : null}
               </button>
               ${hasAuto ? html`
                 <button type="button" id="quickClear" title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留"
-                        onClick=${quickClear}>🗑 清除自動筆記</button>` : null}
-            </div>
-            <${Banner} banner=${bannerState} />
-          </div>
+                        aria-label="清除自動筆記" onClick=${quickClear}><${Trash} /></button>` : null}
+            </div>`} />
+        <div id="page" className="page">
+          <div className="hrow"><h1 id="ref"><${Slot} text=${reference} /></h1><${Banner} banner=${bannerState} /></div>
           <${Verses} verses=${verses} notes=${notes} pending=${pending} par=${par} inter=${inter} nudge=${nudge}
             handlers=${{
               openNote: (n, rect, gap = 78) => setDetail({ mode: 'card', note: n, rect, gap }),
@@ -278,7 +281,7 @@ function App() {
           onManual=${() => { const s = sel; setSel(null); if (s) setDetail({ mode: 'edit', note: { verse: s.verse, anchor: s.anchor, label: s.quote.slice(0, 20), body: '', kind: 'personal' }, rect: s.rect, gap: 8 }); }}
           onAi=${() => { const s = sel; setSel(null); window.getSelection()?.removeAllRanges(); if (s) aiNote(s); }} />
       </section>
-      <${Chat} chat=${chat} onGutterDown=${onGutterDown} />
+      <${Chat} chat=${chat} theme=${theme} onGutterDown=${onGutterDown} />
     <//>`;
 }
 

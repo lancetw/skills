@@ -2,8 +2,9 @@
 // footnotes, the 對照 column, and the whole-Bible search popover.
 import {
   html, useRef, useState, useEffect, useLayoutEffect, useMemo, Fragment,
-  Slot, MAX_ARROWS, MIN_GAP, COLOR, DOTC, useTicker,
+  Slot, MAX_ARROWS, MIN_GAP, COLOR, DOTC, useTicker, ThinkingOrb,
 } from './lib.js';
+import { Search, Columns, Moon, Sun, Chat, Close, Back, Check, Alert } from './icons.js';
 
 // ── verse text ────────────────────────────────────────────────────────────────
 // A slice of the verse text with its footnote markers dropped in at their offsets
@@ -49,9 +50,9 @@ function PendingChip({ p, onRetry, onDismiss }) {
   const q = p.quote.slice(0, 10);
   if (p.error) return html`
     <span className="chip err" title=${p.full || ''}>
-      ✗ 「${q}」${p.error}
+      <${Alert} /> 「${q}」${p.error}
       <button onClick=${() => onRetry(p)}>再試</button>
-      <button title="關掉" onClick=${() => onDismiss(p)}>✕</button>
+      <button title="關掉" aria-label="關掉" onClick=${() => onDismiss(p)}><${Close} /></button>
     </span>`;
   return html`
     <span className="chip pending">
@@ -61,20 +62,34 @@ function PendingChip({ p, onRetry, onDismiss }) {
     </span>`;
 }
 
+// A Hebrew/Greek fragment inside a Chinese parsing string ("冠詞 הַ + 名詞") drags the neutral " + "
+// and the digits after it into its own run, printing them backwards. First-strong isolates pin each
+// fragment so only the fragment itself is RTL.
+const BIDI = /[\u0590-\u05FF\uFB1D-\uFB4F\u0370-\u03FF\u1F00-\u1FFF]+/g;
+const isolate = s => (s || '').replace(/\s+/g, ' ').trim().replace(BIDI, m => `\u2068${m}\u2069`);
+
 // 原文逐字分析：一節一次（qp.php 整章會失敗），抓回來就留著，之後開合都不再打網路
 function Interlinear({ data, onWord }) {
   if (!data) return html`<div className="inter"><span className="spin"></span> 原文分析載入中…</div>`;
   if (!data.words?.length) return html`<div className="inter">${data.error || '這一節沒有原文分析資料'}</div>`;
+  const dir = data.ot ? 'rtl' : 'ltr';
   return html`
-    <div className="inter" dir=${data.ot ? 'rtl' : undefined}>
-      ${data.text ? html`<p className="ot">${data.text}</p>` : null}
-      <div className="ws">
-        ${data.words.map((x, i) => html`
-          <button type="button" className="w" key=${i} onClick=${e => onWord(x, data.ot, e.currentTarget.getBoundingClientRect())}>
-            <b>${x.word}</b><i>${x.exp}</i><em>${x.wform || x.pro}</em>
-          </button>`)}
+    <div className=${`inter${data.ot ? ' he' : ''}`}>
+      ${data.text ? html`<p className="ot" dir=${dir}>${data.text}</p>` : null}
+      <div className="ws" dir=${dir}>
+        ${data.words.map((x, i) => {
+          // Greek splits 詞性 (pro) from the parsing (wform); Hebrew puts both in wform and leaves pro empty
+          const gram = [x.pro, x.wform].map(isolate).filter(Boolean).join(' · ');
+          return html`
+            <button type="button" className="w" key=${i} title=${[x.exp, gram].filter(Boolean).join('\n')}
+                    onClick=${e => onWord(x, data.ot, e.currentTarget.getBoundingClientRect())}>
+              <b>${x.word}</b>
+              <i>${isolate(x.exp)}</i>
+              ${gram ? html`<em>${gram}</em>` : null}
+            </button>`;
+        })}
       </div>
-      ${data.literal ? html`<p className="lit" dir="ltr">直譯：${data.literal}</p>` : null}
+      ${data.literal ? html`<p className="lit" dir="ltr"><span className="lb">直譯</span>${data.literal}</p>` : null}
     </div>`;
 }
 
@@ -178,7 +193,7 @@ export function Verses({ verses, notes, pending, par, inter, nudge, handlers }) 
               <li key=${f.n} id=${`fn-${f.n}`}>
                 <span className="v">${f.verse}</span>${f.text}
                 <a className="back" href=${`#fnref-${f.n}`} title="回到經文"
-                   onClick=${e => { e.preventDefault(); jumpVerse(f.n); }}>↩</a>
+                   onClick=${e => { e.preventDefault(); jumpVerse(f.n); }} aria-label="回到經文"><${Back} /></a>
               </li>`)}
           </ol>
         </section>` : null}
@@ -208,7 +223,7 @@ export function useFootnoteJump(scopeRef) {
 // ── title bar ─────────────────────────────────────────────────────────────────
 const VERSIONS = [['rcuv', '和合本修訂版'], ['lcc', '呂振中'], ['bhs', 'BHS 希伯來文'], ['fhlwh', 'NT 希臘文']];
 
-export function TopBar({ pref, setPref, pver, setPver, loadLabel, onLoad, par, setParVersion, togglePar, onSearch, theme, toggleTheme, chatOn, toggleChat }) {
+export function TopBar({ pref, setPref, pver, setPver, loadLabel, onLoad, par, setParVersion, togglePar, onSearch, theme, toggleTheme, chatOn, toggleChat, actions }) {
   return html`
     <form id="pf" className="top" onSubmit=${e => { e.preventDefault(); onLoad(); }}>
       <${Slot} tag="span" className="brand" text="Bible Buddy ELI5" stagger=${30} />
@@ -219,16 +234,17 @@ export function TopBar({ pref, setPref, pver, setPver, loadLabel, onLoad, par, s
         </select>
         <button className="primary" id="pload" type="submit"><${Slot} text=${loadLabel} /></button>
       </div>
+      ${actions}
       <div className="icons">
         <select id="parver" hidden=${!par.on} title="對照欄用哪個譯本" value=${par.version}
                 onChange=${e => setParVersion(e.target.value)}>
           <option value="auto">${par.autoLabel}</option>
           ${VERSIONS.map(([v, n]) => html`<option key=${v} value=${v}>${n}</option>`)}
         </select>
-        <button type="button" id="parToggle" className=${par.on ? 'on' : ''} title="雙欄對照：右邊另一個譯本" onClick=${togglePar}>⇄</button>
-        <button type="button" id="searchToggle" title="全本經文關鍵字搜尋" onClick=${onSearch}>🔍</button>
-        <button type="button" id="theme" title="切換深淺色" onClick=${toggleTheme}><${Slot} text=${theme === 'dark' ? '☀' : '☾'} /></button>
-        <button type="button" id="chatToggle" className=${chatOn ? 'on' : ''} title="顯示 / 隱藏 agent 對話" onClick=${toggleChat}>💬</button>
+        <button type="button" id="parToggle" className=${par.on ? 'on' : ''} title="雙欄對照：右邊另一個譯本" aria-pressed=${par.on} onClick=${togglePar}><${Columns} /></button>
+        <button type="button" id="searchToggle" title="全本經文關鍵字搜尋" onClick=${onSearch}><${Search} /></button>
+        <button type="button" id="theme" title="切換深淺色" onClick=${toggleTheme}>${theme === 'dark' ? html`<${Sun} />` : html`<${Moon} />`}</button>
+        <button type="button" id="chatToggle" className=${chatOn ? 'on' : ''} title="顯示 / 隱藏 agent 對話" aria-pressed=${chatOn} onClick=${toggleChat}><${Chat} /></button>
       </div>
     </form>`;
 }
@@ -236,9 +252,11 @@ export function TopBar({ pref, setPref, pver, setPver, loadLabel, onLoad, par, s
 export function Banner({ banner }) {
   const t = useTicker(banner?.timer ? banner.t0 : 0, !!banner?.timer);
   if (!banner) return html`<div id="banner" hidden></div>`;
+  const tone = banner.tone || (banner.spin === false ? 'ok' : 'busy');
   return html`
-    <div id="banner" title=${banner.title || ''}>
-      ${banner.spin === false ? null : html`<span className="spin"></span>`}
+    <div id="banner" className=${tone} title=${banner.title || ''} role=${tone === 'err' ? 'alert' : 'status'}>
+      ${tone === 'busy' ? html`<${ThinkingOrb} state="breathing" size=${20} className="orb" aria-label=${banner.text} />`
+        : tone === 'err' ? html`<${Alert} />` : html`<${Check} />`}
       <${Slot} tag="span" id="bannerText" text=${banner.text} stagger=${20} />
       <span className="t">${t}</span>
     </div>`;
@@ -288,7 +306,7 @@ export function SearchPopover({ open, onClose, onPick, version }) {
       <div id="sres">
         ${!res ? null
           : res.loading ? html`<p className="hint">搜尋中…</p>`
-          : res.error ? html`<p className="hint">✗ ${res.error}</p>`
+          : res.error ? html`<p className="hint err"><${Alert} /> ${res.error}</p>`
           : !res.total ? html`<p className="hint">找不到。換個詞，或換一個譯本再搜（原文譯本查不到中文）。</p>`
           : html`
             <p className="hint">${res.total} 筆${res.records.length < res.total ? `，顯示前 ${res.records.length} 筆` : ''}</p>

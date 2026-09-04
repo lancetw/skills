@@ -5,8 +5,12 @@ import { html } from '../vendor/htm-react.mjs';
 // slot-text is the one dependency still fetched at runtime: it is an ES module, so it cannot carry
 // an SRI hash the way the classic scripts in <head> do. Version-pinned only.
 import { slotText } from 'https://cdn.jsdelivr.net/npm/slot-text@0.3.4/dist/index.js';
+// libraries.dev effects, vendored like React: a canvas thinking indicator and a beam that rides a
+// border. Both are peer-dep-only on React, which the <head> import map resolves to our vendored copy.
+import { ThinkingOrb } from '../vendor/thinking-orbs.mjs';
+import { BorderBeam } from '../vendor/border-beam.mjs';
 
-export { React, html };
+export { React, html, ThinkingOrb, BorderBeam };
 export const {
   useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, Fragment,
 } = React;
