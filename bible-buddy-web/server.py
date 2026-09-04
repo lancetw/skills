@@ -10,6 +10,8 @@ import os
 import re
 import sys
 import uuid
+import webbrowser
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from claude_agent_sdk import (
@@ -41,7 +43,20 @@ from book_names import lookup  # noqa: E402
 from detect_desktop import detect_desktop  # noqa: E402
 from fetch_fhl import fetch  # noqa: E402  bible-buddy's own fetcher, stdlib only
 
-app = FastAPI()
+@asynccontextmanager
+async def _lifespan(_app):
+    """The page is the deliverable, so open it as soon as the server can serve it.
+    uvicorn owns the port, not us: read it back off the command line (default 8765).
+    BIBLE_BUDDY_NO_OPEN=1 for a headless run."""
+    if not os.environ.get("BIBLE_BUDDY_NO_OPEN"):
+        port = "8765"
+        if "--port" in sys.argv:
+            port = sys.argv[sys.argv.index("--port") + 1]
+        webbrowser.open(f"http://127.0.0.1:{port}")
+    yield
+
+
+app = FastAPI(lifespan=_lifespan)
 passage: dict = {"reference": "", "version": "rcuv", "verses": []}
 notes: list[dict] = []
 hidden: set[str] = set()  # ids the user deleted; the auto passes are cached and must not resurrect them
