@@ -34,7 +34,7 @@
   body.chat-hidden { grid-template-columns:1fr 0; } body.chat-hidden #chat { display:none; }
   #gutter { position:absolute; left:-4px; top:0; bottom:0; width:8px; cursor:col-resize; z-index:6; }
   #gutter:hover, #gutter.on { background:var(--pen); opacity:.3; }
-  #chatToggle.on { border-color:var(--pen); color:var(--pen); }
+  #chatToggle.on, #parToggle.on { border-color:var(--pen); color:var(--pen); }
   #reader, #chat { min-height:0; }   /* grid items default to min-height:auto and would grow past the row */
   button, input, select { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:6px 10px; }
   button { cursor:pointer; } button:hover { border-color:var(--pen); color:var(--pen); }
@@ -88,6 +88,30 @@
   .fn { font-size:.6em; vertical-align:super; color:var(--pen); cursor:pointer; user-select:none; margin:0 1px; font-family:var(--sans); }  /* translator footnote marker */
   .chip { display:inline-block; font-size:.8rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
 
+  /* 原文：每節左欄一顆「原」，展開逐字分析；對照譯本另成一欄 */
+  .verse .ob { position:absolute; left:-52px; top:34px; width:32px; padding:0; font-family:var(--hand); font-size:.72rem; line-height:1.6; color:var(--ink-2); background:transparent; border-color:transparent; }
+  .verse .ob:hover, .verse .ob.on { color:var(--pen); border-color:var(--rule); background:var(--paper-2); }
+  .inter { margin:6px 0 2px; padding:10px 12px; border-left:2px solid var(--rule); background:var(--paper-2); border-radius:0 6px 6px 0; font-size:.9rem; line-height:1.6; }
+  .inter .ot { margin:0 0 8px; font-size:1.25rem; line-height:1.9; }
+  .inter .lit { margin:8px 0 0; font-family:var(--sans); font-size:.8rem; color:var(--ink-2); }
+  .inter .ws { display:flex; flex-wrap:wrap; gap:6px; }
+  .inter .w { display:flex; flex-direction:column; gap:1px; align-items:flex-start; text-align:start; padding:4px 8px; background:var(--card); }
+  /* arrow labels hang ~70px under their span; the block has to clear them, unless the chip row already did */
+  .verse.has-notes .inter { margin-top:74px; }
+  .verse.has-notes:has(.chips) .inter { margin-top:6px; }
+  .inter .w:hover { border-color:var(--pen); }
+  .inter .w b { font-size:1.15rem; font-weight:400; }
+  .inter .w i, .inter .w em { font-style:normal; font-family:var(--sans); color:var(--ink-2); }
+  .inter .w i { font-size:.78rem; max-width:16em; }
+  .inter .w em { font-size:.68rem; opacity:.75; }
+  /* 對照：整章兩欄，譯註橫跨兩欄 */
+  #verses.par { display:grid; grid-template-columns:1fr 1fr; column-gap:26px; }
+  #verses.par .fns { grid-column:1 / -1; }
+  .parv { font-family:var(--serif); font-size:1.1rem; line-height:2.1; padding:6px 0; color:var(--ink-2); }
+  .parv[dir=rtl] { text-align:right; }
+  @container (max-width: 700px) { #verses.par { display:block; } .parv { padding:0 0 10px; } }
+  /* Strong's 字典：借用筆記卡片的殼，內文是純文字不是 markdown */
+  #detail pre.lex { margin:0; white-space:pre-wrap; font-family:var(--sans); font-size:.85rem; }
   /* note card popover */
   #detail { position:fixed; margin:0; inset:auto; width:min(440px, 90vw); max-height:45vh; overflow:auto; padding:12px 14px; border:1px solid var(--rule); border-radius:10px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); font-size:.9rem; line-height:1.6; }
   #detail::backdrop { background:transparent; }
@@ -113,6 +137,17 @@
   #detail form.ed textarea { min-height:80px; resize:vertical; font-family:var(--sans); }
   #detail form.ed .row { display:flex; gap:6px; justify-content:flex-end; }
   #detail form.ed .row select { width:auto; margin-right:auto; }
+  /* 全本搜尋：置中的浮層，輸入在上、命中清單在下 */
+  #search { position:fixed; inset:auto; top:70px; left:50%; transform:translateX(-50%); width:min(640px, calc(100vw - 24px)); max-height:calc(100vh - 100px); padding:12px; border:1px solid var(--rule); border-radius:10px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
+  #search:popover-open { display:flex; flex-direction:column; gap:8px; }
+  #sf { display:flex; gap:8px; } #sf input { flex:1; min-width:0; }
+  #sres { overflow:auto; }
+  #sres .hint { margin:2px 0 6px; font-size:.78rem; color:var(--ink-2); }
+  #sres .hit { display:block; width:100%; text-align:left; border:0; border-bottom:1px solid var(--rule); border-radius:0; background:transparent; padding:8px 6px; }
+  #sres .hit:hover { background:var(--paper-2); }
+  #sres .hit b { display:block; font-size:.78rem; color:var(--pen); font-family:var(--sans); }
+  #sres .hit span { font-family:'Noto Serif TC', serif; }
+  #sres mark { background:transparent; color:var(--pen); font-weight:700; }
   /* selection menu: sits just under the highlighted text */
   #selmenu { position:fixed; margin:0; inset:auto; padding:4px; gap:4px; border:1px solid var(--rule); border-radius:8px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
   #selmenu:popover-open { display:flex; }
@@ -181,13 +216,14 @@
 </head>
 <body>
 <section id="reader">
-  <form id="pf" class="top"><span class="brand">Bible Buddy ELI5</span><div class="pgrp"><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button></div><div class="icons"><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></div></form>
+  <form id="pf" class="top"><span class="brand">Bible Buddy ELI5</span><div class="pgrp"><input id="pref" value="以賽亞書 7:10-17"><select id="pver"><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button class="primary" id="pload">載入</button></div><div class="icons"><select id="parver" hidden title="對照欄用哪個譯本"><option value="auto">原文</option><option value="rcuv">和合本修訂版</option><option value="lcc">呂振中</option><option value="bhs">BHS 希伯來文</option><option value="fhlwh">NT 希臘文</option></select><button type="button" id="parToggle" title="雙欄對照：右邊另一個譯本">⇄</button><button type="button" id="searchToggle" title="全本經文關鍵字搜尋">🔍</button><button type="button" id="theme" title="切換深淺色">☾</button><button type="button" id="chatToggle" title="顯示 / 隱藏 agent 對話">💬</button></div></form>
   <div id="page" class="page">
     <div class="hrow"><h1 id="ref">載入中…</h1></div>
     <div class="trow"><div class="actions"><button type="button" id="quick" title="一次模型掃整段，寫成淺顯易懂的 ELI5 筆記；產生過的段落直接回傳">✨ 生成 ELI5 筆記</button><button type="button" id="quickClear" hidden title="刪除這段所有自動筆記（ELI5、agent 標注、references）；手動筆記保留">🗑 清除自動筆記</button></div><div id="banner" hidden><span class="spin"></span><span id="bannerText"></span><span class="t" id="bannerTime"></span></div></div>
     <div id="verses"></div>
   </div>
   <div id="detail" popover></div>
+  <div id="search" popover><form id="sf"><input id="sq" placeholder="搜尋全本經文，例：虛空" autocomplete="off"><button class="primary" type="submit">搜尋</button></form><div id="sres"></div></div>
   <div id="selmenu" popover><button type="button" id="selManual">✎ 手動筆記</button><button type="button" id="selAi" title="用模型針對這幾個字寫一條淺顯易懂的筆記">✨ ELI5 筆記</button></div>
 </section>
 <aside id="chat">
@@ -232,6 +268,9 @@ function banner(text, { spin = true, timer = false, hideAfter = 0 } = {}) {
 const MAX_ARROWS = 3, MIN_GAP = 9;
 const COLOR = { lexical:'amber', history:'blue', misread:'red', crossref:'purple', personal:'green' };
 let verses = [], notes = [], cardSlot = null, lastRef = null, fnNum = {};
+// 原文：哪幾節展開了逐字分析（連同抓回來的資料，render() 會重建整個 #verses），以及對照欄的狀態
+let lastQ = null, parOn = false, parData = { map: new Map(), rtl: false, version: '' };
+const interOpen = new Set(), interCache = new Map();
 const TOOL_ZH = { Bash:'執行抓經文腳本', WebSearch:'搜尋', WebFetch:'讀網頁', Read:'讀參考資料', Grep:'查參考資料', Glob:'找檔案', Write:'寫檔案', Edit:'修改檔案', Skill:'載入 skill', ToolSearch:'找工具', mcp__notes__add_annotation:'加筆記', mcp__notes__update_annotation:'更新筆記' };
 const DOTC = { amber:'#b8751a', blue:'#3b72c4', green:'#2f8f5b', red:'#c45a38', purple:'#8657c8' };
 const $ = s => document.querySelector(s);
@@ -240,18 +279,21 @@ const $ = s => document.querySelector(s);
 async function loadPassage(refStr, version) {
   const m = (refStr || '').trim().match(/^(\S+?)\s*(\d+)?(?::(\d+)(?:-(\d+))?)?$/);
   if (!m || /^\d/.test(m[1])) { banner('✗ 看不懂的經文位置，例：約翰福音 3:16', { spin: false, hideAfter: 4000 }); slot('#pload').set('載入'); return; }
+  lastQ = { book: m[1], chapter: +(m[2] || 1), start: +(m[3] || 1), end: +(m[4] || m[3] || 200) };
   const qs = `?book=${encodeURIComponent(m[1])}&chapter=${m[2]||1}&start=${m[3]||1}&end=${m[4]||m[3]||200}&version=${version||'rcuv'}`;
   banner('載入經文…');
   const r = await (await fetch('/api/passage' + qs)).json();
   if (r.error) { banner(`✗ ${r.error}`, { spin: false, hideAfter: 4000 }); slot('#pload').set('載入'); return; }
   notes = await (await fetch('/api/notes')).json();   // server keeps them unless the passage changed
   verses = r.verses;
+  interOpen.clear(); interCache.clear();               // the 原文 blocks belong to the verses we just replaced
   const title = `${r.reference} · ${r.version}`;
   if (lastRef && lastRef !== r.reference) logLine('tool', `📖 切換到 ${esc(r.reference)}，agent 對話重新開始`);  // the server drops the agent session on a passage change
   lastRef = r.reference;
   slot('#ref').set(title); quickLabel();
   render();
   slot('#pload').set('載入');
+  if (parOn) loadSide();                                     // not awaited: the 對照 column fills in on its own
   const refsN = await addAuto('/api/auto-notes/refs');        // instant, from bible-buddy references
   banner(refsN ? `✓ 已驗證 ${refsN} 條` : null, { spin: false, hideAfter: 3000 });
 }
@@ -292,6 +334,7 @@ async function addAuto(url) {
 function render() {
   let fnN = 0; fnNum = {}; const fnList = [];  // translator footnotes numbered once across the passage
   for (const v of verses) for (const [i, f] of (v.footnotes || []).entries()) { fnNum[`${v.verse}:${i}`] = ++fnN; fnList.push({ n: fnN, verse: v.verse, text: f.text }); }
+  $('#verses').className = parOn ? 'par' : '';
   $('#verses').innerHTML = verses.map(v => {
     const vs = notes.filter(n => n.verse === v.verse && n.anchor).sort((a,b) => a.anchor.start - b.anchor.start);
     let out = '', pos = 0, shown = 0, lastStart = -99;
@@ -306,7 +349,8 @@ function render() {
     out += seg(v, pos, v.text.length);
     const pend = [...pending.values()].filter(p => p.verse === v.verse);
     const chips = rest.length || pend.length ? `<div class="chips">${rest.map(n => `<span class="chip" data-id="${n.id}" style="--c:${DOTC[COLOR[n.kind]]}">${esc(n.label)}</span>`).join('')}${pend.map(pendingChip).join('')}</div>` : '';
-    return `<div class="verse ${shown ? 'has-notes' : ''}" data-verse="${v.verse}"><span class="n">${v.verse}</span>${out}<span class="eol">\u200b</span>${chips}</div>`;
+    const par = parOn ? `<div class="parv"${parData.rtl ? ' dir="rtl"' : ''}>${esc(parData.map.get(v.verse) || '')}</div>` : '';
+    return `<div class="verse ${shown ? 'has-notes' : ''}" data-verse="${v.verse}"><span class="n">${v.verse}</span><button type="button" class="ob${interOpen.has(v.verse) ? ' on' : ''}" data-ob="${v.verse}" title="原文逐字分析">原</button>${out}<span class="eol">\u200b</span>${chips}${interOpen.has(v.verse) ? interHTML(v.verse) : ''}</div>` + par;
   }).join('') + (fnList.length ? `<section class="fns"><h3>譯註</h3><ol>${fnList.map(f => `<li id="fn-${f.n}"><span class="v">${f.verse}</span>${esc(f.text)}<a class="back" href="#fnref-${f.n}" title="回到經文">↩</a></li>`).join('')}</ol></section>` : '');
   demoteWrapped();
 }
@@ -319,6 +363,43 @@ function seg(v, a, b) {
     out += esc(v.text.slice(p, f.pos)) + `<sup class="fn" id="fnref-${n}" data-fn="${n}" title="${esc(f.text)}">${n}</sup>`; p = f.pos;
   }
   return out + esc(v.text.slice(p, b));
+}
+// 原文逐字分析：一節一次（qp.php 整章會失敗），抓回來就留著，之後開合都不再打網路
+function interHTML(vn) {
+  const d = interCache.get(vn);
+  if (!d) return '<div class="inter"><span class="spin"></span> 原文分析載入中…</div>';
+  if (!d.words?.length) return `<div class="inter">${esc(d.error || '這一節沒有原文分析資料')}</div>`;
+  const w = x => `<button type="button" class="w" data-sn="${esc(x.sn)}" data-ot="${d.ot ? 1 : 0}"><b>${esc(x.word)}</b><i>${esc(x.exp)}</i><em>${esc(x.wform || x.pro)}</em></button>`;
+  return `<div class="inter"${d.ot ? ' dir="rtl"' : ''}>${d.text ? `<p class="ot">${esc(d.text)}</p>` : ''}`
+    + `<div class="ws">${d.words.map(w).join('')}</div>`
+    + `${d.literal ? `<p class="lit" dir="ltr">直譯：${esc(d.literal)}</p>` : ''}</div>`;
+}
+async function toggleInter(vn) {
+  if (interOpen.has(vn)) { interOpen.delete(vn); render(); return; }
+  interOpen.add(vn); render();
+  if (interCache.has(vn)) return;
+  interCache.set(vn, await api(`/api/interlinear?book=${encodeURIComponent(lastQ.book)}&chapter=${lastQ.chapter}&verse=${encodeURIComponent(vn)}`));
+  render();
+}
+// Strong's 字典：FHL 回的是純文字（音譯、欽定本次數、字義樹），不是 markdown，所以只 escape 不 render
+async function showLex(btn) {
+  const d = $('#detail'), at = () => placeDetail(btn.getBoundingClientRect());
+  cardSlot?.destroy(); cardSlot = null;
+  d.innerHTML = '<div class="lex"><span class="spin"></span> 查字典…</div>';
+  d.showPopover(); at();
+  const r = await api(`/api/lexicon?sn=${encodeURIComponent(btn.dataset.sn)}&ot=${btn.dataset.ot}`);
+  d.innerHTML = r.error ? `<pre class="lex">✗ ${esc(r.error)}</pre>`
+    : `<div class="hd"><b>${esc(r.orig)}</b></div><div class="meta"><span class="tag">Strong's ${esc(r.sn)}</span></div><pre class="lex">${esc(r.text || '（字典沒有這個編號）')}</pre>`;
+  at();
+}
+// 對照欄：另一個譯本的同幾節。走 /api/side，不動伺服器的 passage 狀態，也不會重開 agent session
+async function loadSide() {
+  if (!lastQ) return;
+  const r = await api(`/api/side?book=${encodeURIComponent(lastQ.book)}&chapter=${lastQ.chapter}&start=${lastQ.start}&end=${lastQ.end}&version=${$('#parver').value}`);
+  parData = { map: new Map((r.verses || []).map(v => [v.verse, v.text])), rtl: r.code === 'bhs', version: r.version };
+  $('#parver').options[0].textContent = r.error ? '原文' : `原文（${r.version}）`;
+  if (r.error) banner(`✗ 對照譯本載入失敗：${r.error}`, { spin: false, hideAfter: 4000 });
+  render();
 }
 // Labels hang ~70px under their span, so an arrow on any line but the last would cover the next line.
 // After layout, turn those into chips. Re-run on resize since wrapping changes.
@@ -419,6 +500,8 @@ $('#detail').addEventListener('pointerdown', e => {
 $('#verses').addEventListener('click', e => {
   // footnote marker ↔ its entry in the 譯註 list: scroll and flash, no popover
   const jump = (el, flash) => { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); if (flash) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 3000); } };  // 3 s lit, then a slow fade
+  const ob = e.target.closest('[data-ob]'); if (ob) { toggleInter(ob.dataset.ob); return; }
+  const wd = e.target.closest('.inter .w'); if (wd) { showLex(wd); return; }
   const fn = e.target.closest('.fn'); if (fn) { jump($('#fn-' + fn.dataset.fn), true); return; }
   const back = e.target.closest('.fns .back'); if (back) { e.preventDefault(); jump($(back.getAttribute('href')).closest('.verse'), true); return; }
   const rt = e.target.closest('[data-retry]'); if (rt) { const p = pending.get(rt.dataset.retry); pending.delete(p.id); aiNote(p); return; }
@@ -586,6 +669,41 @@ $('#quickClear').onclick = async () => {
   notes = notes.filter(x => x.author === 'user'); render(); quickLabel();
   banner(`✓ 已刪除 ${r.removed} 條自動筆記`, { spin: false, hideAfter: 3000 });
 };
+// ⇄ 雙欄對照：開關與譯本選擇都記在 localStorage，重新整理回到同一個畫面
+function parallel(on) {
+  parOn = on; $('#parver').hidden = !on; $('#parToggle').classList.toggle('on', on);
+  try { localStorage.setItem('par', on ? $('#parver').value : ''); } catch {}
+  on ? loadSide() : render();
+}
+$('#parToggle').onclick = () => parallel(!parOn);
+$('#parver').onchange = () => parallel(true);
+// 全本搜尋（FHL se.php，用目前選的譯本）→ 點一筆就載入那一整章並跳到該節
+$('#searchToggle').onclick = () => { $('#search').showPopover(); $('#sq').focus(); $('#sq').select(); };
+$('#sf').onsubmit = async e => {
+  e.preventDefault();
+  const q = $('#sq').value.trim(); if (!q) return;
+  $('#sres').innerHTML = '<p class="hint">搜尋中…</p>';
+  const r = await api(`/api/search?q=${encodeURIComponent(q)}&version=${$('#pver').value}`);
+  if (r.error) { $('#sres').innerHTML = `<p class="hint">✗ ${esc(r.error)}</p>`; return; }
+  if (!r.total) { $('#sres').innerHTML = '<p class="hint">找不到。換個詞，或換一個譯本再搜（原文譯本查不到中文）。</p>'; return; }
+  // hits are FHL text, not markup: escape first, then mark the keyword in the escaped copy
+  const key = esc(q);
+  $('#sres').innerHTML = `<p class="hint">${r.total} 筆${r.records.length < r.total ? `，顯示前 ${r.records.length} 筆` : ''}</p>`
+    + r.records.map(x => `<button type="button" class="hit" data-book="${esc(x.book)}" data-ch="${x.chapter}" data-v="${esc(x.verse)}"><b>${esc(x.ref)}</b><span>${esc(x.text).split(key).join(`<mark>${key}</mark>`)}</span></button>`).join('');
+};
+$('#sres').addEventListener('click', async e => {
+  const b = e.target.closest('.hit'); if (!b) return;
+  $('#search').hidePopover();
+  const ref = `${b.dataset.book} ${b.dataset.ch}`, version = $('#pver').value;
+  $('#pref').value = ref;
+  try { localStorage.setItem('passage', JSON.stringify({ ref, version })); } catch {}
+  slot('#pload').set('載入中…');
+  await loadPassage(ref, version);
+  const el = $(`.verse[data-verse="${CSS.escape(b.dataset.v)}"]`);
+  if (!el) return;
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2000);
+});
 $('#pf').onsubmit = async e => {
   e.preventDefault(); slot('#pload').set('載入中…');
   try { localStorage.setItem('passage', JSON.stringify({ ref: $('#pref').value.trim(), version: $('#pver').value })); } catch {}
@@ -616,6 +734,8 @@ slot('#pload'); slot('#send'); slot('#status', '');
 // a refresh must come back to the same passage, or it would switch the server's passage and drop the running quick pass
 let saved = null; try { saved = JSON.parse(localStorage.getItem('passage')); } catch {}
 if (saved?.ref) { $('#pref').value = saved.ref; $('#pver').value = saved.version || 'rcuv'; }
+let savedPar = ''; try { savedPar = localStorage.getItem('par') || ''; } catch {}
+if (savedPar) { $('#parver').value = savedPar; parOn = true; $('#parver').hidden = false; $('#parToggle').classList.add('on'); }
 loadPassage(saved?.ref, saved?.version).then(reattach);
 </script>
 </body>

@@ -5,10 +5,13 @@ Run:  uv run uvicorn server:app --port 8765   then open http://127.0.0.1:8765
 """
 import asyncio
 import hashlib
+import html as html_mod
 import json
 import os
 import re
 import sys
+import urllib.parse
+import urllib.request
 import uuid
 import webbrowser
 from contextlib import asynccontextmanager
@@ -41,7 +44,7 @@ SKILL = HERE / ".claude/skills/bible-buddy"
 sys.path.append(str(SKILL / "scripts"))  # append, not insert(0): position 0 would let scripts/ shadow a stdlib module
 from book_names import lookup  # noqa: E402
 from detect_desktop import detect_desktop  # noqa: E402
-from fetch_fhl import fetch  # noqa: E402  bible-buddy's own fetcher, stdlib only
+from fetch_fhl import BOOK_BID, fetch  # noqa: E402  bible-buddy's own fetcher, stdlib only
 
 @asynccontextmanager
 async def _lifespan(_app):
@@ -111,6 +114,105 @@ async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int =
         NOTES_DIR.mkdir(parents=True, exist_ok=True)
         _LAST_FILE().write_text(json.dumps({"book": book, "chapter": chapter, "start": start, "end": end, "version": version}, ensure_ascii=False))
     return r
+
+
+# ── keyword search over the whole Bible (FHL se.php) ──────────────────────────
+SE_API = "https://bible.fhl.net/api/se.php"
+BID_ZH = {bid: (lookup(osis) or (osis,))[0] for osis, bid in BOOK_BID.items()}  # se.php returns bid + an abbreviation; the reader wants the full name
+
+
+def _clean_hit(text: str) -> str:
+    """A search hit is rawer than a fetched verse: some versions are indexed in their Strong's edition
+    (<WH0430>, {<WH0853>}), and section headings and <br/> come along. Strip all of it, then reuse the
+    passage cleaner to drop translator notes and parallel refs."""
+    text = html_mod.unescape(re.sub(r"<[^>]+>", "", text)).replace("{", "").replace("}", "")
+    return re.sub(r"\s+", " ", _split_footnotes(text)[0]).strip()
+
+
+def _fhl(api: str, params: dict) -> dict:
+    req = urllib.request.Request(api + "?" + urllib.parse.urlencode(params), headers={"User-Agent": "bible-buddy-web/1.0"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+def _bid(book: str) -> int | None:
+    info = lookup(book)
+    return BOOK_BID.get(info[2]) if info else None
+
+
+@app.get("/api/search")
+async def search(q: str, version: str = "rcuv", limit: int = 40):
+    """Keyword hits across all 66 books. Two calls: the total (count_only) and the first `limit` verses,
+    because se.php's record_count is the returned count once a limit is set."""
+    q = q.strip()
+    if not q:
+        return {"records": [], "total": 0}
+    base = {"q": q, "VERSION": version, "gb": 0}
+    try:
+        total, data = await asyncio.gather(
+            asyncio.to_thread(_fhl, SE_API, {**base, "count_only": 1}),
+            asyncio.to_thread(_fhl, SE_API, {**base, "limit": max(1, min(limit, 200))}),
+        )
+    except Exception as e:
+        return {"error": f"FHL 搜尋失敗：{e}", "records": [], "total": 0}
+    records = []
+    for r in data.get("record", []):
+        book = BID_ZH.get(r.get("bid"), r.get("chineses", ""))
+        records.append({"book": book, "chapter": r.get("chap"), "verse": str(r.get("sec")),
+                        "ref": f"{book} {r.get('chap')}:{r.get('sec')}", "text": _clean_hit(r.get("bible_text", ""))})
+    return {"records": records, "total": total.get("record_count", len(records)), "q": q}
+
+
+# ── 原文: word-by-word analysis (qp.php), lexicon (sd.php), parallel column ────
+QP_API = "https://bible.fhl.net/api/qp.php"
+SD_API = "https://bible.fhl.net/api/sd.php"
+
+
+@app.get("/api/interlinear")
+async def interlinear(book: str, chapter: int, verse: int):
+    """One verse of FHL's word analysis. Record wid=0 carries the whole original verse plus a literal
+    Chinese rendering; wid>=1 are the words in reading order. Per verse only — a whole chapter errors out."""
+    bid = _bid(book)
+    if not bid:
+        return {"error": f"未知書卷：{book}"}
+    try:
+        d = await asyncio.to_thread(_fhl, QP_API, {"bid": bid, "chap": chapter, "sec": verse, "gb": 0})
+    except Exception as e:
+        return {"error": f"FHL 原文分析失敗：{e}"}
+    head, words = {"text": "", "literal": ""}, []
+    for r in d.get("record", []):
+        g = lambda k: (r.get(k) or "").strip()  # noqa: E731  every field can be absent or null
+        if r.get("wid") == 0:
+            head = {"text": re.sub(r"\s+", " ", g("word")), "literal": re.sub(r"\s+", " ", g("exp"))}
+        else:
+            words.append({k: g(k) for k in ("word", "sn", "pro", "wform", "orig", "exp", "remark")})
+    if not words:
+        return {"error": "這一節沒有原文分析資料", **head, "words": []}
+    return {"ot": d.get("N") == 1, "words": words, **head}  # N: 0 新約 (Greek, LTR), 1 舊約 (Hebrew, RTL)
+
+
+@app.get("/api/lexicon")
+async def lexicon(sn: str, ot: int = 0):
+    """Strong's entry for one word: transliteration, KJV counts, gloss tree. Plain text, not markdown."""
+    try:
+        d = await asyncio.to_thread(_fhl, SD_API, {"N": 1 if ot else 0, "k": sn, "gb": 0})
+    except Exception as e:
+        return {"error": f"FHL 字典失敗：{e}"}
+    r = (d.get("record") or [{}])[0]
+    return {"sn": r.get("sn") or sn, "orig": r.get("orig") or "", "text": (r.get("dic_text") or "").strip()}
+
+
+@app.get("/api/side")
+async def side(book: str, chapter: int, start: int = 1, end: int = 200, version: str = "auto"):
+    """The same verses in a second version, for the 對照 column. Read-only on purpose: unlike
+    /api/passage it leaves the page's passage state and the agent session alone.
+    version=auto picks the original language of the testament the book is in."""
+    if version == "auto":
+        version = "bhs" if (_bid(book) or 1) <= 39 else "fhlwh"
+    r = await asyncio.to_thread(fetch, book, chapter, start, end, version)
+    for v in r.get("verses", []):
+        v["text"] = _split_footnotes(v["text"])[0]
+    return {"version": r.get("version", version), "code": version, "verses": r.get("verses", []), "error": r.get("error")}
 
 
 def _LAST_FILE() -> Path:
