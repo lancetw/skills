@@ -37,3 +37,23 @@ def test_twenty_chinese_characters_is_the_ceiling():
 def test_overlong_label_never_cuts_a_latin_word_in_half():
     out = server._short_label("誤讀 · " + "word " * 10)
     assert out.endswith("…") and "wor…" not in out and " wo…" not in out
+
+
+# ── section headings ──────────────────────────────────────────────────────────
+# FHL prefixes the verse a version prints a heading above with "<h2>…</h2>" (出 3:1).
+
+RAW_EXOD_3_1 = "<h2>上帝呼召摩西</h2><u>摩西</u>牧放他岳父<u>米甸</u>祭司的羊羣。"
+
+
+def test_heading_is_split_off_the_verse():
+    text, heading = server.split_heading(RAW_EXOD_3_1)
+    assert heading == "上帝呼召摩西"
+    assert "上帝呼召摩西" not in text and text.startswith("<u>摩西</u>牧放")
+
+
+def test_verse_without_a_heading_is_untouched():
+    assert server.split_heading("<u>摩西</u>說：「我在這裏。」") == ("<u>摩西</u>說：「我在這裏。」", "")
+
+
+def test_search_hit_drops_the_heading():
+    assert server._clean_hit(RAW_EXOD_3_1) == "摩西牧放他岳父米甸祭司的羊羣。"

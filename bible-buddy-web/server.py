@@ -47,7 +47,7 @@ SKILL = HERE / ".claude/skills/bible-buddy"
 sys.path.append(str(SKILL / "scripts"))  # append, not insert(0): position 0 would let scripts/ shadow a stdlib module
 from book_names import lookup  # noqa: E402
 from detect_desktop import detect_desktop  # noqa: E402
-from fetch_fhl import BOOK_BID, fetch  # noqa: E402  bible-buddy's own fetcher, stdlib only
+from fetch_fhl import BOOK_BID, fetch, split_heading  # noqa: E402  bible-buddy's own fetcher, stdlib only
 
 @asynccontextmanager
 async def _lifespan(_app):
@@ -204,7 +204,7 @@ def _clean_hit(text: str) -> str:
     """A search hit is rawer than a fetched verse: some versions are indexed in their Strong's edition
     (<WH0430>, {<WH0853>}), and section headings and <br/> come along. Strip all of it, then reuse the
     passage cleaner to drop translator notes and parallel refs."""
-    text = html_mod.unescape(re.sub(r"<[^>]+>", "", text)).replace("{", "").replace("}", "")
+    text = html_mod.unescape(re.sub(r"<[^>]+>", "", split_heading(text)[0])).replace("{", "").replace("}", "")
     return re.sub(r"\s+", " ", _split_footnotes(text)[0]).strip()
 
 

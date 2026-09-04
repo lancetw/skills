@@ -158,10 +158,13 @@ export function Verses({ verses, notes, pending, par, inter, handlers }) {
   return html`
     <div id="verses" ref=${box} className=${par.on ? 'par' : ''}>
       ${verses.map(v => {
+        // 譯本印在這一節之上的段落標題（FHL 把它塞在經文前面），不是經文本身，所以不參與標註與逐字分析
+        const hd = v.heading ? html`<h4 className="sh">${v.heading}</h4>` : null;
         // 併節：這一節的字被譯本併進前一節（FHL 回傳 "a"）。中譯沒有可標註的經文，但原文有這一節，
         // 所以 原文逐字分析 與對照欄照舊；原 鈕改成行內，短短一列的左緣沒有第二層空間放它
         if (v.merged) return html`
           <${Fragment} key=${v.verse}>
+            ${hd}
             <div className="verse merged" data-verse=${v.verse}>
               <span className="n">${v.verse}</span><span className="mg">併入上節</span>
               <button type="button" className=${`ob${inter.open.has(v.verse) ? ' on' : ''}`} title="原文逐字分析"
@@ -189,6 +192,7 @@ export function Verses({ verses, notes, pending, par, inter, handlers }) {
         body.push(...seg(v, pos, v.text.length, fnNum));
         return html`
           <${Fragment} key=${v.verse}>
+            ${hd}
             <div className=${`verse ${arrows.length ? 'has-notes' : ''}`} data-verse=${v.verse}>
               <span className="n">${v.verse}</span>
               <button type="button" className=${`ob${inter.open.has(v.verse) ? ' on' : ''}`} title="原文逐字分析"

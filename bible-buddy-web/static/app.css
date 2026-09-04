@@ -75,6 +75,10 @@
   .page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
   .page::before { content:""; position:absolute; top:0; bottom:0; left:60px; width:1px; background:var(--margin); }   /* the red margin line */
   h1 { font-family:'Noto Serif TC', serif; font-size:1.05rem; font-weight:600; color:var(--ink-2); margin:0 0 14px; }
+  /* 譯本自己的段落標題（出 3:1「上帝呼召摩西」）：跟 h1 同一個襯線字族，但小一號、留白靠上 */
+  .sh { font-family:'Noto Serif TC', serif; font-size:1rem; font-weight:600; color:var(--ink-2); margin:20px 0 2px; }
+  .sh:first-child { margin-top:0; }
+  #verses.par .sh { grid-column:1 / -1; }
   .verse { position:relative; font-family:var(--serif); font-size:1.15rem; line-height:2.1; padding:6px 0; }
   .verse.has-notes { padding-bottom:78px; }
   /* 併節只留一個小記號，但行高照舊：頁緣的節號與 原 鈕要跟其他節排在同一欄 */
