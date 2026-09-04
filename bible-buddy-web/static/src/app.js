@@ -24,7 +24,6 @@ function App() {
   const [sel, setSel] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [quickBusy, setQuickBusy] = useState(false);
-  const [nudge, setNudge] = useState(0);            // width changed without a window resize
   const savedPar = useRef(local.get('par', '')).current;
   const [par, setPar] = useState({ on: !!savedPar, version: savedPar || 'auto', map: {}, rtl: false, autoLabel: '原文' });
   const [theme, setTheme] = useState(() => local.get('theme', 'light'));
@@ -48,7 +47,7 @@ function App() {
   }, []);
 
   // ── chat ────────────────────────────────────────────────────────────────────
-  const openChat = useCallback(() => { setChatOn(true); local.set('chat', '1'); setNudge(n => n + 1); }, []);
+  const openChat = useCallback(() => { setChatOn(true); local.set('chat', '1'); }, []);
   const onNote = useCallback(n => setNotes(cur => {
     const i = cur.findIndex(x => x.id === n.id);
     return i >= 0 ? cur.map(x => (x.id === n.id ? n : x)) : [...cur, n];
@@ -116,7 +115,6 @@ function App() {
     local.set('par', on ? v : '');
     setPar(p => ({ ...p, on, version: v }));
     parRef.current = { ...parRef.current, on, version: v };
-    setNudge(n => n + 1);
     if (on) loadSide();
   }, [loadSide]);
 
@@ -211,7 +209,6 @@ function App() {
       g.classList.remove('on');
       const w = parseInt(document.body.style.getPropertyValue('--chat-w'));
       if (w) local.set('chatW', w);    // a click that never moved leaves the property unset, and NaN is not a width
-      setNudge(n => n + 1);
     }, { once: true });
     e.preventDefault();
   };
@@ -222,7 +219,6 @@ function App() {
   const onGutterReset = () => {
     document.body.style.removeProperty('--chat-w');
     local.set('chatW', 0);
-    setNudge(n => n + 1);
   };
 
   // A refresh must come back to the same passage, or it would switch the server's passage and drop the
@@ -281,7 +277,7 @@ function App() {
           par=${par} togglePar=${() => parallel(!par.on)} setParVersion=${v => parallel(true, v)}
           onSearch=${() => setSearchOpen(true)}
           theme=${theme} toggleTheme=${() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
-          chatOn=${chatOn} toggleChat=${() => { const on = !chatOn; setChatOn(on); local.set('chat', on ? '1' : '0'); setNudge(n => n + 1); }}
+          chatOn=${chatOn} toggleChat=${() => { const on = !chatOn; setChatOn(on); local.set('chat', on ? '1' : '0'); }}
           actions=${html`
             <div className="actions">
               <button type="button" id="quick" className=${quickBusy ? 'busy' : ''} disabled=${quickBusy || chat.running}
@@ -294,7 +290,7 @@ function App() {
             </div>`} />
         <div id="page" className="page">
           <div className="hrow"><h1 id="ref"><${Slot} text=${reference} /></h1><${Banner} banner=${bannerState} /></div>
-          <${Verses} verses=${verses} notes=${notes} pending=${pending} par=${par} inter=${inter} nudge=${nudge}
+          <${Verses} verses=${verses} notes=${notes} pending=${pending} par=${par} inter=${inter}
             handlers=${{
               openNote: (n, rect, gap = 78) => setDetail({ mode: 'card', note: n, rect, gap }),
               toggleInter, showLex,

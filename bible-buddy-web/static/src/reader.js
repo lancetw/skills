@@ -95,13 +95,18 @@ function Interlinear({ data, onWord }) {
 }
 
 // ── the page ──────────────────────────────────────────────────────────────────
-export function Verses({ verses, notes, pending, par, inter, nudge, handlers }) {
+export function Verses({ verses, notes, pending, par, inter, handlers }) {
   const box = useRef(null);
-  const [win, setWin] = useState(0);                         // bumped on resize: wrapping decides the arrows
+  // The reader's own width decides the wrapping, so it decides the arrows below. Watch the element,
+  // not the window: the chat panel, the 對照 column and a gutter drag all resize it without one, and
+  // a counter bumped alongside them moved a render out of step with the width, so arrows demoted in
+  // the narrow reader were kept demoted once it was wide again.
+  const [w, setW] = useState(0);
   useEffect(() => {
-    const on = () => setWin(n => n + 1);
-    addEventListener('resize', on);
-    return () => removeEventListener('resize', on);
+    if (!box.current) return;
+    const ro = new ResizeObserver(([e]) => setW(Math.round(e.contentRect.width)));
+    ro.observe(box.current);
+    return () => ro.disconnect();
   }, []);
 
   const fnNum = {}, fnList = [];                             // translator footnotes numbered once across the passage
@@ -115,8 +120,8 @@ export function Verses({ verses, notes, pending, par, inter, nudge, handlers }) 
   // line. The original page fixed that by rewriting the DOM after layout; here the measurement only
   // produces state (which ids lost their arrow, which lean right) and React re-renders from it.
   const key = useMemo(
-    () => [win, nudge, par.on, verses.map(v => v.verse).join(), notes.map(n => n.id).join(), [...inter.open].join()].join('|'),
-    [win, nudge, par.on, verses, notes, inter.open]);
+    () => [w, par.on, verses.map(v => v.verse).join(), notes.map(n => n.id).join(), [...inter.open].join()].join('|'),
+    [w, par.on, verses, notes, inter.open]);
   const [lay, setLay] = useState({ key: '', dem: [], nw: [] });
   const cur = lay.key === key ? lay : { key, dem: [], nw: [] };
   const demoted = new Set(cur.dem), nwSet = new Set(cur.nw);
