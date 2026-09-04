@@ -47,9 +47,12 @@ uv run --directory {WEB} uvicorn server:app --port 8765
 ```
 
 Run it **in the background** and leave it running — the page is the deliverable, and the
-agent turns it serves take minutes. Then give the user the URL: `http://127.0.0.1:8765`.
+agent turns it serves take minutes. The server opens the page in the default browser once it
+is ready; still give the user the URL (`http://127.0.0.1:8765`) in case the browser is not
+where they are looking. `BIBLE_BUDDY_NO_OPEN=1` suppresses the auto-open.
 
-Port 8765 taken → pick another and say which one you used. The server binds loopback only.
+Port 8765 taken → pick another, pass it as `--port` (the auto-open reads that flag) and say
+which one you used. The server binds loopback only.
 
 ### The proxy trap
 
