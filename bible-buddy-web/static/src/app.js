@@ -5,6 +5,7 @@ import { React, html, useState, useEffect, useRef, useCallback, Slot, api, local
 import { createRoot } from '../vendor/react-dom-client.mjs';
 import { TopBar, Banner, Verses, SearchPopover, useFootnoteJump } from './reader.js';
 import { Sparkle, Trash, Check } from './icons.js';
+import { Doodle } from './doodles.js';
 import { Detail, SelectionMenu, useSelection } from './notes.js';
 import { useChat, Chat } from './chat.js';
 
@@ -257,6 +258,11 @@ function App() {
               retryPending: p => { setPending(cur => { const { [p.id]: _, ...rest } = cur; return rest; }); aiNote(p); },
               dismissPending: p => setPending(cur => { const { [p.id]: _, ...rest } = cur; return rest; }),
             }} />
+          ${verses.length
+            ? html`<div className="dood foot" aria-hidden="true">
+                     <${Doodle} name="star" /><${Doodle} name="star" /><${Doodle} name="star" />
+                   </div>`
+            : html`<div className="dood blank" aria-hidden="true"><${Doodle} name="sprout" /></div>`}
         </div>
         <${Detail} detail=${detail} setDetail=${setDetail} running=${chat.running}
           verses=${verses} notes=${notes} setNotes=${setNotes}

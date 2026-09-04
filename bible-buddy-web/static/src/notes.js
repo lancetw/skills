@@ -5,6 +5,7 @@ import {
   Slot, api, mdHtml, AUTHOR, KIND_ZH, DOTC, COLOR, Fragment,
 } from './lib.js';
 import { Refresh, BadgeCheck, ArrowRight, Pencil, Sparkle, Alert } from './icons.js';
+import { Doodle } from './doodles.js';
 
 // place the card below a rect (labels hang ~70px under a span, so a span rect gets extra room);
 // flip above if it would overflow
@@ -41,6 +42,7 @@ function Card({ n, running, actions }) {
       <div className="hd">
         <span className="dot" style=${{ '--c': DOTC[COLOR[n.kind]] }}></span>
         <${Slot} tag="b" text=${n.label} stagger=${25} />
+        <${Doodle} name=${n.doodle} className="doodle cdood" style=${{ '--c': DOTC[COLOR[n.kind]] }} />
       </div>
       <div className="meta">
         ${tags.map(t => html`<span className="tag" key=${t}>${t}</span>`)}
