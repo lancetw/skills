@@ -110,20 +110,32 @@ WIDE = re.compile(r"[\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\uf900-
 LABEL_W = 40  # = 20 Chinese characters, the width the note chips and arrow labels were built for
 
 
+def _width(s: str) -> int:
+    return sum(2 if WIDE.match(c) else 1 for c in s)
+
+
+def _fit(s: str, budget: int) -> str:
+    """The longest prefix of `s` that stays inside `budget` half-widths."""
+    w = 0
+    for i, c in enumerate(s):
+        w += 2 if WIDE.match(c) else 1
+        if w > budget:
+            return s[:i]
+    return s
+
+
+def _whole_words(cut: str) -> str:
+    """Never leave half a Latin word: back off to the last space if the cut landed inside one."""
+    if cut and cut[-1].isascii() and cut[-1].isalnum() and " " in cut:
+        return cut[:cut.rfind(" ")]
+    return cut
+
+
 def _short_label(s: str, budget: int = LABEL_W) -> str:
     s = " ".join(str(s).split())
-    if sum(2 if WIDE.match(c) else 1 for c in s) <= budget:
+    if _width(s) <= budget:
         return s
-    out = w = 0
-    for c in s:
-        w += 2 if WIDE.match(c) else 1
-        if w > budget - 1:
-            break
-        out += 1
-    cut = s[:out]
-    if cut and cut[-1].isascii() and cut[-1].isalnum() and " " in cut:  # never leave half a Latin word
-        cut = cut[:cut.rfind(" ")]
-    return cut.rstrip() + "…"
+    return _whole_words(_fit(s, budget - 1)).rstrip() + "…"  # budget - 1 leaves room for the ellipsis
 
 
 @app.get("/api/passage")
@@ -288,6 +300,34 @@ def _save() -> None:
     tmp.replace(_notes_file())  # atomic: a crash mid-write cannot leave a half file
 
 
+def _shift(i: int, cuts: list) -> int:
+    """Where offset `i` lands once the inline "([1.1]…)" footnotes are cut out. An offset inside a
+    cut collapses to its start; one after a cut moves back by every cut that ended before it."""
+    return i - sum(l for s, l in cuts if s + l <= i) - sum(i - s for s, l in cuts if s < i < s + l)
+
+
+def _migrate_anchors() -> None:
+    """Notes saved against text that still had the footnotes inline: move their anchors, once.
+    A span that collapses to nothing anchored only on cut text, so it becomes a verse-level chip."""
+    for n in notes:
+        a, v = n.get("anchor"), _one_verse(n["verse"])
+        if not a or not v:
+            continue
+        cuts = v.get("cuts", [])
+        a["start"], a["end"] = _shift(a["start"], cuts), _shift(a["end"], cuts)
+        if a["end"] <= a["start"]:
+            n["anchor"] = None
+
+
+def _restore_quick(d: dict) -> None:
+    """The paid model pass comes back with the file, so the button will not re-spend."""
+    _quick_cache[_key()] = d["quick"]
+    _quick_cost[_key()] = d.get("quick_cost")
+    for n in notes:  # files from before pass_cost existed
+        if n.get("author") == "quick" and "pass_cost" not in n and "cost" not in n:
+            n["pass_cost"] = d.get("quick_cost")
+
+
 def _load() -> None:
     notes.clear(); hidden.clear()
     f = _notes_file() if passage["reference"] else None
@@ -298,22 +338,10 @@ def _load() -> None:
     zh = _zh_refs()  # a passage first read while the tables were still English gets its refs notes translated here
     for n in notes:
         n.update(zh.get(n["id"], {}))
-    if not d.get("clean"):  # saved against text that still had "([1.1]…)" inline: shift anchors past the cuts, once
-        for n in notes:
-            a = n.get("anchor")
-            v = next((x for x in passage["verses"] if str(x["verse"]) == str(n["verse"])), None)
-            if a and v:
-                shift = lambda i: i - sum(l for s, l in v.get("cuts", []) if s + l <= i) - sum(i - s for s, l in v.get("cuts", []) if s < i < s + l)
-                a["start"], a["end"] = shift(a["start"]), shift(a["end"])
-                if a["end"] <= a["start"]:
-                    n["anchor"] = None
-        _save()
+    if not d.get("clean"):
+        _migrate_anchors(); _save()
     if d.get("quick") is not None:
-        _quick_cache[_key()] = d["quick"]  # the paid model pass comes back too; the button will not re-spend
-        _quick_cost[_key()] = d.get("quick_cost")
-        for n in notes:  # files from before pass_cost existed
-            if n.get("author") == "quick" and "pass_cost" not in n and "cost" not in n:
-                n["pass_cost"] = d.get("quick_cost")
+        _restore_quick(d)
 
 
 # ── the note ledger ───────────────────────────────────────────────────────────
@@ -323,8 +351,12 @@ def _load() -> None:
 # the save lost the note silently, which is why they go through one interface now.
 
 
+def _one_verse(verse: str) -> dict | None:
+    return next((x for x in passage["verses"] if str(x["verse"]) == str(verse)), None)
+
+
 def _verse_text(verse: str) -> str:
-    v = next((x for x in passage["verses"] if str(x["verse"]) == str(verse)), None)
+    v = _one_verse(verse)
     return v["text"] if v else ""
 
 
@@ -477,6 +509,28 @@ def _short(d: dict) -> str:
 _turn_running = False
 
 
+def _turn_prompt(message: str) -> str:
+    """The passage as the agent sees it, fenced. The system prompt tells the agent the block is data,
+    not instructions — so the verse text must not be able to close its own fence."""
+    ctx = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" + "".join(f"\n    （譯註：{f['text']}）" for f in v.get("footnotes", [])) for v in passage["verses"])
+    ctx = ctx.replace("<<<PASSAGE", "＜＜＜PASSAGE").replace(">>>", "＞＞＞")
+    return (f"/bible-buddy {message}\n\n[目前畫面] {passage['reference']}（{passage['version']}）\n"
+            f"<<<PASSAGE\n{ctx}\n>>>")
+
+
+def _turn_event(m) -> list[dict]:
+    """One SDK message as the frames the page reads. Anything else on the stream is not the page's business."""
+    if isinstance(m, SystemMessage) and m.subtype == "init":
+        print("skills loaded:", m.data.get("skills"), file=sys.stderr)
+    elif isinstance(m, AssistantMessage):
+        return [{"type": "text", "text": b.text} if isinstance(b, TextBlock)
+                else {"type": "tool", "name": b.name, "input": _short(b.input)}
+                for b in m.content if isinstance(b, (TextBlock, ToolUseBlock))]
+    elif isinstance(m, ResultMessage):
+        return [{"type": "done", "cost": m.total_cost_usd, "turns": m.num_turns, "is_error": m.is_error, "result": m.result}]
+    return []
+
+
 async def run_turn(message: str) -> None:
     global _turn_running
     _turn_running = True
@@ -485,22 +539,10 @@ async def run_turn(message: str) -> None:
             await events.put({"type": "error", "text": "尚未載入經文：請先在上方載入一段經文再問"})
             return
         c = await get_client()
-        ctx = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" + "".join(f"\n    （譯註：{f['text']}）" for f in v.get("footnotes", [])) for v in passage["verses"])
-        ctx = ctx.replace("<<<PASSAGE", "＜＜＜PASSAGE").replace(">>>", "＞＞＞")  # verse text must not be able to close its own fence
-        prompt = (f"/bible-buddy {message}\n\n[目前畫面] {passage['reference']}（{passage['version']}）\n"
-                  f"<<<PASSAGE\n{ctx}\n>>>")  # fenced: the system prompt tells the agent this block is data, not instructions
-        await c.query(prompt)
+        await c.query(_turn_prompt(message))
         async for m in c.receive_response():
-            if isinstance(m, SystemMessage) and m.subtype == "init":
-                print("skills loaded:", m.data.get("skills"), file=sys.stderr)
-            elif isinstance(m, AssistantMessage):
-                for b in m.content:
-                    if isinstance(b, TextBlock):
-                        await events.put({"type": "text", "text": b.text})
-                    elif isinstance(b, ToolUseBlock):
-                        await events.put({"type": "tool", "name": b.name, "input": _short(b.input)})
-            elif isinstance(m, ResultMessage):
-                await events.put({"type": "done", "cost": m.total_cost_usd, "turns": m.num_turns, "is_error": m.is_error, "result": m.result})
+            for ev in _turn_event(m):
+                await events.put(ev)
     except Exception as e:  # surface to the page, don't swallow
         await events.put({"type": "error", "text": repr(e)})
     finally:
@@ -697,6 +739,11 @@ QUICK_RETRIES = 3     # the CLI retries 529/5xx itself with backoff; its default
 QUICK_TIMEOUT_S = 180  # hard ceiling on one pass, so the button can never spin forever
 
 
+def _retry_line(d: dict) -> str:
+    """What the spinner says while the API is overloaded: which code, which attempt, how long until the next."""
+    return f"API {d.get('error_status') or '?'}，重試 {d.get('attempt')}/{d.get('max_retries')}（{round((d.get('retry_delay_ms') or 0) / 1000)}s 後）"
+
+
 async def _structured(prompt: str, schema: dict, key: str) -> tuple[dict, float | None]:
     """One tool-less model call with a JSON schema. Retries are capped and a ceiling applies, so it always ends;
     an API failure (529 overloaded, timeout) arrives as an error ResultMessage, not an exception, and is raised here."""
@@ -707,8 +754,7 @@ async def _structured(prompt: str, schema: dict, key: str) -> tuple[dict, float 
         async with asyncio.timeout(QUICK_TIMEOUT_S):
             async for m in query(prompt=prompt, options=opts):
                 if isinstance(m, SystemMessage) and m.subtype == "api_retry":
-                    d = m.data
-                    _quick_status[key] = f"API {d.get('error_status') or '?'}，重試 {d.get('attempt')}/{d.get('max_retries')}（{round((d.get('retry_delay_ms') or 0) / 1000)}s 後）"
+                    _quick_status[key] = _retry_line(m.data)
                     print("model retry:", key, _quick_status[key], file=sys.stderr)
                 elif isinstance(m, ResultMessage):
                     if m.is_error:
@@ -747,6 +793,16 @@ ONE_PROMPT = """你是第一世紀猶太教背景的聖經學者。針對下面�
 {text}"""
 
 
+def _one_prompt(verse: str, quote: str, old: dict | None, eli5: bool) -> str:
+    ctx = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" for v in passage["verses"])
+    prompt = ONE_PROMPT.format(verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx)
+    if eli5:
+        prompt += "\n補充規則：\n" + ELI5_RULES
+    if old:
+        prompt += f"\n\n先前的筆記是「{old['label']}」：{old.get('body', '')}\n請重寫：修正錯誤，或換一個更有價值的角度；不要照抄。"
+    return prompt
+
+
 @app.post("/api/auto-notes/one")
 async def auto_note_one(body: dict):
     """A model note for one selected phrase. Not cached: the user asked for exactly this one.
@@ -756,15 +812,9 @@ async def auto_note_one(body: dict):
     if _anchor(verse, quote) is None:
         return {"error": "選取的字不在該節經文裡"}
     old = _find_note(str(body["replace"])) if body.get("replace") else None
-    ctx = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" for v in passage["verses"])
-    prompt = ONE_PROMPT.format(verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx)
     eli5 = bool(body.get("eli5")) or (old or {}).get("style") == "eli5"  # a rewrite keeps the note's register
-    if eli5:
-        prompt += "\n補充規則：\n" + ELI5_RULES
-    if old:
-        prompt += f"\n\n先前的筆記是「{old['label']}」：{old.get('body', '')}\n請重寫：修正錯誤，或換一個更有價值的角度；不要照抄。"
     try:
-        r, cost = await _structured(prompt, ONE_SCHEMA, f"one|{verse}|{quote}")
+        r, cost = await _structured(_one_prompt(verse, quote, old, eli5), ONE_SCHEMA, f"one|{verse}|{quote}")
     except Exception as e:
         print("one-note failed:", verse, quote, repr(e), file=sys.stderr)
         return {"error": str(e)}
