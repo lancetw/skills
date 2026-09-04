@@ -6,6 +6,8 @@ import {
   Slot, mdHtml, local, useTicker, TOOL_ZH, Fragment, ThinkingOrb, BorderBeam,
 } from './lib.js';
 import { Check, Alert, Stop } from './icons.js';
+import { readTurn } from './turn.js';
+import { api } from './api.js';
 import { Doodle } from './doodles.js';
 
 const LOG_KEY = 'chatlog2';     // v1 stored raw innerHTML; this one stores messages
@@ -42,51 +44,47 @@ export function useChat({ openChat, onNote }) {
   const push = m => { const id = nid(); setMessages(cur => [...cur, { id, ...m }]); return id; };
   const patch = (id, fn) => setMessages(cur => cur.map(m => (m.id === id ? fn(m) : m)));
 
-  // reads one SSE stream of turn events into a bubble; shared by a fresh turn and a reattached one
+  // reads one SSE stream of turn events into a bubble; shared by a fresh turn and a reattached one.
+  // readTurn guarantees `end` runs however the stream finishes, so the bubble and the composer are
+  // never left waiting on a turn that already died.
   const consume = useCallback(async (res, botId) => {
-    let finished = false, buf = '';
-    const finish = () => { finished = true; patch(botId, m => ({ ...m, pending: false, act: null })); setRunning(false); };
-    const rd = res.body.getReader(), dec = new TextDecoder();
-    let rest = '';
-    for (;;) {
-      const { value, done } = await rd.read();
-      if (done) break;
-      rest += dec.decode(value, { stream: true });
-      let i;
-      while ((i = rest.indexOf('\n\n')) >= 0) {
-        const line = rest.slice(0, i); rest = rest.slice(i + 2);
-        if (!line.startsWith('data: ')) continue;
-        const ev = JSON.parse(line.slice(6));
-        if (ev.type === 'text') {
-          buf += ev.text + '\n';
-          const t = buf;
-          patch(botId, m => ({ ...m, text: t, act: '撰寫中…', orb: 'composing' }));
-          say('撰寫中…');
-        } else if (ev.type === 'tool') {
-          const z = TOOL_ZH[ev.name] || ev.name;
-          say(`${z}…`);
-          patch(botId, m => ({ ...m, act: `${z}…`, orb: 'searching', steps: [...(m.steps || []), `${ev.name} ${ev.input}`] }));
-        } else if (ev.type === 'note') {
-          onNote(ev.note);
-        } else if (ev.type === 'done') {
-          finish();
-          say(`完成 · ${ev.turns} turns`, ev.is_error ? 'err' : 'ok');
-          sendSlot.current?.flash?.('完成');
-          push({ kind: 'tool', tone: ev.is_error ? 'err' : 'ok', text: `${ev.turns} turns${ev.is_error ? ' · ERROR' : ''}` });
-          const o = options(buf);
-          if (o) push({ kind: 'opts', opts: o });
-        } else if (ev.type === 'error') {
-          finish();
-          say('出錯', 'err');
-          push({ kind: 'tool', tone: 'err', text: ev.text });
+    let buf = '';
+    await readTurn(res, {
+      text: ev => {
+        buf += ev.text + '\n';
+        const t = buf;
+        patch(botId, m => ({ ...m, text: t, act: '撰寫中…', orb: 'composing' }));
+        say('撰寫中…');
+      },
+      tool: ev => {
+        const z = TOOL_ZH[ev.name] || ev.name;
+        say(`${z}…`);
+        patch(botId, m => ({ ...m, act: `${z}…`, orb: 'searching', steps: [...(m.steps || []), `${ev.name} ${ev.input}`] }));
+      },
+      note: ev => onNote(ev.note),
+      done: ev => {
+        say(`完成 · ${ev.turns} turns`, ev.is_error ? 'err' : 'ok');
+        sendSlot.current?.flash?.('完成');
+        push({ kind: 'tool', tone: ev.is_error ? 'err' : 'ok', text: `${ev.turns} turns${ev.is_error ? ' · ERROR' : ''}` });
+        const o = options(buf);
+        if (o) push({ kind: 'opts', opts: o });
+      },
+      error: ev => {
+        say('出錯', 'err');
+        push({ kind: 'tool', tone: 'err', text: ev.text });
+      },
+      end: (reason, err) => {
+        patch(botId, m => ({ ...m, pending: false, act: null }));
+        setRunning(false);
+        if (reason === 'closed') {
+          say('連線中斷，重新整理可接回進行中的回答', 'err');
+          push({ kind: 'tool', tone: 'err', text: '串流在 done 之前結束（server 重啟？）' });
+        } else if (reason === 'failed') {
+          say('連線中斷，重新整理可接回進行中的回答', 'err');
+          push({ kind: 'tool', tone: 'err', text: `串流讀取失敗：${err?.message || err}` });
         }
-      }
-    }
-    if (!finished) {
-      finish();
-      say('連線中斷，重新整理可接回進行中的回答', 'err');
-      push({ kind: 'tool', tone: 'err', text: '串流在 done 之前結束（server 重啟？）' });
-    }
+      },
+    });
   }, [onNote]);
 
   const send = useCallback(async text => {
@@ -96,7 +94,16 @@ export function useChat({ openChat, onNote }) {
     say('agent 啟動中…');
     push({ kind: 'me', text: t, folded: t.length > 120 || t.includes('\n') });
     const botId = push({ kind: 'bot', text: '', steps: [], act: 'agent 啟動中…', orb: 'connecting', pending: true, t0: Date.now() });
-    const res = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: t }) });
+    let res;   // raw fetch, not api(): the answer is an event stream, not JSON
+    try {
+      res = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ message: t }) });
+    } catch (e) {   // the turn never started, so nothing will arrive to end it: end it here
+      patch(botId, m => ({ ...m, pending: false, act: null }));
+      setRunning(false);
+      say('送不出去', 'err');
+      push({ kind: 'tool', tone: 'err', text: `連線失敗：${e.message}` });
+      return;
+    }
     if (res.headers.get('content-type')?.includes('application/json')) {
       const r = await res.json();
       patch(botId, m => ({ ...m, pending: false, act: null }));
@@ -110,23 +117,28 @@ export function useChat({ openChat, onNote }) {
 
   // after a refresh the server may still be mid-turn: show a pending bubble and attach to its event stream
   const reattach = useCallback(async () => {
-    let s;
-    try { s = await (await fetch('/api/chat/status')).json(); } catch { return; }
+    const s = await api('/api/chat/status');
     if (!s.running) return;
     openChat();
     setRunning(true);
     say('agent 處理中（接回）…');
     const botId = push({ kind: 'bot', text: '', steps: [], act: '接回進行中的回答…', orb: 'weaving', pending: true, t0: Date.now() });
-    await consume(await fetch('/api/chat/stream'), botId);
+    try {
+      await consume(await fetch('/api/chat/stream'), botId);
+    } catch (e) {   // the stream never opened, so consume never got to make its own end guarantee
+      patch(botId, m => ({ ...m, pending: false, act: null }));
+      setRunning(false);
+      say('接不回進行中的回答', 'err');
+    }
   }, [consume, openChat]);
 
   const clear = () => {
     if (running) return;
     setMessages([]);
     say('');
-    fetch('/api/chat/reset', { method: 'POST' });
+    api('/api/chat/reset', 'POST');
   };
-  const stop = () => { say('停止中…'); fetch('/api/chat/stop', { method: 'POST' }); };
+  const stop = () => { say('停止中…'); api('/api/chat/stop', 'POST'); };
   const note = text => push({ kind: 'tool', text });
   const prefillInput = text => { openChat(); setInput(text); setTimeout(() => inputRef.current?.focus(), 0); };
   const toggleFold = id => patch(id, m => ({ ...m, folded: !m.folded }));

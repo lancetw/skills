@@ -5,6 +5,7 @@ import {
   Slot, MAX_ARROWS, MIN_GAP, COLOR, DOTC, useTicker, ThinkingOrb,
 } from './lib.js';
 import { Search, Columns, Moon, Sun, Chat, Close, Back, Check, Alert } from './icons.js';
+import { api } from './api.js';
 import { Doodle, DOODLES, Book } from './doodles.js';
 
 // ── verse text ────────────────────────────────────────────────────────────────
@@ -328,7 +329,7 @@ export function SearchPopover({ open, onClose, onPick, version }) {
     const t = q.trim();
     if (!t) return;
     setRes({ loading: true });
-    const r = await fetch(`/api/search?q=${encodeURIComponent(t)}&version=${version}`).then(x => x.json()).catch(x => ({ error: x.message }));
+    const r = await api(`/api/search?q=${encodeURIComponent(t)}&version=${version}`);
     setRes({ ...r, key: t });
   };
 

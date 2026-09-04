@@ -1,7 +1,8 @@
 // The reading desk: passage state, notes, and the wiring between the page, the note card and the
 // agent panel. Everything below the API boundary is unchanged — this file replaces the imperative
 // render()/innerHTML page, not the server.
-import { React, html, useState, useEffect, useRef, useCallback, Slot, api, local, ThinkingOrb } from './lib.js';
+import { React, html, useState, useEffect, useRef, useCallback, Slot, local, ThinkingOrb } from './lib.js';
+import { api, apiErrorText } from './api.js';
 import { createRoot } from '../vendor/react-dom-client.mjs';
 import { TopBar, Banner, Verses, SearchPopover, useFootnoteJump } from './reader.js';
 import { Sparkle, Trash, Check } from './icons.js';
@@ -31,7 +32,6 @@ function App() {
 
   const lastQ = useRef(null), lastRef = useRef(null), lastAuto = useRef({});
   const versesRef = useRef(verses); versesRef.current = verses;
-  const notesRef = useRef(notes); notesRef.current = notes;
   const parRef = useRef(par); parRef.current = par;
   const readerRef = useRef(null);
   const seenRev = useRef(null);   // last /api/display rev this page has obeyed
@@ -68,9 +68,10 @@ function App() {
     lastQ.current = { book: m[1], chapter: +(m[2] || 1), start: +(m[3] || 1), end: +(m[4] || m[3] || 200) };
     const q = lastQ.current;
     banner('載入經文…');
-    const r = await (await fetch(`/api/passage?book=${encodeURIComponent(q.book)}&chapter=${q.chapter}&start=${q.start}&end=${q.end}&version=${version || 'rcuv'}`)).json();
-    if (r.error) { banner(r.error, { spin: false, tone: 'err', hideAfter: 4000 }); setLoadLabel('載入'); return; }
-    const fresh = await (await fetch('/api/notes')).json();   // server keeps them unless the passage changed
+    const r = await api(`/api/passage?book=${encodeURIComponent(q.book)}&chapter=${q.chapter}&start=${q.start}&end=${q.end}&version=${version || 'rcuv'}`);
+    // a dropped connection used to leave the button on 「載入中…」 and the banner spinning forever
+    if (r.error || !r.verses) { banner(apiErrorText(r.error || '伺服器回傳異常'), { spin: false, tone: 'err', hideAfter: 4000, title: r.error || '' }); setLoadLabel('載入'); return; }
+    const fresh = await api('/api/notes');   // server keeps them unless the passage changed
     setNotes(Array.isArray(fresh) ? fresh : []);
     setVerses(r.verses);
     setInter({ open: new Set(), cache: {} });                 // the 原文 blocks belong to the verses we just replaced
@@ -86,14 +87,11 @@ function App() {
 
   // returns the number of new notes, or -1 on failure (the error stays on the banner until the next action)
   const addAuto = useCallback(async url => {
-    let fresh;
-    try { fresh = await (await fetch(url)).json(); } catch (e) { fresh = { error: e.message }; }
+    let fresh = await api(url);
     if (fresh && !Array.isArray(fresh) && Array.isArray(fresh.notes)) { lastAuto.current = fresh; fresh = fresh.notes; }  // quick pass wraps its list
     if (!Array.isArray(fresh)) {
       const msg = fresh?.error || '伺服器回傳異常';
-      const code = msg.match(/API Error: (\d+)/);   // "API Error: 529 Overloaded. This is a server-side…" → one short line
-      banner(`ELI5 筆記失敗：${code ? `API ${code[1]} ${code[1] === '529' ? '過載' : '錯誤'}，稍後再點一次` : msg.slice(0, 60)}`,
-        { spin: false, title: msg });               // the pill clips long text; the full error lives in the tooltip
+      banner(`ELI5 筆記失敗：${apiErrorText(msg)}`, { spin: false, title: msg });   // the pill clips; the full error lives in the tooltip
       return -1;
     }
     setNotes(cur => [...cur, ...fresh.filter(n => !cur.some(x => x.id === n.id))]);
@@ -148,18 +146,13 @@ function App() {
     setPending(cur => ({ ...cur, [id]: p }));
     const key = `one|${s.verse}|${s.quote}`;
     const poll = setInterval(async () => {
-      try {
-        const { status } = await api('/api/auto-notes/quick/status?key=' + encodeURIComponent(key));
-        setPending(cur => (cur[id] ? { ...cur, [id]: { ...cur[id], status } } : cur));
-      } catch {}
+      const { status } = await api('/api/auto-notes/quick/status?key=' + encodeURIComponent(key));
+      setPending(cur => (cur[id] ? { ...cur, [id]: { ...cur[id], status } } : cur));
     }, 2000);
-    let r;
-    try { r = await api('/api/auto-notes/one', 'POST', { verse: s.verse, quote: s.quote, replace: s.replace, eli5: true }); }
-    catch (e) { r = { error: e.message }; }
+    const r = await api('/api/auto-notes/one', 'POST', { verse: s.verse, quote: s.quote, replace: s.replace, eli5: true });
     clearInterval(poll);
     if (r.error) {
-      const code = r.error.match(/API Error: (\d+)/);
-      setPending(cur => ({ ...cur, [id]: { ...cur[id], error: code ? `API ${code[1]}${code[1] === '529' ? ' 過載' : ''}` : r.error.slice(0, 40), full: r.error } }));
+      setPending(cur => ({ ...cur, [id]: { ...cur[id], error: apiErrorText(r.error, 40), full: r.error } }));
       return;
     }
     setPending(cur => { const { [id]: _, ...rest } = cur; return rest; });
@@ -172,15 +165,13 @@ function App() {
     banner('ELI5 筆記產生中', { timer: true });
     // the CLI retries 529s with backoff; poll the server's progress line so the wait explains itself
     const poll = setInterval(async () => {
-      try {
-        const { status } = await (await fetch('/api/auto-notes/quick/status')).json();
-        if (status) setBannerState(b => (b ? { ...b, text: `ELI5 筆記產生中 · ${status}` } : b));
-      } catch {}
+      const { status } = await api('/api/auto-notes/quick/status');
+      if (status) setBannerState(b => (b ? { ...b, text: `ELI5 筆記產生中 · ${status}` } : b));
     }, 2000);
     const n = await addAuto('/api/auto-notes/quick');
     clearInterval(poll);
     setQuickBusy(false);
-    // count what the pass returned, not notesRef: setNotes has not re-rendered yet, so the ref still holds the pre-pass list
+    // count what the pass returned, not the notes state: setNotes has not re-rendered yet
     if (n >= 0) banner(`ELI5 筆記 ${n} 條${lastAuto.current.cached ? '（快取）' : ''}`, { spin: false, tone: 'ok', hideAfter: 4000 });
   }, [addAuto, banner]);
 
@@ -189,6 +180,7 @@ function App() {
     const n = notes.filter(x => x.author !== 'user').length;
     if (!confirm(`確定刪除這段全部 ${n} 條自動筆記（ELI5、agent 標注、references）？\n手動筆記會保留。這個動作無法復原。`)) return;
     const r = await api('/api/notes/quick', 'DELETE');
+    if (r.error) { banner(`刪除失敗：${apiErrorText(r.error)}`, { spin: false, tone: 'err', hideAfter: 4000, title: r.error }); return; }
     setNotes(cur => cur.filter(x => x.author === 'user'));
     banner(`已刪除 ${r.removed} 條自動筆記`, { spin: false, tone: 'ok', hideAfter: 3000 });
   }, [notes, banner]);
@@ -228,8 +220,7 @@ function App() {
     const w = +local.get('chatW', 0);
     if (w) document.body.style.setProperty('--chat-w', w + 'px');
     (async () => {
-      let d = null;
-      try { d = await api('/api/display'); } catch {}
+      const d = await api('/api/display');
       seenRev.current = d?.rev ?? null;
       const ref = d?.ref || savedPassage?.ref || pref;
       const version = (d?.ref ? d.version : savedPassage?.version) || pver;
@@ -253,8 +244,7 @@ function App() {
   // The boot effect already recorded the rev in force, so this only fires on commands sent since.
   useEffect(() => {
     const t = setInterval(async () => {
-      let d;
-      try { d = await api('/api/display'); } catch { return; }
+      const d = await api('/api/display');
       if (!d?.ref || d.rev === seenRev.current) return;
       seenRev.current = d.rev;
       setPref(d.ref);

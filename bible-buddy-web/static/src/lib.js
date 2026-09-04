@@ -29,9 +29,6 @@ export const TOOL_ZH = {
   mcp__notes__add_annotation: '加筆記', mcp__notes__update_annotation: '更新筆記',
 };
 
-export const api = (url, method, body) =>
-  fetch(url, { method, headers: { 'content-type': 'application/json' }, body: body && JSON.stringify(body) }).then(r => r.json());
-
 // Note bodies and agent replies are model text quoting a passage fetched off the internet: markdown,
 // never trusted HTML. Everything that reaches innerHTML as markdown goes through here, so a
 // <script>/onerror/javascript: smuggled into either is stripped. marked and DOMPurify are the

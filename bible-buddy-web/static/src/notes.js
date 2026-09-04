@@ -2,8 +2,10 @@
 // dragged by its title row. Also the menu that appears when text in a verse is selected.
 import {
   html, useRef, useEffect, useLayoutEffect,
-  Slot, api, mdHtml, AUTHOR, KIND_ZH, DOTC, COLOR, Fragment,
+  Slot, mdHtml, AUTHOR, KIND_ZH, DOTC, COLOR, Fragment,
 } from './lib.js';
+import { api } from './api.js';
+import { offsetOf, trimSpan } from './anchor.js';
 import { Refresh, BadgeCheck, ArrowRight, Pencil, Sparkle, Alert } from './icons.js';
 import { Doodle } from './doodles.js';
 
@@ -189,6 +191,20 @@ export function SelectionMenu({ sel, onClose, onManual, onAi }) {
 }
 
 // captured at mouseup: the click on the menu clears the browser selection before its handler runs
+// A verse renders more than its text. Everything matched here sits inside .verse but is not part of
+// the verse, so its characters must not shift a selection's offset.
+const NOT_VERSE_TEXT = '.n, .ob, .mg, .vdood, .fn, .eol, .chips, .inter';
+
+// The verse's own text nodes, in reading order. `.ann` spans wrap verse text, so they are kept.
+function verseTextNodes(vEl) {
+  const w = document.createTreeWalker(vEl, NodeFilter.SHOW_TEXT, {
+    acceptNode: t => (t.parentElement?.closest(NOT_VERSE_TEXT) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+  });
+  const out = [];
+  for (let t; (t = w.nextNode());) out.push(t);
+  return out;
+}
+
 export function useSelection(versesRef, setSel, off) {
   useEffect(() => {
     // the quick pass rewrites the whole passage's notes: a selection menu opened mid-pass would
@@ -198,15 +214,21 @@ export function useSelection(versesRef, setSel, off) {
       if (e.target.closest?.('#selmenu, #detail')) return;
       const s = window.getSelection();
       if (!s || s.isCollapsed) return;
-      const q = s.toString().trim();
-      if (!q) return;
       const vEl = s.anchorNode?.parentElement?.closest('.verse');
       if (!vEl) return;
       const v = versesRef.current.find(x => String(x.verse) === vEl.dataset.verse);
       if (!v) return;
-      const start = v.text.indexOf(q);
-      if (start < 0) return;
-      setSel({ verse: v.verse, quote: q, anchor: { start, end: start + q.length }, rect: s.getRangeAt(0).getBoundingClientRect() });
+      // Take the offsets off the range the reader actually dragged. Searching the verse for the
+      // selected string instead would anchor every repeated phrase to its first occurrence.
+      const r = s.getRangeAt(0);
+      const ns = verseTextNodes(vEl);
+      let [start, end] = [offsetOf(ns, r.startContainer, r.startOffset), offsetOf(ns, r.endContainer, r.endOffset)];
+      if (start < 0 || end < 0) return;
+      if (start > end) [start, end] = [end, start];   // a backwards drag
+      [start, end] = trimSpan(v.text, start, end);
+      const q = v.text.slice(start, end);             // from the verse, so a footnote marker inside the drag is not part of the quote
+      if (!q) return;
+      setSel({ verse: v.verse, quote: q, anchor: { start, end }, rect: r.getBoundingClientRect() });
     };
     document.addEventListener('mouseup', on);
     return () => document.removeEventListener('mouseup', on);
