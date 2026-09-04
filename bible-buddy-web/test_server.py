@@ -1,20 +1,21 @@
 """FHL marks a verse folded into an earlier one with a bare "a" (和合本2010 路 1:2-3, 太 19:5)."""
+import corpus
 import server
 
 
 def test_merged_marker_is_not_text():
-    v = server._normalize({"verse": "2", "text": "a"})
+    v = corpus.normalize({"verse": "2", "text": "a"})
     assert v == {"verse": "2", "text": "", "footnotes": [], "cuts": [], "merged": True}
 
 
 def test_real_verse_untouched():
-    v = server._normalize({"verse": "4", "text": "要讓你知道所學的道都是確實的。([1.4]註)"})
+    v = corpus.normalize({"verse": "4", "text": "要讓你知道所學的道都是確實的。([1.4]註)"})
     assert v["text"] == "要讓你知道所學的道都是確實的。" and not v.get("merged")
     assert [f["text"] for f in v["footnotes"]] == ["註"]
 
 
 def test_verse_starting_with_a_is_kept():
-    assert server._normalize({"verse": "1", "text": "a man"})["text"] == "a man"
+    assert corpus.normalize({"verse": "1", "text": "a man"})["text"] == "a man"
 
 
 if __name__ == "__main__":
@@ -46,17 +47,17 @@ RAW_EXOD_3_1 = "<h2>上帝呼召摩西</h2><u>摩西</u>牧放他岳父<u>米甸
 
 
 def test_heading_is_split_off_the_verse():
-    text, heading = server.split_heading(RAW_EXOD_3_1)
+    text, heading = corpus.split_heading(RAW_EXOD_3_1)
     assert heading == "上帝呼召摩西"
     assert "上帝呼召摩西" not in text and text.startswith("<u>摩西</u>牧放")
 
 
 def test_verse_without_a_heading_is_untouched():
-    assert server.split_heading("<u>摩西</u>說：「我在這裏。」") == ("<u>摩西</u>說：「我在這裏。」", "")
+    assert corpus.split_heading("<u>摩西</u>說：「我在這裏。」") == ("<u>摩西</u>說：「我在這裏。」", "")
 
 
 def test_search_hit_drops_the_heading():
-    assert server._clean_hit(RAW_EXOD_3_1) == "摩西牧放他岳父米甸祭司的羊羣。"
+    assert corpus.clean_hit(RAW_EXOD_3_1) == "摩西牧放他岳父米甸祭司的羊羣。"
 
 
 # ── the note ledger ───────────────────────────────────────────────────────────
