@@ -3,10 +3,14 @@
 <head>
 <meta charset="utf-8">
 <title>Bible Buddy ELI5</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/syabro/neat-annotations/neat-annotations.css">
+<!-- every CDN asset is pinned and carries an SRI hash: a changed upstream file fails to load instead of running.
+     Google Fonts is exempt (its CSS varies by user agent, so no hash can match); the slot-text ES module import
+     below cannot carry SRI either, so it is version-pinned only. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/syabro/neat-annotations@83199c8c7420b85f775c770c5ee481df69b840bc/neat-annotations.css" integrity="sha384-dG94PO7yurmhlfEL3nfOYPfaQy9Ii/6gyNKlZvhjCvI0eBM+hPOnnnE6+zzv6F+U" crossorigin="anonymous">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@500;600;700&family=Iansui&family=LXGW+WenKai+TC&family=Noto+Sans+Hebrew:wght@400;700&family=Noto+Serif+Hebrew:wght@400;700&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slot-text@0.3.4/style.css">
+<script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js" integrity="sha384-948ahk4ZmxYVYOc+rxN1H2gM1EJ2Duhp7uHtZ4WSLkV4Vtx5MUqnV+l7u9B+jFv+" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.3.1/dist/purify.min.js" integrity="sha384-80VlBZnyAwkkqtSfg5NhPyZff6nU4K/qniLBL8Jnm4KDv6jZhLiYtJbhglg/i9ww" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slot-text@0.3.4/style.css" integrity="sha384-NCI84A2P1g2em3UcaUnXE8lFIWWhuKqgovI5GaxGXWHOfCadroHk8HfSjpA2Sa6m" crossorigin="anonymous">
 <style>
   /* notebook: ivory paper, red margin rule, serif scripture, handwritten labels. Light by default. */
   :root {
@@ -338,6 +342,9 @@ function demoteWrapped() {
 }
 addEventListener('resize', render);
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Note bodies and agent replies are model text quoting a passage fetched off the internet: markdown, never trusted HTML.
+// Everything that reaches innerHTML as markdown goes through here, so a <script>/onerror/javascript: smuggled into either is stripped.
+const md = s => DOMPurify.sanitize(marked.parse(String(s)));
 
 const AUTHOR = { agent:'agent', quick:'AI', refs:'references', user:'我' };
 const KIND_ZH = { lexical:'原文字義', history:'歷史背景', misread:'誤讀/翻譯', crossref:'相關經文', personal:'個人' };
@@ -355,7 +362,7 @@ function showCard(n, rect, gap) {
   const unverified = n.author === 'quick' && !n.verified;
   const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.style === 'eli5' && 'ELI5', n.edited && '已編輯', n.verified && '✓ agent 已驗證'].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
     + (unverified ? '<span class="tag unv" title="AI 筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
-  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : n.author === 'agent' ? `<button id="rewrite" title="請 agent 重新查證並重寫這條" ${running ? 'disabled' : ''}>🔄 請 agent 重寫</button>` : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask" ${running ? 'disabled title="agent 忙碌中"' : ''}>追問 →</button></div>`;
+  d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${md((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : n.author === 'agent' ? `<button id="rewrite" title="請 agent 重新查證並重寫這條" ${running ? 'disabled' : ''}>🔄 請 agent 重寫</button>` : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask" ${running ? 'disabled title="agent 忙碌中"' : ''}>追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
   d.querySelector('#ask').onclick = () => { d.hidePopover(); $('#q').value = `針對「${n.label}」追問：`; $('#q').focus(); };
   d.querySelector('#edit').onclick = () => showEditor(n, rect, gap);
@@ -476,7 +483,8 @@ async function aiNote(s) {
 function logLine(cls, html) { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; $('#log').appendChild(d); $('#log').scrollTop = 1e9; saveLog(); return d; }
 // the log survives a refresh: its HTML is kept in the browser (the agent session itself lives on the server)
 function saveLog() { try { const h = $('#log').innerHTML; localStorage.setItem('chatlog', h.length > 400000 ? '' : h); } catch {} }
-try { const h = localStorage.getItem('chatlog'); if (h) { $('#log').innerHTML = h; $('#log').querySelectorAll('.msg.pending').forEach(m => { m.classList.remove('pending'); m.querySelector('.act')?.remove(); }); $('#log').scrollTop = 1e9; } } catch {}
+// re-sanitize on the way out too: the stored log was clean when written, but localStorage is writable by anything else on this origin
+try { const h = localStorage.getItem('chatlog'); if (h) { $('#log').innerHTML = DOMPurify.sanitize(h); $('#log').querySelectorAll('.msg.pending').forEach(m => { m.classList.remove('pending'); m.querySelector('.act')?.remove(); }); $('#log').scrollTop = 1e9; } } catch {}
 $('#log').addEventListener('click', e => {  // fold / unfold toggles must work on restored messages too
   const b = e.target.closest('.msg.me .more'); if (!b) return; const m = b.closest('.msg'); const f = m.classList.toggle('fold'); b.textContent = f ? '展開 ▾' : '收合 ▴';
 });
@@ -539,7 +547,7 @@ async function consume(res, cur, act, finish, setBuf, getBuf) {
       const line = rest.slice(0, i); rest = rest.slice(i + 2);
       if (!line.startsWith('data: ')) continue;
       const ev = JSON.parse(line.slice(6));
-      if (ev.type === 'text') { setBuf(getBuf() + ev.text + '\n'); const a = cur.querySelector('.act'); cur.innerHTML = marked.parse(getBuf()); if (a) cur.prepend(a); slot('#status').set('✍ 撰寫中…'); act.set('撰寫中…'); }
+      if (ev.type === 'text') { setBuf(getBuf() + ev.text + '\n'); const a = cur.querySelector('.act'); cur.innerHTML = md(getBuf()); if (a) cur.prepend(a); slot('#status').set('✍ 撰寫中…'); act.set('撰寫中…'); }
       else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); stepSink(`⚙ ${esc(ev.name)} ${esc(ev.input)}`); }
       else if (ev.type === 'note') { const i = notes.findIndex(x => x.id === ev.note.id); if (i >= 0) notes[i] = ev.note; else notes.push(ev.note); render(); }
       else if (ev.type === 'done') { end(); slot('#status').set(`✓ 完成 · ${ev.turns} turns`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns${ev.is_error ? ' · ERROR' : ''}`); renderOptions(getBuf()); }
