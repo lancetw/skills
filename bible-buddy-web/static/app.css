@@ -215,8 +215,11 @@
   /* thinking-orbs paints a canvas and sizes itself; only 20 and 64 have presets, so 20 it is everywhere */
   .orb { flex:none; }
   #banner .orb { margin:-4px 0; }                        /* a 20px canvas must not grow the pill's line box */
-  /* border-beam wraps the pending bubble in its own container: keep it a plain block in the log's flow */
-  #log .beam { display:block; }
+  /* border-beam wraps the pending bubble in its own container: keep it a plain block in the log's flow.
+     The wrapper is overflow:hidden, so the bubble's own vertical margin can no longer collapse through it
+     and would show as padding inside the frame: move that margin out onto the wrapper. */
+  #log .beam { display:block; margin:.5em 0; }
+  #log .beam > .msg { margin:0; }
   #log .msg.pending { border-color:var(--pen); }
   #log .msg.pending .act { display:flex; align-items:center; gap:10px; color:var(--ink-2); font-size:.85rem; }
   #log .msg.pending .act .t { margin-left:auto; font-variant-numeric:tabular-nums; }
