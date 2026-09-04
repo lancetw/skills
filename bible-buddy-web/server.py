@@ -67,6 +67,10 @@ passage: dict = {"reference": "", "version": "rcuv", "verses": []}
 notes: list[dict] = []
 hidden: set[str] = set()  # ids the user deleted; the auto passes are cached and must not resurrect them
 events: asyncio.Queue = asyncio.Queue()  # ponytail: one global queue = one user
+# What the page should be showing. Claude Code writes here (POST /api/display); the page polls the rev
+# and reloads when it moves. Passage state above is what the *server* last fetched — the two only agree
+# after the page has acted on a command.
+display: dict = {"rev": 0, "ref": "", "version": ""}
 
 SYSTEM_APPEND = """你在一個網頁查經工具裡工作。畫面左側顯示 [目前畫面] 列出的經文。
 每個關鍵發現（原文字義 lexical、歷史背景 history、常見誤讀或翻譯偏差 misread、相關經文 crossref）
@@ -130,6 +134,25 @@ async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int =
         NOTES_DIR.mkdir(parents=True, exist_ok=True)
         _LAST_FILE().write_text(json.dumps({"book": book, "chapter": chapter, "start": start, "end": end, "version": version}, ensure_ascii=False))
     return r
+
+
+
+@app.get("/api/display")
+async def get_display():
+    """The page polls this. rev 0 means nobody has driven the page from outside this session."""
+    return display
+
+
+@app.post("/api/display")
+async def set_display(body: dict):
+    """Drive the browser from the CLI: curl -X POST .../api/display -d '{"ref":"約翰福音 3:16"}'.
+    The reference string is parsed by the page (same grammar as its own input box), not here, so a bad one
+    surfaces on the page's banner instead of failing this call."""
+    ref = (body.get("ref") or display["ref"] or passage["reference"]).strip()
+    if not ref:
+        return {"error": "尚未載入經文，請給 ref"}
+    display.update(rev=display["rev"] + 1, ref=ref, version=body.get("version") or passage["version"] or "rcuv")
+    return {"ok": True, **display}
 
 
 # ── keyword search over the whole Bible (FHL se.php) ──────────────────────────

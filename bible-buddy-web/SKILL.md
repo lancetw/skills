@@ -62,6 +62,29 @@ The server drops loopback `HTTP(S)_PROXY` variables at import, on purpose. A pac
 guard exports a short-lived proxy that dies with it, and the Claude CLI the SDK spawns would
 inherit it and fail every call with "Connection refused". Leave that block alone.
 
+## Driving the page from Claude Code
+
+The page is not only steered from its own input box. `POST /api/display` sets what the browser
+should be showing; the page polls every 2s and loads it. Use this whenever the user asks for a
+passage while the app is running — do not tell them to type it in themselves.
+
+```bash
+curl -s -X POST http://127.0.0.1:8765/api/display \
+  -H 'content-type: application/json' \
+  -d '{"ref": "約翰福音 3:16", "version": "rcuv"}'
+```
+
+- `ref` takes the same grammar as the page's own box: `約翰福音 3:16`, `以賽亞書 7:10-17`,
+  `創世記 1` (whole chapter), `約翰福音` (= chapter 1). It is parsed by the page, so a bad
+  reference shows up on the page's banner, not in this call's response.
+- `version` — `rcuv` / `lcc` / `bhs` / `nt`. Omit it to keep the one on screen; omit `ref` to
+  change only the version.
+- The response echoes `rev`, a counter in server memory. `GET /api/display` reads it back.
+  A page opened *after* the command still obeys it, because rev survives until the server exits.
+
+The command changes the passage, which restarts the agent session and switches the notes file,
+exactly as if the user had pressed 載入.
+
 ## What the page does
 
 **Passage bar** — reference plus version (和合本修訂版 / 呂振中 / BHS 希伯來文 / NT 希臘文),
