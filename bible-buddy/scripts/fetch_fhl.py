@@ -36,6 +36,16 @@ from book_names import lookup
 
 API_BASE = "https://bible.fhl.net/api/qb.php"
 
+# FHL prefixes a verse with the section heading the version prints above it: "<h2>上帝呼召摩西</h2>摩西牧放…"
+# (出 3:1). Stripping tags alone would glue the heading onto the verse's first sentence.
+HEADING = re.compile(r"<h\d[^>]*>(.*?)</h\d>", re.I | re.S)
+
+
+def split_heading(text: str) -> tuple[str, str]:
+    """→ the verse without its section heading(s), and the heading text ("" when there is none)."""
+    heads = [re.sub(r"<[^>]+>", "", h).strip() for h in HEADING.findall(text)]
+    return HEADING.sub("", text), " ".join(h for h in heads if h)
+
 # bid: Protestant canon order, 1-66
 BOOK_BID = {
     "Gen": 1, "Exod": 2, "Lev": 3, "Num": 4, "Deut": 5,
@@ -143,13 +153,17 @@ def fetch(book: str, chapter: int, start_verse: int = None, end_verse: int = Non
         text = rec.get("bible_text", "")
         if not text:
             continue
+        text, heading = split_heading(text)
         # Clean up: remove HTML tags, heading markers
         text = re.sub(r'<[^>]+>', '', text)
         text = html_mod.unescape(text).strip()
         text = re.sub(r'\s+', ' ', text)
         # Remove footnote markers like 【6】
         text = re.sub(r'【\d+】', '', text)
-        verses.append({"verse": str(rec.get("sec", "?")), "text": text})
+        v = {"verse": str(rec.get("sec", "?")), "text": text}
+        if heading:
+            v["heading"] = html_mod.unescape(heading)
+        verses.append(v)
 
     ref = f"{chinese_name} {chapter}"
     if start_verse and end_verse:
@@ -178,6 +192,8 @@ def format_output(result: dict) -> str:
     ]
 
     for v in result.get("verses", []):
+        if v.get("heading"):
+            lines.append(f"  ── {v['heading']} ──")
         lines.append(f"  [{v['verse']}] {v['text']}")
 
     if not result.get("verses"):
