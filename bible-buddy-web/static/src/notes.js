@@ -4,8 +4,6 @@ import {
   html, useRef, useEffect, useLayoutEffect,
   Slot, mdHtml, AUTHOR, KIND_ZH, DOTC, COLOR, Fragment,
 } from './lib.js';
-import { api } from './api.js';
-import { replaceOrAdd, without } from './notelist.js';
 import { offsetOf, trimSpan } from './anchor.js';
 import { Refresh, BadgeCheck, ArrowRight, Pencil, Sparkle, Alert } from './icons.js';
 import { Doodle } from './doodles.js';
@@ -101,7 +99,7 @@ function Lexicon({ lex }) {
     <//>`;
 }
 
-export function Detail({ detail, setDetail, running, verses, notes, setNotes, send, prefillInput, aiNote, banner }) {
+export function Detail({ detail, setDetail, running, verses, notes, store, send, prefillInput, aiNote, banner }) {
   const ref = useRef(null);
   const quoteOf = n => (n?.anchor ? verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end) ?? '' : '');
 
@@ -131,9 +129,8 @@ export function Detail({ detail, setDetail, running, verses, notes, setNotes, se
     inner = html`<${Editor} n=${n} quote=${quoteOf(n)}
       onCancel=${() => (n.id ? setDetail({ ...detail, mode: 'card' }) : setDetail(null))}
       onSave=${async patch => {
-        const saved = n.id ? await api('/api/notes/' + n.id, 'PUT', patch) : await api('/api/notes', 'POST', { ...n, ...patch });
-        if (saved.error) { banner(saved.error, { spin: false, tone: 'err', hideAfter: 4000 }); return; }
-        setNotes(cur => replaceOrAdd(cur, n.id, saved));
+        const r = await store.save(n, patch);
+        if (r.error) { banner(r.error, { spin: false, tone: 'err', hideAfter: 4000 }); return; }
         setDetail(null);
       }} />`;
   } else if (detail?.mode === 'card') {
@@ -142,8 +139,8 @@ export function Detail({ detail, setDetail, running, verses, notes, setNotes, se
       edit: () => setDetail({ ...detail, mode: 'edit', note: n }),
       del: async () => {
         if (!confirm(`確定刪除這條筆記「${n.label}」？無法復原。`)) return;
-        await api('/api/notes/' + n.id, 'DELETE');
-        setNotes(cur => without(cur, n.id));
+        const r = await store.remove(n.id);
+        if (r.error) { banner(`刪除失敗：${r.error}`, { spin: false, tone: 'err', hideAfter: 4000 }); return; }
         setDetail(null);
       },
       ask: () => { setDetail(null); prefillInput(`針對「${n.label}」追問：`); },

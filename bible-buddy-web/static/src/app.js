@@ -3,7 +3,7 @@
 // render()/innerHTML page, not the server.
 import { React, html, useState, useEffect, useRef, useCallback, Slot, local, ThinkingOrb } from './lib.js';
 import { api, apiErrorText, parseRef, passageUrl } from './api.js';
-import { upsert, mergeNew, replaceOrAdd, onlyMine } from './notelist.js';
+import { makeNotes } from './notes-store.js';
 import { createRoot } from '../vendor/react-dom-client.mjs';
 import { TopBar, Banner, Verses, SearchPopover, useFootnoteJump } from './reader.js';
 import { Sparkle, Trash, Check } from './icons.js';
@@ -32,6 +32,11 @@ function App() {
   const [chatOn, setChatOn] = useState(() => local.get('chat', '0') === '1');
 
   const lastQ = useRef(null), lastRef = useRef(null), lastAuto = useRef({});
+  // Every change to the note list goes through here: the store owns the rule, the request that earns
+  // it, and what happens when the request fails. Built once — its verbs are stable identities.
+  const storeRef = useRef(null);
+  storeRef.current ||= makeNotes({ api, apply: setNotes });
+  const store = storeRef.current;
   const versesRef = useRef(verses); versesRef.current = verses;
   const parRef = useRef(par); parRef.current = par;
   const readerRef = useRef(null);
@@ -49,8 +54,7 @@ function App() {
 
   // ── chat ────────────────────────────────────────────────────────────────────
   const openChat = useCallback(() => { setChatOn(true); local.set('chat', '1'); }, []);
-  const onNote = useCallback(n => setNotes(cur => upsert(cur, n)), []);
-  const chat = useChat({ openChat, onNote });
+  const chat = useChat({ openChat, onNote: store.applyServer });
   const chatRef = useRef(chat); chatRef.current = chat;
   const interRef = useRef(inter); interRef.current = inter;   // toggleInter has to read the cache without waiting for a re-render
 
@@ -67,8 +71,7 @@ function App() {
     const r = await api(passageUrl(q, version));
     // a dropped connection used to leave the button on 「載入中…」 and the banner spinning forever
     if (r.error || !r.verses) { banner(apiErrorText(r.error || '伺服器回傳異常'), { spin: false, tone: 'err', hideAfter: 4000, title: r.error || '' }); setLoadLabel('載入'); return; }
-    const fresh = await api('/api/notes');   // server keeps them unless the passage changed
-    setNotes(Array.isArray(fresh) ? fresh : []);
+    await store.refresh();   // the server keeps them unless the passage changed
     setVerses(r.verses);
     setInter({ open: new Set(), cache: {} });                 // the 原文 blocks belong to the verses we just replaced
     // the server drops the agent session on a passage change
@@ -83,15 +86,14 @@ function App() {
 
   // returns the number of new notes, or -1 on failure (the error stays on the banner until the next action)
   const addAuto = useCallback(async url => {
-    let fresh = await api(url);
-    if (fresh && !Array.isArray(fresh) && Array.isArray(fresh.notes)) { lastAuto.current = fresh; fresh = fresh.notes; }  // quick pass wraps its list
-    if (!Array.isArray(fresh)) {
-      const msg = fresh?.error || '伺服器回傳異常';
-      banner(`ELI5 筆記失敗：${apiErrorText(msg)}`, { spin: false, title: msg });   // the pill clips; the full error lives in the tooltip
+    const r = await store.applyPass(url);
+    if (r.error) {
+      // tone is what picks the icon and the ARIA role; without it a failure renders as a success
+      banner(`ELI5 筆記失敗：${apiErrorText(r.error)}`, { spin: false, tone: 'err', title: r.error });   // the pill clips; the full error lives in the tooltip
       return -1;
     }
-    setNotes(cur => mergeNew(cur, fresh));
-    return fresh.length;
+    lastAuto.current = r;
+    return r.added;
   }, [banner]);
 
   // 對照欄：另一個譯本的同幾節。走 /api/side，不動伺服器的 passage 狀態，也不會重開 agent session
@@ -152,7 +154,7 @@ function App() {
       return;
     }
     setPending(cur => { const { [id]: _, ...rest } = cur; return rest; });
-    setNotes(cur => replaceOrAdd(cur, s.replace, r));
+    store.applyOne(r, s.replace);
   }, []);
 
   // the model pass is manual: it costs money and a minute, and a 529 on page load used to look like "0 notes"
@@ -175,9 +177,8 @@ function App() {
   const quickClear = useCallback(async () => {
     const n = notes.filter(x => x.author !== 'user').length;
     if (!confirm(`確定刪除這段全部 ${n} 條自動筆記（ELI5、agent 標注、references）？\n手動筆記會保留。這個動作無法復原。`)) return;
-    const r = await api('/api/notes/quick', 'DELETE');
+    const r = await store.clearAuto();
     if (r.error) { banner(`刪除失敗：${apiErrorText(r.error)}`, { spin: false, tone: 'err', hideAfter: 4000, title: r.error }); return; }
-    setNotes(onlyMine);
     banner(`已刪除 ${r.removed} 條自動筆記`, { spin: false, tone: 'ok', hideAfter: 3000 });
   }, [notes, banner]);
 
@@ -290,7 +291,7 @@ function App() {
             : html`<div className="dood blank" aria-hidden="true"><${Doodle} name="sprout" /></div>`}
         </div>
         <${Detail} detail=${detail} setDetail=${setDetail} running=${chat.running}
-          verses=${verses} notes=${notes} setNotes=${setNotes}
+          verses=${verses} notes=${notes} store=${store}
           send=${chat.send} prefillInput=${chat.prefillInput} aiNote=${aiNote} banner=${banner} />
         <${SearchPopover} open=${searchOpen} onClose=${() => setSearchOpen(false)} version=${pver}
           onPick=${async x => {
