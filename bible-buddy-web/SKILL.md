@@ -127,7 +127,7 @@ and their fetched data live in module state, not in the DOM.
 
 | Author | Where it comes from | Cost |
 |---|---|---|
-| `refs` | bible-buddy's own `translation-bias.md` / `commonly-misread-passages.md` tables, matched to the loaded verses | free, instant, already verified |
+| `refs` | bible-buddy's own `translation-bias.md` / `commonly-misread-passages.md` tables, matched to the loaded verses, served in Chinese through `references/zh-notes.json` | free, instant, already verified |
 | `quick` | ✨ 生成 ELI5 筆記 — one schema-constrained model pass, 10–14 notes for the whole passage | one paid pass, cached per passage+version |
 | `agent` | the chat agent calling `mcp__notes__add_annotation` during a turn | part of the turn |
 | `user` | 反白經文 → ✎ 手動筆記 | free |
@@ -139,6 +139,23 @@ note is rewritten in place rather than duplicated.
 
 **Chat** streams over SSE. A refreshed page reattaches to the running turn instead of losing
 it. Changing passage starts a fresh agent session, since the old history is about other verses.
+
+### The reference tables are English
+
+bible-buddy's tables are written in English, and this is a Chinese reading desk. `references/zh-notes.json`
+holds the Traditional Chinese `label` and `body` of every row, keyed by the note id that `_ref_notes()`
+derives from the row's own cells. A row with no entry serves in English rather than failing, and a passage
+whose notes were saved before the file existed is re-translated when it is loaded again.
+
+Upstream edits a row → its cells change → its id changes → it falls back to English until regenerated:
+
+```bash
+uv run --directory {WEB} python translate_refs.py        # only the ids the file is missing
+uv run --directory {WEB} python translate_refs.py --force  # all 96 rows again
+```
+
+That is a paid model pass (about US$2 for the whole set, ~$0.10 per batch of 6). Don't run it as a
+side effect of something else; the committed JSON is what makes these notes free at read time.
 
 ## Where the work is saved
 
