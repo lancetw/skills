@@ -12,7 +12,7 @@ import sys
 
 from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
 
-from server import HERE, ZH_REFS, _ref_notes
+from server import HERE, ZH_REFS, _ref_notes, _short_label
 
 SCHEMA = {"type": "json_schema", "schema": {
     "type": "object", "required": ["items"],
@@ -27,7 +27,7 @@ PROMPT = """把下面每一條聖經筆記翻成台灣繁體中文。這些筆�
 - 保留 markdown：`**中譯：**`、`**原文：**`、`**影響：**`、`**常見誤讀：**`、`**第一世紀脈絡：**` 這些標題已經是中文，原樣保留；其餘 ** ** 粗體位置也保留。
 - 希伯來文、希臘文原文字、音譯（chesed、plerosai…）、經卷章節（Gen 1:1、Deut 32:11）、學術書名一律保留原文，不要翻也不要拿掉。
 - 譯文要讀得順，是中文句子不是英文直譯；術語第一次出現時可用括號補五個字內的白話。
-- label：20 字以內。原本就是中文的（像「慈愛＝chesed hesed」）就原樣保留；英文或被截斷的（像「誤讀 · plerosai (πληρ」）改寫成看得懂的中文短標，誤讀類保留開頭的「誤讀 · 」。
+- label：20 個中文字寬（拉丁音譯算半形，兩個字母當一個中文字）以內。原本就是中文的（像「慈愛＝chesed hesed」）就原樣保留；英文或被截斷的（像「誤讀 · plerosai (πληρ」）改寫成看得懂的中文短標，誤讀類保留開頭的「誤讀 · 」。
 - body：句意完整翻完，不要摘要、不要刪內容、不要自己加解釋。
 
 {rows}"""
@@ -63,7 +63,7 @@ async def main() -> None:
             continue
         for it in items:
             if it["id"] in chunk:  # a hallucinated id would otherwise write a note nobody serves
-                done[it["id"]] = {"label": it["label"][:20], "body": it["body"]}
+                done[it["id"]] = {"label": _short_label(it["label"]), "body": it["body"]}
         ZH_REFS.parent.mkdir(parents=True, exist_ok=True)
         ZH_REFS.write_text(json.dumps(done, ensure_ascii=False, indent=1, sort_keys=True))
     print(f"wrote {len(done)} rows to {ZH_REFS}", file=sys.stderr)
