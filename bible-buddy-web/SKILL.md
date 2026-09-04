@@ -8,13 +8,15 @@ license: MIT
 
 **回應語言：一律使用台灣繁體中文。**
 
-# Bible Buddy ELI5 — 網頁查經原型
+# Bible Buddy ELI5 — 網頁查經
 
-A **prototype**, deliberately throwaway. It answers one question: can the Agent SDK
-dispatch `/bible-buddy` and have it annotate the passage on screen through a custom
-tool, and how does that feel to read? State is a module-level dict, notes autosave to
-one JSON per passage, one global event queue serves one user. Fine for one reader on
-one laptop; not a product.
+A local reading desk for scripture. It loads a passage from FHL, drops plain-language
+notes onto the words themselves, and lets a `/bible-buddy` agent verify or expand any of
+them through a custom tool.
+
+**Single user, single machine, by design.** State is a module-level dict, notes autosave
+to one JSON per passage on the Desktop, one event queue serves one reader. It binds
+loopback only. Don't put it behind a shared port.
 
 ## Path Resolution
 
@@ -121,6 +123,5 @@ one automatically, so this means that reload also failed (usually FHL unreachabl
 **A quote that does not match the verse** — the note degrades to verse-level (no underline)
 instead of failing. Expected, not a bug.
 
-Failures surface rather than being handled — that is the prototype's stance. Read the
-uvicorn stderr for `model pass:` / `model retry:` / `quick pass failed:` lines before
-theorising.
+Failures surface rather than being swallowed. Read the uvicorn stderr for `model pass:` /
+`model retry:` / `quick pass failed:` lines before theorising.

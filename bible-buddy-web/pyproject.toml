@@ -1,7 +1,7 @@
 [project]
-name = "bible-buddy-web-proto"
-version = "0.0.1"
-description = "PROTOTYPE — throwaway. Agent SDK runs the bible-buddy skill; annotations land on the passage."
+name = "bible-buddy-web"
+version = "1.0.0"
+description = "Local web Bible reader. The Agent SDK runs the bible-buddy skill; annotations land on the passage."
 requires-python = ">=3.10"
 dependencies = [
     "fastapi",
