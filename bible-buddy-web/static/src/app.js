@@ -182,7 +182,8 @@ function App() {
     const n = await addAuto('/api/auto-notes/quick');
     clearInterval(poll);
     setQuickBusy(false);
-    if (n >= 0) banner(`ELI5 筆記 ${notesRef.current.filter(x => x.author === 'quick').length} 條${lastAuto.current.cached ? '（快取）' : ''}`, { spin: false, tone: 'ok', hideAfter: 4000 });
+    // count what the pass returned, not notesRef: setNotes has not re-rendered yet, so the ref still holds the pre-pass list
+    if (n >= 0) banner(`ELI5 筆記 ${n} 條${lastAuto.current.cached ? '（快取）' : ''}`, { spin: false, tone: 'ok', hideAfter: 4000 });
   }, [addAuto, banner]);
 
   // delete every automatic note of the passage (ELI5, agent, references) after a native confirm
