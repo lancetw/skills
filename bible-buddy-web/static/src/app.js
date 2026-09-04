@@ -207,10 +207,20 @@ function App() {
     g.addEventListener('pointerup', () => {
       g.removeEventListener('pointermove', move);
       g.classList.remove('on');
-      local.set('chatW', parseInt(document.body.style.getPropertyValue('--chat-w')));
+      const w = parseInt(document.body.style.getPropertyValue('--chat-w'));
+      if (w) local.set('chatW', w);    // a click that never moved leaves the property unset, and NaN is not a width
       setNudge(n => n + 1);
     }, { once: true });
     e.preventDefault();
+  };
+
+  // double-click the gutter to give the width back. Dropping the inline property hands the column to
+  // the stylesheet's own fallback, so the default lives in exactly one place (#root in app.css);
+  // 0 is what the loader below already reads as "never set".
+  const onGutterReset = () => {
+    document.body.style.removeProperty('--chat-w');
+    local.set('chatW', 0);
+    setNudge(n => n + 1);
   };
 
   // a refresh must come back to the same passage, or it would switch the server's passage
@@ -287,7 +297,7 @@ function App() {
           onManual=${() => { const s = sel; setSel(null); if (s) setDetail({ mode: 'edit', note: { verse: s.verse, anchor: s.anchor, label: s.quote.slice(0, 20), body: '', kind: 'personal' }, rect: s.rect, gap: 8 }); }}
           onAi=${() => { const s = sel; setSel(null); window.getSelection()?.removeAllRanges(); if (s) aiNote(s); }} />
       </section>
-      <${Chat} chat=${chat} theme=${theme} onGutterDown=${onGutterDown} />
+      <${Chat} chat=${chat} theme=${theme} onGutterDown=${onGutterDown} onGutterReset=${onGutterReset} />
     <//>`;
 }
 

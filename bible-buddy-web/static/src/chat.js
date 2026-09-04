@@ -186,14 +186,14 @@ function Message({ m, theme, onFold, onOption }) {
   return html`<${Bubble} m=${m} theme=${theme} />`;
 }
 
-export function Chat({ chat, theme, onGutterDown }) {
+export function Chat({ chat, theme, onGutterDown, onGutterReset }) {
   const log = useRef(null);
   useEffect(() => { if (log.current) log.current.scrollTop = 1e9; }, [chat.messages]);
   const empty = chat.messages.length === 0;
 
   return html`
     <aside id="chat">
-      <div id="gutter" title="拖曳調整寬度" onPointerDown=${onGutterDown}></div>
+      <div id="gutter" title="拖曳調整寬度，雙擊還原預設" onPointerDown=${onGutterDown} onDoubleClick=${onGutterReset}></div>
       <div className="chead">
         <span>agent 對話</span>
         <button type="button" id="clear" title="清空對話並重新開始 agent session" disabled=${chat.running} onClick=${chat.clear}>清除</button>

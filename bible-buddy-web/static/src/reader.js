@@ -5,7 +5,7 @@ import {
   Slot, MAX_ARROWS, MIN_GAP, COLOR, DOTC, useTicker, ThinkingOrb,
 } from './lib.js';
 import { Search, Columns, Moon, Sun, Chat, Close, Back, Check, Alert } from './icons.js';
-import { Doodle, DOODLES } from './doodles.js';
+import { Doodle, DOODLES, Book } from './doodles.js';
 
 // ── verse text ────────────────────────────────────────────────────────────────
 // A slice of the verse text with its footnote markers dropped in at their offsets
@@ -155,9 +155,8 @@ export function Verses({ verses, notes, pending, par, inter, nudge, handlers }) 
       ${verses.map(v => {
         const { arrows, chips } = arrange(v, notes, demoted);
         const pend = Object.values(pending).filter(p => p.verse === v.verse);
-        // one doodle per verse, not one per note: the margin holds 32px and a stack of them would
-        // read as a legend. First note wins, which is the one nearest the top of the verse.
-        const dood = notes.find(n => n.verse === v.verse && DOODLES[n.doodle]);
+        // every note on this verse that picked a doodle, stacked down the margin in note order
+        const doods = notes.filter(n => n.verse === v.verse && DOODLES[n.doodle]);
         const body = [];
         let pos = 0;
         for (const n of arrows) {
@@ -177,9 +176,10 @@ export function Verses({ verses, notes, pending, par, inter, nudge, handlers }) 
               <span className="n">${v.verse}</span>
               <button type="button" className=${`ob${inter.open.has(v.verse) ? ' on' : ''}`} title="原文逐字分析"
                       onClick=${() => handlers.toggleInter(v.verse)}>原</button>
-              ${dood ? html`
-                <span className="vdood" title=${dood.label} style=${{ '--c': DOTC[COLOR[dood.kind]] }}>
-                  <${Doodle} name=${dood.doodle} />
+              ${doods.length ? html`
+                <span className="vdood">
+                  ${doods.map(n => html`
+                    <${Doodle} key=${n.id} name=${n.doodle} title=${n.label} style=${{ '--c': DOTC[COLOR[n.kind]] }} />`)}
                 </span>` : null}
               ${body}
               <span className="eol">${'​'}</span>
@@ -234,7 +234,13 @@ const VERSIONS = [['rcuv', '和合本修訂版'], ['lcc', '呂振中'], ['bhs', 
 export function TopBar({ pref, setPref, pver, setPver, loadLabel, onLoad, par, setParVersion, togglePar, onSearch, theme, toggleTheme, chatOn, toggleChat, actions }) {
   return html`
     <form id="pf" className="top" onSubmit=${e => { e.preventDefault(); onLoad(); }}>
-      <${Slot} tag="span" className="brand" text="Bible Buddy ELI5" stagger=${30} />
+      <span className="brand">
+        <${Book} className="doodle bdood" aria-hidden="true" />
+        <span className="bt">
+          <${Slot} tag="b" text="Bible Buddy" stagger=${30} />
+          <span className="sub">ELI5</span>
+        </span>
+      </span>
       <div className="pgrp">
         <input id="pref" value=${pref} onChange=${e => setPref(e.target.value)} />
         <select id="pver" value=${pver} onChange=${e => setPver(e.target.value)}>
