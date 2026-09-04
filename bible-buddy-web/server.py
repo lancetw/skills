@@ -1,5 +1,7 @@
-"""PROTOTYPE, throwaway. Answers: can the Agent SDK dispatch /bible-buddy and have it
-annotate the passage on screen via a custom tool, and how does that feel?
+"""Local web Bible reader. The Agent SDK dispatches /bible-buddy and the agent annotates
+the passage on screen through a custom tool.
+
+Single-user by design: module-level state, one event queue, notes on the local disk.
 
 Run:  uv run uvicorn server:app --port 8765   then open http://127.0.0.1:8765
 """
@@ -394,7 +396,7 @@ async def get_client() -> ClaudeSDKClient:
     if _client is not None and _client_stale:
         try:
             await _client.disconnect()
-        except Exception as e:  # prototype: a dead CLI is fine, we are replacing it anyway
+        except Exception as e:  # a dead CLI is fine, we are replacing it anyway
             print("old agent session:", repr(e), file=sys.stderr)
         _client = None
     _client_stale = False
@@ -450,7 +452,7 @@ async def run_turn(message: str) -> None:
                         await events.put({"type": "tool", "name": b.name, "input": _short(b.input)})
             elif isinstance(m, ResultMessage):
                 await events.put({"type": "done", "cost": m.total_cost_usd, "turns": m.num_turns, "is_error": m.is_error, "result": m.result})
-    except Exception as e:  # prototype: surface, don't handle
+    except Exception as e:  # surface to the page, don't swallow
         await events.put({"type": "error", "text": repr(e)})
     finally:
         _turn_running = False
