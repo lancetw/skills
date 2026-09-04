@@ -158,11 +158,15 @@ export function Verses({ verses, notes, pending, par, inter, handlers }) {
   return html`
     <div id="verses" ref=${box} className=${par.on ? 'par' : ''}>
       ${verses.map(v => {
-        // 併節：這一節的字被譯本併進前一節（FHL 回傳 "a"）。留一行維持節號與對照欄的對齊，但沒有可標註的經文
+        // 併節：這一節的字被譯本併進前一節（FHL 回傳 "a"）。中譯沒有可標註的經文，但原文有這一節，
+        // 所以 原文逐字分析 與對照欄照舊；原 鈕改成行內，短短一列的左緣沒有第二層空間放它
         if (v.merged) return html`
           <${Fragment} key=${v.verse}>
             <div className="verse merged" data-verse=${v.verse}>
               <span className="n">${v.verse}</span><span className="mg">併入上節</span>
+              <button type="button" className=${`ob${inter.open.has(v.verse) ? ' on' : ''}`} title="原文逐字分析"
+                      onClick=${() => handlers.toggleInter(v.verse)}>原</button>
+              ${inter.open.has(v.verse) ? html`<${Interlinear} data=${inter.cache[v.verse]} onWord=${handlers.showLex} />` : null}
             </div>
             ${par.on ? html`<div className="parv" dir=${par.rtl ? 'rtl' : undefined}>${par.map[v.verse] || ''}</div>` : null}
           <//>`;
