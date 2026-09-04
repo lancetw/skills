@@ -189,8 +189,11 @@ export function SelectionMenu({ sel, onClose, onManual, onAi }) {
 }
 
 // captured at mouseup: the click on the menu clears the browser selection before its handler runs
-export function useSelection(versesRef, setSel) {
+export function useSelection(versesRef, setSel, off) {
   useEffect(() => {
+    // the quick pass rewrites the whole passage's notes: a selection menu opened mid-pass would
+    // anchor a note onto a list that is about to be replaced, so close it and stop listening
+    if (off) { setSel(null); return; }
     const on = e => {
       if (e.target.closest?.('#selmenu, #detail')) return;
       const s = window.getSelection();
@@ -207,5 +210,5 @@ export function useSelection(versesRef, setSel) {
     };
     document.addEventListener('mouseup', on);
     return () => document.removeEventListener('mouseup', on);
-  }, [versesRef, setSel]);
+  }, [versesRef, setSel, off]);
 }
