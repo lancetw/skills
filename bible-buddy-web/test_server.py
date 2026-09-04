@@ -178,3 +178,23 @@ def test_editing_a_note_keeps_its_anchor_and_clips_the_new_label(desk):
     assert server.notes[-1]["anchor"] == anchor
     assert server.notes[-1]["label"] == server._short_label("誤" * 40)
     assert server.notes[-1]["edited"] is True
+
+
+# ── anchors across the footnote cuts ──────────────────────────────────────────
+# Notes saved before the inline "([1.1]…)" footnotes were stripped point into the old text. A wrong
+# shift underlines the wrong words, so each position relative to a cut is pinned.
+
+def test_an_offset_before_every_cut_does_not_move():
+    assert server._shift(3, [(10, 5)]) == 3
+
+
+def test_an_offset_after_a_cut_moves_back_by_its_length():
+    assert server._shift(20, [(10, 5)]) == 15
+
+
+def test_an_offset_inside_a_cut_collapses_to_where_the_cut_started():
+    assert server._shift(12, [(10, 5)]) == 10
+
+
+def test_every_earlier_cut_counts():
+    assert server._shift(30, [(2, 3), (10, 5)]) == 22

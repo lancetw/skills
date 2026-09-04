@@ -128,7 +128,7 @@ test('a span that is all blank trims to nothing', () => {
 // Every call used to decide for itself what a failure looks like, so the same 529 reached the reader
 // in two different wordings and a 500 with an HTML body reached them as a SyntaxError.
 
-const { api, apiErrorText } = await import('./static/src/api.js');
+const { api, apiErrorText, parseRef } = await import('./static/src/api.js');
 
 const withFetch = async (impl, fn) => {
   const real = globalThis.fetch;
@@ -187,6 +187,34 @@ test('nothing at all still says something', () => {
 // ── one list of notes, one set of rules ───────────────────────────────────────
 // Seven call sites each wrote their own "merge a note into the list", with different answers to the
 // same question, and one of them was another module holding App's raw state setter.
+
+// ── what the reader typed ─────────────────────────────────────────────────────
+// A reference the parser misreads loads the wrong passage silently, so each shape is pinned.
+
+test('a book, chapter and verse range reads as all four', () => {
+  assert.deepEqual(parseRef('以賽亞書 7:10-17'), { book: '以賽亞書', chapter: 7, start: 10, end: 17 });
+});
+
+test('a bare chapter is the whole chapter', () => {
+  assert.deepEqual(parseRef('創世記 1'), { book: '創世記', chapter: 1, start: 1, end: 200 });
+});
+
+test('one verse is a range of itself, not the rest of the chapter', () => {
+  assert.deepEqual(parseRef('Matt 5:17'), { book: 'Matt', chapter: 5, start: 17, end: 17 });
+});
+
+test('a book on its own is its first chapter', () => {
+  assert.deepEqual(parseRef('約翰福音'), { book: '約翰福音', chapter: 1, start: 1, end: 200 });
+});
+
+test('a reference that names no book is not a reference', () => {
+  assert.equal(parseRef('7:10-17'), null);
+});
+
+test('nothing typed is not a reference', () => {
+  assert.equal(parseRef(''), null);
+  assert.equal(parseRef(null), null);
+});
 
 const L = await import('./static/src/notelist.js');
 

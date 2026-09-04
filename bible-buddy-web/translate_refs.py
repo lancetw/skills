@@ -47,9 +47,27 @@ async def run(batch: dict) -> list[dict]:
     return []
 
 
+def _batch_size() -> int:
+    return int(sys.argv[sys.argv.index("--batch") + 1]) if "--batch" in sys.argv else 6
+
+
+def _already_done() -> dict:
+    """What earlier runs translated. --force starts over; a missing file is a first run."""
+    if "--force" in sys.argv or not ZH_REFS.is_file():
+        return {}
+    return json.loads(ZH_REFS.read_text())
+
+
+def _keep(done: dict, items: list[dict], chunk: dict) -> None:
+    for it in items:
+        if it["id"] in chunk:  # a hallucinated id would otherwise write a note nobody serves
+            done[it["id"]] = {"label": _short_label(it["label"]), "body": it["body"]}
+    ZH_REFS.parent.mkdir(parents=True, exist_ok=True)
+    ZH_REFS.write_text(json.dumps(done, ensure_ascii=False, indent=1, sort_keys=True))
+
+
 async def main() -> None:
-    size = int(sys.argv[sys.argv.index("--batch") + 1]) if "--batch" in sys.argv else 6
-    done = {} if "--force" in sys.argv else json.loads(ZH_REFS.read_text()) if ZH_REFS.is_file() else {}
+    size, done = _batch_size(), _already_done()
     todo = {f["id"]: f for _, _, f in _ref_notes() if f["id"] not in done}
     print(f"{len(done)} already translated, {len(todo)} to go", file=sys.stderr)
     ids = list(todo)
@@ -61,11 +79,7 @@ async def main() -> None:
         except Exception as e:  # one bad batch must not throw away the batches before it
             print(f"  failed: {e!r}", file=sys.stderr)
             continue
-        for it in items:
-            if it["id"] in chunk:  # a hallucinated id would otherwise write a note nobody serves
-                done[it["id"]] = {"label": _short_label(it["label"]), "body": it["body"]}
-        ZH_REFS.parent.mkdir(parents=True, exist_ok=True)
-        ZH_REFS.write_text(json.dumps(done, ensure_ascii=False, indent=1, sort_keys=True))
+        _keep(done, items, chunk)
     print(f"wrote {len(done)} rows to {ZH_REFS}", file=sys.stderr)
 
 

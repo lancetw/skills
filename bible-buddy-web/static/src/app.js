@@ -2,7 +2,7 @@
 // agent panel. Everything below the API boundary is unchanged — this file replaces the imperative
 // render()/innerHTML page, not the server.
 import { React, html, useState, useEffect, useRef, useCallback, Slot, local, ThinkingOrb } from './lib.js';
-import { api, apiErrorText } from './api.js';
+import { api, apiErrorText, parseRef, passageUrl } from './api.js';
 import { upsert, mergeNew, replaceOrAdd, onlyMine } from './notelist.js';
 import { createRoot } from '../vendor/react-dom-client.mjs';
 import { TopBar, Banner, Verses, SearchPopover, useFootnoteJump } from './reader.js';
@@ -55,18 +55,16 @@ function App() {
   const interRef = useRef(inter); interRef.current = inter;   // toggleInter has to read the cache without waiting for a re-render
 
   // ── passage ─────────────────────────────────────────────────────────────────
-  // 「以賽亞書 7:10-17」「創世記 1」「Matt 5:17」「約翰福音」（= 第 1 章）都吃
   const loadPassage = useCallback(async (refStr, version) => {
-    const m = (refStr || '').trim().match(/^(\S+?)\s*(\d+)?(?::(\d+)(?:-(\d+))?)?$/);
-    if (!m || /^\d/.test(m[1])) {
+    const q = parseRef(refStr);
+    if (!q) {
       banner('看不懂的經文位置，例：約翰福音 3:16', { spin: false, tone: 'err', hideAfter: 4000 });
       setLoadLabel('載入');
       return;
     }
-    lastQ.current = { book: m[1], chapter: +(m[2] || 1), start: +(m[3] || 1), end: +(m[4] || m[3] || 200) };
-    const q = lastQ.current;
+    lastQ.current = q;
     banner('載入經文…');
-    const r = await api(`/api/passage?book=${encodeURIComponent(q.book)}&chapter=${q.chapter}&start=${q.start}&end=${q.end}&version=${version || 'rcuv'}`);
+    const r = await api(passageUrl(q, version));
     // a dropped connection used to leave the button on 「載入中…」 and the banner spinning forever
     if (r.error || !r.verses) { banner(apiErrorText(r.error || '伺服器回傳異常'), { spin: false, tone: 'err', hideAfter: 4000, title: r.error || '' }); setLoadLabel('載入'); return; }
     const fresh = await api('/api/notes');   // server keeps them unless the passage changed
