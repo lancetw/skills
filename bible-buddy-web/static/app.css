@@ -1,0 +1,202 @@
+  /* notebook: ivory paper, red margin rule, serif scripture, handwritten labels. Light by default. */
+  :root {
+    /* handwriting stack: Shantell Sans covers Latin only, so CJK falls through to Iansui (芫荽), then 霞鶩文楷 */
+    --hand: 'Shantell Sans', 'Iansui', 'LXGW WenKai TC', 'Noto Sans Hebrew', cursive;
+    /* Hebrew with niqqud/cantillation needs a font that has them; the CJK faces don't, so every stack ends in Noto Hebrew */
+    --sans: 'Noto Sans TC', 'Noto Sans Hebrew', system-ui, sans-serif;
+    --serif: 'Noto Serif TC', 'Songti TC', 'Noto Serif Hebrew', serif;
+    color-scheme: light;
+    --paper:#F8F5EC; --paper-2:#F1EDE1; --ink:#2B2A26; --ink-2:#6E6A60; --rule:#DED8C8; --margin:#D9A3A3;
+    --pen:#3A5A8C; --card:#FFFDF7; --shadow:0 6px 20px #4a412a22;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper:#1E1D1A; --paper-2:#26241F; --ink:#E6E1D6; --ink-2:#A39E92; --rule:#36332C; --margin:#7A4A4A;
+    --pen:#8FB0E0; --card:#2A2823; --shadow:0 6px 20px #00000066;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); }
+  /* #root, not body, is the grid: React needs a mount node of its own */
+  #root { display:grid; grid-template-columns:1fr var(--chat-w, 420px); grid-template-rows:100vh; height:100vh; }
+  /* chat panel: hidden by default, width set by dragging its left edge; both remembered per browser */
+  #root.chat-hidden { grid-template-columns:1fr 0; } #root.chat-hidden #chat { display:none; }
+  #gutter { position:absolute; left:-4px; top:0; bottom:0; width:8px; cursor:col-resize; z-index:6; }
+  #gutter:hover, #gutter.on { background:var(--pen); opacity:.3; }
+  #chatToggle.on, #parToggle.on { border-color:var(--pen); color:var(--pen); }
+  #reader, #chat { min-height:0; }   /* grid items default to min-height:auto and would grow past the row */
+  button, input, select { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:6px 10px; }
+  button { cursor:pointer; } button:hover { border-color:var(--pen); color:var(--pen); }
+  /* anything disabled says so under the mouse: the chat input while a turn runs, the quick / verify buttons */
+  button:disabled, input:disabled { cursor:not-allowed; opacity:.55; } button:disabled:hover { border-color:var(--rule); color:inherit; }
+  form#f:has(#q:disabled) { cursor:not-allowed; }
+  button.primary { background:var(--pen); color:var(--paper); border-color:var(--pen); }
+
+  /* reader = a notebook page */
+  #reader { overflow:auto; padding:0 32px 40px 24px; }
+  /* the title bar stays put while the passage scrolls under it */
+  /* a solid band edge to edge (negative margins undo the reader's gutters), with a hard rule; no shadow, nothing shows through */
+  .top { display:flex; flex-wrap:wrap; row-gap:8px; gap:8px; align-items:center; position:sticky; top:0; z-index:5; margin:0 -32px 14px -24px; padding:14px 32px 12px 24px; background:var(--paper-2); border-bottom:1px solid var(--rule); }
+  .top .brand { font-family:'Noto Serif TC', serif; font-weight:700; letter-spacing:.04em; margin-right:auto; white-space:nowrap; }
+  .top .pgrp { display:flex; gap:8px; flex:1 1 22em; min-width:0; }
+  .top .pgrp input { flex:1 1 8em; min-width:6em; width:auto; }
+  .top .pgrp select { flex:0 1 auto; min-width:0; }
+  .top .icons { display:flex; gap:8px; flex:none; }
+  /* narrow reader (chat open, small window): brand and icons share the first row, the passage controls take the second */
+  #reader { container-type:inline-size; }
+  @container (max-width: 860px) {
+    .top .pgrp { order:9; flex-basis:100%; }
+    .top .icons { margin-left:auto; }
+    .top .brand { margin-right:0; }
+  }
+  @container (max-width: 560px) { .top .brand { display:none; } }
+  .page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
+  .page::before { content:""; position:absolute; top:0; bottom:0; left:60px; width:1px; background:var(--margin); }   /* the red margin line */
+  h1 { font-family:'Noto Serif TC', serif; font-size:1.05rem; font-weight:600; color:var(--ink-2); margin:0 0 14px; }
+  .verse { position:relative; font-family:var(--serif); font-size:1.15rem; line-height:2.1; padding:6px 0; }
+  .verse.has-notes { padding-bottom:78px; }
+  .verse .n { position:absolute; left:-52px; top:6px; width:32px; text-align:right; font-family:var(--hand); font-size:.8rem; color:var(--margin); line-height:2.1; }
+  .ann { --ann-font:var(--hand); cursor:pointer; }
+  .chips { line-height:1.4; margin-top:2px; font-family:var(--hand); }
+  .verse.has-notes .chips { margin-top:72px; }
+  .verse.has-notes:has(.chips) { padding-bottom:8px; }
+  /* AI note in flight: a dashed chip in the verse's own chip row, where the note will land; red with actions on failure */
+  .chip.pending, .chip.err { display:inline-flex; align-items:center; gap:5px; cursor:default; opacity:1; }
+  .chip.pending { --c:var(--ink-2); border-style:dashed; }
+  .chip.pending .spin { width:10px; height:10px; border-width:1.5px; }
+  .chip.pending .t { font-variant-numeric:tabular-nums; opacity:.7; }
+  .chip.err { --c:#c45a38; }
+  .chip.err button { font-size:.75rem; padding:0 5px; border-color:transparent; background:transparent; color:inherit; }
+  .chip.err button:hover { text-decoration:underline; }
+  .fns { margin-top:28px; padding-top:12px; border-top:1px solid var(--rule); font-family:var(--serif); font-size:.9rem; color:var(--ink-2); }
+  .fns h3 { margin:0 0 6px; font-size:.8rem; font-weight:500; letter-spacing:.12em; }
+  .fns ol { margin:0; padding-left:1.8em; } .fns li { line-height:1.8; padding:0 4px; border-radius:4px; transition:background 1.5s; }
+  .fns li.flash { background:var(--paper-2); transition:none; }
+  .verse { transition:background 1.5s; border-radius:4px; } .verse.flash { background:var(--paper-2); transition:none; }  /* ↩ from a footnote lights the verse briefly */
+  .fns .v { font-family:var(--hand); color:var(--margin); margin-right:6px; } .fns .back { margin-left:6px; color:var(--pen); text-decoration:none; }
+  .fn { font-size:.6em; vertical-align:super; color:var(--pen); cursor:pointer; user-select:none; margin:0 1px; font-family:var(--sans); }  /* translator footnote marker */
+  .chip { display:inline-block; font-size:.8rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
+
+  /* 原文：每節左欄一顆「原」，展開逐字分析；對照譯本另成一欄 */
+  .verse .ob { position:absolute; left:-52px; top:34px; width:32px; padding:0; font-family:var(--hand); font-size:.72rem; line-height:1.6; color:var(--ink-2); background:transparent; border-color:transparent; }
+  .verse .ob:hover, .verse .ob.on { color:var(--pen); border-color:var(--rule); background:var(--paper-2); }
+  .inter { margin:6px 0 2px; padding:10px 12px; border-left:2px solid var(--rule); background:var(--paper-2); border-radius:0 6px 6px 0; font-size:.9rem; line-height:1.6; }
+  .inter .ot { margin:0 0 8px; font-size:1.25rem; line-height:1.9; }
+  .inter .lit { margin:8px 0 0; font-family:var(--sans); font-size:.8rem; color:var(--ink-2); }
+  .inter .ws { display:flex; flex-wrap:wrap; gap:6px; }
+  .inter .w { display:flex; flex-direction:column; gap:1px; align-items:flex-start; text-align:start; padding:4px 8px; background:var(--card); }
+  /* arrow labels hang ~70px under their span; the block has to clear them, unless the chip row already did */
+  .verse.has-notes .inter { margin-top:74px; }
+  .verse.has-notes:has(.chips) .inter { margin-top:6px; }
+  .inter .w:hover { border-color:var(--pen); }
+  .inter .w b { font-size:1.15rem; font-weight:400; }
+  .inter .w i, .inter .w em { font-style:normal; font-family:var(--sans); color:var(--ink-2); }
+  .inter .w i { font-size:.78rem; max-width:16em; }
+  .inter .w em { font-size:.68rem; opacity:.75; }
+  /* 對照：整章兩欄，譯註橫跨兩欄 */
+  #verses.par { display:grid; grid-template-columns:1fr 1fr; column-gap:26px; }
+  #verses.par .fns { grid-column:1 / -1; }
+  .parv { font-family:var(--serif); font-size:1.1rem; line-height:2.1; padding:6px 0; color:var(--ink-2); }
+  .parv[dir=rtl] { text-align:right; }
+  @container (max-width: 700px) { #verses.par { display:block; } .parv { padding:0 0 10px; } }
+  /* Strong's 字典：借用筆記卡片的殼，內文是純文字不是 markdown */
+  #detail pre.lex { margin:0; white-space:pre-wrap; font-family:var(--sans); font-size:.85rem; }
+  /* note card popover */
+  #detail { position:fixed; margin:0; inset:auto; width:min(440px, 90vw); max-height:45vh; overflow:auto; padding:12px 14px; border:1px solid var(--rule); border-radius:10px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); font-size:.9rem; line-height:1.6; }
+  #detail::backdrop { background:transparent; }
+  /* note card: title on its own line, a quiet row of tags, the body, then text-style actions in a footer */
+  #detail .hd { display:flex; align-items:flex-start; gap:8px; }
+  #detail .hd b { font-family:var(--hand); font-weight:500; font-size:1.15rem; line-height:1.35; }
+  #detail .dot { width:10px; height:10px; border-radius:50%; background:var(--c); flex:none; margin-top:.45em; }
+  #detail .meta { display:flex; flex-wrap:wrap; gap:4px 6px; margin:4px 0 8px 18px; font-size:.75rem; color:var(--ink-2); }
+  #detail .meta .tag { border:1px solid var(--rule); border-radius:999px; padding:0 7px; line-height:1.5; }
+  #detail .meta .tag.unv { color:#b8751a; border-color:#b8751a; cursor:help; }
+  #detail .body { margin-left:18px; }
+  #detail .body > :first-child { margin-top:0; } #detail .body > :last-child { margin-bottom:0; }
+  #detail .ft { display:flex; gap:2px; margin-top:10px; padding-top:8px; border-top:1px solid var(--rule); }
+  #detail .ft button { font-size:.8rem; padding:3px 10px; border-color:transparent; background:transparent; color:var(--ink-2); }
+  #detail .ft button:hover { color:var(--pen); background:var(--paper-2); }
+  #detail .ft button.danger:hover { color:#c45a38; }
+  #detail .ft #ask { margin-left:auto; color:var(--pen); }
+  #detail .ed .cap { font-size:.75rem; color:var(--ink-2); }
+  #detail .hd, #detail .ed .cap { cursor:move; user-select:none; touch-action:none; }  /* drag handles */
+  /* inline editor: same card, fields stacked */
+  #detail form.ed { display:grid; gap:6px; }
+  #detail form.ed input, #detail form.ed textarea, #detail form.ed select { width:100%; box-sizing:border-box; }
+  #detail form.ed textarea { min-height:80px; resize:vertical; font-family:var(--sans); }
+  #detail form.ed .row { display:flex; gap:6px; justify-content:flex-end; }
+  #detail form.ed .row select { width:auto; margin-right:auto; }
+  /* 全本搜尋：置中的浮層，輸入在上、命中清單在下 */
+  #search { position:fixed; inset:auto; top:70px; left:50%; transform:translateX(-50%); width:min(640px, calc(100vw - 24px)); max-height:calc(100vh - 100px); padding:12px; border:1px solid var(--rule); border-radius:10px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
+  #search:popover-open { display:flex; flex-direction:column; gap:8px; }
+  #sf { display:flex; gap:8px; } #sf input { flex:1; min-width:0; }
+  #sres { overflow:auto; }
+  #sres .hint { margin:2px 0 6px; font-size:.78rem; color:var(--ink-2); }
+  #sres .hit { display:block; width:100%; text-align:left; border:0; border-bottom:1px solid var(--rule); border-radius:0; background:transparent; padding:8px 6px; }
+  #sres .hit:hover { background:var(--paper-2); }
+  #sres .hit b { display:block; font-size:.78rem; color:var(--pen); font-family:var(--sans); }
+  #sres .hit span { font-family:'Noto Serif TC', serif; }
+  #sres mark { background:transparent; color:var(--pen); font-weight:700; }
+  /* selection menu: sits just under the highlighted text */
+  #selmenu { position:fixed; margin:0; inset:auto; padding:4px; gap:4px; border:1px solid var(--rule); border-radius:8px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
+  #selmenu:popover-open { display:flex; }
+  #selmenu button { font-size:.85rem; padding:4px 10px; }
+  /* loading states: a banner on the page for passage/quick-notes waits, a pending bubble for agent turns */
+  /* status pill sits in the fixed-height heading row, so showing/hiding it never shifts the verses */
+  .hrow { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; margin:0 0 8px; }
+  .hrow h1 { margin:0; }
+  /* tools row: action pills left, status pill right; wraps on a narrow reader, fixed min-height so the pill's coming and going never shifts the verses */
+  .trow { display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; min-height:34px; margin:0 0 14px; }
+  /* passage actions: one group of identical pills at the right of the heading row */
+  .actions { display:inline-flex; flex-wrap:wrap; gap:6px; }
+  .actions button { font-size:.82rem; padding:4px 12px; border-radius:999px; background:var(--paper-2); }
+  .actions button:hover { background:var(--card); }
+  /* the ELI5 button while its pass runs: same dashed, muted look as a pending chip, with a spinner in front of the label */
+  .actions button.busy, .actions button.busy:hover { border-style:dashed; color:var(--ink-2); background:var(--paper-2); opacity:1; cursor:progress; }
+  .actions button.busy::before { content:""; display:inline-block; width:10px; height:10px; margin-right:6px; vertical-align:-1px; border:1.5px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; }
+  .actions #quickClear:hover { border-color:#c45a38; color:#c45a38; }
+  #quickClear[hidden] { display:none; }
+  .actions + #banner { margin-left:0; }
+
+  /* the pill can never widen the row: it shrinks and clips, the full text lives in its title tooltip */
+  #banner { min-width:0; max-width:100%; }
+  #banner { margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:4px 12px; border-radius:999px; background:var(--paper-2); border:1px solid var(--rule); color:var(--ink); font-size:.82rem; white-space:nowrap; }
+  #banner[hidden] { display:none; }                     /* the display rule above would otherwise beat the hidden attribute */
+  #bannerText { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  #banner .t { flex:none; font-variant-numeric:tabular-nums; color:var(--ink-2); }
+  .spin { width:14px; height:14px; border:2px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; flex:none; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .dots { display:inline-flex; align-items:center; gap:4px; }  /* a flex box, not baseline-aligned inline boxes, so the dots sit on the text's centre line */
+  .dots span { display:block; width:6px; height:6px; border-radius:50%; background:var(--pen); animation:blink 1.2s infinite; }
+  .dots span:nth-child(2) { animation-delay:.2s; } .dots span:nth-child(3) { animation-delay:.4s; }
+  @keyframes blink { 0%,80%,100% { opacity:.2; } 40% { opacity:1; } }
+  #log .msg.pending { border-color:var(--pen); }
+  #log .msg.pending .act { display:flex; align-items:center; gap:10px; color:var(--ink-2); font-size:.85rem; }
+  #log .msg.pending .act .t { margin-left:auto; font-variant-numeric:tabular-nums; }
+  #status { padding:4px 12px; font-size:.8rem; color:var(--ink-2); font-family:var(--sans); min-height:1.6em; }
+  form#f button.stop { background:#c45a38; border-color:#c45a38; color:#fff; }
+  @media (prefers-reduced-motion: reduce) { .spin, .dots span { animation:none; } }
+  #detail p { margin:.4em 0; }
+
+  /* chat = sticky notes column */
+  #chat { position:relative; min-width:0; border-left:1px solid var(--rule); background:var(--paper-2); display:flex; flex-direction:column; }
+  #log { min-height:0; }   /* flex children only scroll when allowed to shrink below content height */
+  #chat .chead { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid var(--rule); font-size:.82rem; color:var(--ink-2); }
+  #chat .chead button { font-size:.78rem; padding:2px 10px; }
+  #log { flex:1; overflow:auto; padding:12px; font-size:.9rem; }
+  #log:empty { flex:0; padding:0; }                       /* an empty log yields the space to the guide */
+  #guide { flex:1; overflow:auto; padding:16px 14px; font-size:.86rem; color:var(--ink-2); line-height:1.6; }
+  #guide[hidden] { display:none; } #guide p { margin:0 0 10px; } #guide b { color:var(--ink); }
+  #guide .ex { display:flex; flex-wrap:wrap; gap:6px; } #guide .ex button { font-size:.8rem; padding:3px 10px; border-radius:999px; }
+  #guide small { display:block; margin-top:4px; }
+  #log .msg { background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:8px 12px; margin:.5em 0; box-shadow:0 1px 3px #0001; }
+  #log details.steps { margin:.2em 0 .2em 6px; }
+  #log details.steps summary { cursor:pointer; color:var(--ink-2); font-size:.76rem; list-style:none; }
+  #log details.steps summary::before { content:'▸ '; } #log details.steps[open] summary::before { content:'▾ '; }
+  /* the user's own message: keeps its line breaks; a long one folds to its first line */
+  #log .msg.me .body { white-space:pre-wrap; }
+  #log .msg.me.fold .body { display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+  #log .msg.me .more { border:none; background:transparent; color:var(--pen); font-size:.78rem; padding:2px 0 0; }
+  #log .tool { color:var(--ink-2); font-size:.74rem; font-family:ui-monospace, monospace; padding:1px 6px; }
+  #log .opts button { display:block; width:100%; margin:4px 0; text-align:left; }
+  form#f { display:flex; gap:6px; padding:10px; border-top:1px solid var(--rule); }
+  form#f input { flex:1; }

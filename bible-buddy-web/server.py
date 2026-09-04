@@ -33,6 +33,7 @@ from claude_agent_sdk import (
 )
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 # A package-manager guard (pmg) launches `uv run` behind a short-lived loopback proxy and exports it
 # (HTTPS_PROXY=http://127.0.0.1:NNNNN, NODE_USE_ENV_PROXY=1). The Claude CLI we spawn would inherit
@@ -79,6 +80,19 @@ SYSTEM_APPEND = """你在一個網頁查經工具裡工作。畫面左側顯示 
 @app.get("/")
 async def index():
     return FileResponse(HERE / "static/index.html", headers={"Cache-Control": "no-cache"})  # a reload always revalidates
+
+
+class _NoCacheStatic(StaticFiles):
+    """The page is native ES modules with no build step and no content hashes in their names,
+    so a stale cached module would silently pair new markup with old code. Revalidate every time."""
+
+    def file_response(self, *args, **kwargs):
+        r = super().file_response(*args, **kwargs)
+        r.headers["Cache-Control"] = "no-cache"
+        return r
+
+
+app.mount("/static", _NoCacheStatic(directory=HERE / "static"), name="static")
 
 
 # FHL inlines translator notes "([1.1]本節或譯…)" / "( [ 1.4] …)" and parallel refs "（#太 3:1-12;可 1:1-8|）" into the verse text
