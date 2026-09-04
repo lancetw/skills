@@ -102,12 +102,6 @@ export function Detail({ detail, setDetail, running, verses, notes, setNotes, se
   const ref = useRef(null);
   const quoteOf = n => (n?.anchor ? verses.find(v => v.verse === n.verse)?.text.slice(n.anchor.start, n.anchor.end) ?? '' : '');
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (detail && !el.matches(':popover-open')) el.showPopover();
-    else if (!detail && el.matches(':popover-open')) el.hidePopover();
-  }, [detail]);
   // light dismiss and Esc close the popover without going through setDetail
   useEffect(() => {
     const el = ref.current;
@@ -116,8 +110,16 @@ export function Detail({ detail, setDetail, running, verses, notes, setNotes, se
     el.addEventListener('toggle', on);
     return () => el.removeEventListener('toggle', on);
   }, [setDetail]);
-  // re-place after every content change: the card's height decides whether it hangs below or above
-  useLayoutEffect(() => { if (detail) place(ref.current, detail.rect, detail.gap); });
+  // Show and place in one layout pass, in that order: a closed popover is display:none, so measuring it
+  // first reports 0px tall and the card is never flipped above — it just hangs off the bottom of the window.
+  // Runs after every content change too, since the card's height decides which side it hangs on.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (detail && !el.matches(':popover-open')) el.showPopover();
+    else if (!detail && el.matches(':popover-open')) el.hidePopover();
+    if (detail) place(el, detail.rect, detail.gap);
+  });
 
   let inner = null;
   if (detail?.mode === 'lex') inner = html`<${Lexicon} lex=${detail.lex} />`;
