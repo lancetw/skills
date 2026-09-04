@@ -258,9 +258,10 @@ async def delete_quick_notes():
     for n in gone:
         notes.remove(n)
         (hidden.discard if n.get("author") == "quick" else hidden.add)(n["id"])
-    for q in _quick_cache.pop(key, None) or []:
+    p = _passes.get(key)
+    for q in (p.notes if p else None) or []:
         hidden.discard(_note_id("quick", key, str(q["verse"]), q["quote"]))
-    _quick_cost.pop(key, None); _quick_tasks.pop(key, None)
+    _pass_forget(key)   # the cached notes, their cost and the Task that made them go together
     _save()
     return {"ok": True, "removed": len(gone)}
 
@@ -292,8 +293,9 @@ def _save() -> None:
     if not passage["reference"]:
         return
     NOTES_DIR.mkdir(parents=True, exist_ok=True)
+    p = _passes.get(_key())
     data = {"reference": passage["reference"], "version": passage["version"], "book": passage.get("book", ""),
-            "notes": notes, "hidden": sorted(hidden), "quick": _quick_cache.get(_key()), "quick_cost": _quick_cost.get(_key()),
+            "notes": notes, "hidden": sorted(hidden), "quick": p.notes if p else None, "quick_cost": p.cost if p else None,
             "clean": True}  # anchors are offsets into footnote-stripped text
     tmp = _notes_file().with_suffix(".json.tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=1))
@@ -321,8 +323,8 @@ def _migrate_anchors() -> None:
 
 def _restore_quick(d: dict) -> None:
     """The paid model pass comes back with the file, so the button will not re-spend."""
-    _quick_cache[_key()] = d["quick"]
-    _quick_cost[_key()] = d.get("quick_cost")
+    p = _pass(_key())
+    p.notes, p.cost = d["quick"], d.get("quick_cost")
     for n in notes:  # files from before pass_cost existed
         if n.get("author") == "quick" and "pass_cost" not in n and "cost" not in n:
             n["pass_cost"] = d.get("quick_cost")
@@ -613,7 +615,6 @@ async def chat(body: dict):
 # ── auto notes: arrows on load, before anyone asks the agent ──────────────────
 REFS = SKILL / "references"
 KINDS = ["lexical", "history", "misread", "crossref"]
-_quick_cache: dict[str, list] = {}  # ponytail: in-memory; sqlite in the real thing
 
 
 def _note_id(*parts: str) -> str:
@@ -732,11 +733,54 @@ QUICK_PROMPT = """你是第一世紀猶太教背景的聖經學者。對下面�
 {text}"""
 
 
-_quick_tasks: dict[str, asyncio.Task] = {}
-_quick_status: dict[str, str] = {}
-_quick_cost: dict[str, float | None] = {}  # USD of the cached pass, shown next to the note count  # live progress per passage, e.g. "API 529 重試 2/3"; the page polls it while waiting
 QUICK_RETRIES = 3     # the CLI retries 529/5xx itself with backoff; its default (~10) kept the spinner up for minutes
 QUICK_TIMEOUT_S = 180  # hard ceiling on one pass, so the button can never spin forever
+
+
+# ── the model pass ────────────────────────────────────────────────────────────
+# A pass on one key is four things at once: the progress line the page polls while it waits, the Task
+# doing the work, the notes it produced, and what they cost. They used to be four dicts keyed the same
+# way, and every caller had to pop the right subset by hand: 🗑 took three of them, _structured the
+# fourth, and dropping one of those would leave a cleared passage still answering "cached" with the
+# notes it had just deleted. They are one record now, and MODEL is the one place this file asks the
+# model anything.
+
+
+class _Pass:
+    """What is known about the pass on one key. `notes is None` means it has not produced any yet."""
+
+    __slots__ = ("status", "task", "notes", "cost")
+
+    def __init__(self):
+        self.status = ""     # live progress, e.g. "API 529，重試 2/3（5s 後）"; the page polls it while it waits
+        self.task = None     # the Task doing the work: concurrent callers await this one, they do not start a second
+        self.notes = None    # what the pass produced, kept so the button cannot re-spend on the same passage
+        self.cost = None     # USD of that pass, shown next to the note count
+
+
+_passes: dict[str, _Pass] = {}  # ponytail: in-memory; sqlite in the real thing
+
+
+def _pass(key: str) -> _Pass:
+    return _passes.setdefault(key, _Pass())
+
+
+def _pass_forget(key: str) -> None:
+    """Everything known about this key's pass goes at once, so no part of it can outlive the rest."""
+    _passes.pop(key, None)
+
+
+class LiveModel:
+    """The real model: one tool-less call, answered against a JSON schema. No tools and no settings,
+    so the pass cannot read the disk or spend a turn on anything but the notes it was asked for."""
+
+    def __call__(self, prompt: str, schema: dict):
+        opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
+                                  output_format=schema, env={"CLAUDE_CODE_MAX_RETRIES": str(QUICK_RETRIES)})
+        return query(prompt=prompt, options=opts)
+
+
+MODEL = LiveModel()   # the seam: tests put a recorded model here and the API never comes into it
 
 
 def _retry_line(d: dict) -> str:
@@ -745,17 +789,15 @@ def _retry_line(d: dict) -> str:
 
 
 async def _structured(prompt: str, schema: dict, key: str) -> tuple[dict, float | None]:
-    """One tool-less model call with a JSON schema. Retries are capped and a ceiling applies, so it always ends;
-    an API failure (529 overloaded, timeout) arrives as an error ResultMessage, not an exception, and is raised here."""
-    opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
-                              output_format=schema, env={"CLAUDE_CODE_MAX_RETRIES": str(QUICK_RETRIES)})
-    _quick_status[key] = ""
+    """One model call, watched. Retries are capped and a ceiling applies, so it always ends; an API failure
+    (529 overloaded, timeout) arrives as an error ResultMessage, not an exception, and is raised here."""
+    p = _pass(key)
     try:
         async with asyncio.timeout(QUICK_TIMEOUT_S):
-            async for m in query(prompt=prompt, options=opts):
+            async for m in MODEL(prompt, schema):
                 if isinstance(m, SystemMessage) and m.subtype == "api_retry":
-                    _quick_status[key] = _retry_line(m.data)
-                    print("model retry:", key, _quick_status[key], file=sys.stderr)
+                    p.status = _retry_line(m.data)
+                    print("model retry:", key, p.status, file=sys.stderr)
                 elif isinstance(m, ResultMessage):
                     if m.is_error:
                         raise RuntimeError(m.result or f"API error (HTTP {m.api_error_status})")
@@ -764,7 +806,9 @@ async def _structured(prompt: str, schema: dict, key: str) -> tuple[dict, float 
     except TimeoutError:
         raise RuntimeError(f"逾時：{QUICK_TIMEOUT_S}s 內沒有結果（API 可能過載）") from None
     finally:
-        _quick_status.pop(key, None)
+        p.status = ""
+        if p.task is None and p.notes is None:
+            _pass_forget(key)  # a one-off note leaves no record; the quick pass's is held open by its Task
     return {}, None
 
 
@@ -772,7 +816,7 @@ async def _quick_run(key: str, ref: str, version: str, verses: list[dict]) -> li
     """The model pass itself. Runs as its own Task so a page refresh (client disconnect) cannot cancel it."""
     text = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" for v in verses)
     data, cost = await _structured(QUICK_PROMPT.format(ref=ref, version=version, text=text), QUICK_SCHEMA, key)
-    _quick_cost[key] = cost
+    _pass(key).cost = cost
     return data.get("notes", [])
 
 
@@ -828,7 +872,8 @@ async def auto_note_one(body: dict):
 @app.get("/api/auto-notes/quick/status")
 async def auto_notes_quick_status(key: str | None = None):
     """Progress line of one model call: the quick pass by default, or ?key=one|<verse>|<quote> for a selection note."""
-    return {"status": _quick_status.get(key or _key(), "")}
+    p = _passes.get(key or _key())
+    return {"status": p.status if p else ""}
 
 
 @app.get("/api/auto-notes/quick")
@@ -837,25 +882,25 @@ async def auto_notes_quick():
     A failed pass is not cached: the next call starts a fresh Task, so the button doubles as retry."""
     if not await _ensure_passage():
         return {"error": "尚未載入經文"}
-    key = f"{passage['reference']}|{passage['version']}"
-    cached = key in _quick_cache
+    key = _key()
+    p = _pass(key)
+    cached = p.notes is not None
     if not cached:
-        task = _quick_tasks.get(key)
-        if task is None or (task.done() and task.exception() is not None):
-            task = _quick_tasks[key] = asyncio.create_task(_quick_run(key, passage["reference"], passage["version"], list(passage["verses"])))
+        if p.task is None or (p.task.done() and p.task.exception() is not None):
+            p.task = asyncio.create_task(_quick_run(key, passage["reference"], passage["version"], list(passage["verses"])))
         try:
-            _quick_cache[key] = await asyncio.shield(task)  # shield: cancelling this request must not cancel the shared task
+            p.notes = await asyncio.shield(p.task)  # shield: cancelling this request must not cancel the shared task
         except Exception as e:
             print("quick pass failed:", key, repr(e), file=sys.stderr)
             return {"error": str(e)}
     if key != _key():
         return []  # the passage changed while the pass ran; its notes belong to the other file, not this one
     out = []
-    for n in _quick_cache[key]:
+    for n in p.notes:
         note = _mint(n["verse"], n["quote"], id=_note_id("quick", key, str(n["verse"]), n["quote"]),
                      label=n["label"], body=n["body"], kind=n["kind"], doodle=n.get("doodle"),
                      author="quick",   # what the UI flags as unverified
-                     style="eli5", pass_cost=_quick_cost.get(key))  # the whole pass's USD, carried on each of its notes
+                     style="eli5", pass_cost=p.cost)  # the whole pass's USD, carried on each of its notes
         if _add(note):
             out.append(note)
-    return {"notes": out, "cost": _quick_cost.get(key), "cached": cached}
+    return {"notes": out, "cost": p.cost, "cached": cached}

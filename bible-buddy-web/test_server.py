@@ -84,8 +84,7 @@ def desk(tmp_path, monkeypatch):
                           verses=[dict(v) for v in VERSES])
     server.notes.clear()
     server.hidden.clear()
-    server._quick_cache.clear()
-    server._quick_cost.clear()
+    server._passes.clear()
     yield tmp_path / "notes"
     server.notes.clear()
     server.hidden.clear()
@@ -198,3 +197,136 @@ def test_an_offset_inside_a_cut_collapses_to_where_the_cut_started():
 
 def test_every_earlier_cut_counts():
     assert server._shift(30, [(2, 3), (10, 5)]) == 22
+
+
+# ── the model pass ────────────────────────────────────────────────────────────
+# None of this could be tested before: the pass reached the model itself, so there was nowhere to
+# stand between the caller and the API. server.MODEL is that place — this section puts a second
+# adapter in it, which is what makes the seam real rather than hypothetical.
+
+from claude_agent_sdk import ResultMessage, SystemMessage  # noqa: E402
+
+
+class RecordedModel:
+    """The model, answered from recorded SDK messages. Every call is logged, so a test can prove the
+    API was asked once — or never. `watch` runs after each message, which is where a test can look at
+    a pass that is still in flight."""
+
+    def __init__(self, *runs, watch=None):
+        self._runs, self._watch, self.calls = list(runs), watch, []
+
+    def __call__(self, prompt, schema):
+        self.calls.append(prompt)
+        msgs = self._runs.pop(0) if len(self._runs) > 1 else self._runs[0]
+
+        async def gen():
+            for m in msgs:
+                await asyncio.sleep(0)   # a real call yields to the loop, so a second caller can arrive mid-pass
+                yield m
+                if self._watch:
+                    self._watch()
+        return gen()
+
+
+@pytest.fixture
+def model(monkeypatch):
+    def use(*runs, watch=None):
+        m = RecordedModel(*runs, watch=watch)
+        monkeypatch.setattr(server, "MODEL", m)
+        return m
+    return use
+
+
+def done(structured, cost=0.5):
+    return ResultMessage(subtype="success", duration_ms=1, duration_api_ms=1, is_error=False, num_turns=1,
+                         session_id="t", total_cost_usd=cost, structured_output=structured)
+
+
+def failed(text="API Error: 529 Overloaded"):
+    return ResultMessage(subtype="error_during_execution", duration_ms=1, duration_api_ms=1, is_error=True,
+                         num_turns=1, session_id="t", result=text, api_error_status=529)
+
+
+RETRY = SystemMessage(subtype="api_retry", data={"error_status": 529, "attempt": 2, "max_retries": 3,
+                                                 "retry_delay_ms": 5000})
+
+TWO_NOTES = {"notes": [
+    {"verse": 4, "quote": "光和暗", "label": "分開", "body": "b", "kind": "lexical", "doodle": "lamp"},
+    {"verse": 5, "quote": "稱光為晝", "label": "命名", "body": "b", "kind": "history", "doodle": "star"},
+]}
+
+
+def test_a_pass_asks_the_model_once_and_hands_its_notes_to_the_page(desk, model):
+    m = model([done(TWO_NOTES)])
+    r = run(server.auto_notes_quick())
+    assert len(m.calls) == 1
+    assert [n["label"] for n in r["notes"]] == ["分開", "命名"]
+    assert r["cost"] == 0.5 and r["cached"] is False
+    assert {n["pass_cost"] for n in r["notes"]} == {0.5}   # the whole pass's USD rides on each of its notes
+
+
+def test_asking_again_is_served_from_the_pass_and_does_not_spend_again(desk, model):
+    m = model([done(TWO_NOTES)])
+    run(server.auto_notes_quick())
+    r = run(server.auto_notes_quick())
+    assert len(m.calls) == 1
+    assert r["cached"] is True
+    assert r["notes"] == []            # they are already on the passage; the pass does not offer them twice
+    assert len(server.notes) == 2
+
+
+def test_a_failed_pass_is_not_cached_so_the_button_doubles_as_retry(desk, model):
+    m = model([failed()], [done(TWO_NOTES)])
+    r = run(server.auto_notes_quick())
+    assert "529" in r["error"] and server.notes == []
+    assert len(run(server.auto_notes_quick())["notes"]) == 2
+    assert len(m.calls) == 2
+
+
+def test_two_readers_waiting_on_the_same_passage_share_one_pass(desk, model):
+    m = model([done(TWO_NOTES)])
+
+    async def both():
+        return await asyncio.gather(server.auto_notes_quick(), server.auto_notes_quick())
+
+    a, b = run(both())
+    assert len(m.calls) == 1           # a refreshed page must not start a second paid pass
+    assert a["cost"] == b["cost"] == 0.5
+    assert len(server.notes) == 2
+
+
+def test_a_retry_shows_on_the_progress_line_and_the_line_clears_when_the_pass_ends(desk, model):
+    seen = []
+    model([RETRY, done(TWO_NOTES)], watch=lambda: seen.append(server._passes[server._key()].status))
+    run(server.auto_notes_quick())
+    assert seen[0] == "API 529，重試 2/3（5s 後）"
+    assert server._passes[server._key()].status == ""
+
+
+def test_an_api_error_reaches_the_page_as_an_error_not_a_crash(desk, model):
+    model([failed("API Error: 500 Internal")])
+    assert "500" in run(server.auto_notes_quick())["error"]
+
+
+def test_a_one_off_note_leaves_no_record_behind(desk, model):
+    model([done({"label": "分開", "body": "b", "kind": "lexical", "doodle": "lamp"})])
+    n = run(server.auto_note_one({"verse": "4", "quote": "光和暗"}))
+    assert n["label"] == "分開" and n["anchor"] is not None
+    assert server._passes == {}        # one key per selected phrase would grow without bound
+
+
+def test_clearing_automatic_notes_forgets_the_whole_pass(desk, model):
+    m = model([done(TWO_NOTES)], [done(TWO_NOTES)])
+    run(server.auto_notes_quick())
+    run(server.delete_quick_notes())
+    assert server._key() not in server._passes
+    r = run(server.auto_notes_quick())  # nothing left to serve from, and no id left hidden
+    assert len(m.calls) == 2 and len(r["notes"]) == 2
+
+
+def test_a_pass_that_lands_after_the_reader_moved_on_stays_off_the_new_passage(desk, model):
+    old = server._key()
+    model([RETRY, done(TWO_NOTES)], watch=lambda: server.passage.update(reference="創世記 1:6-7"))
+    assert run(server.auto_notes_quick()) == []
+    assert server.notes == []                       # the notes belong to the other passage's file
+    assert server._passes[old].notes is not None    # and they stay cached under the key that paid for them
