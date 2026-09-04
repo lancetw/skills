@@ -4,6 +4,7 @@ import {
   html, useRef, useEffect, useLayoutEffect,
   Slot, api, mdHtml, AUTHOR, KIND_ZH, DOTC, COLOR, Fragment,
 } from './lib.js';
+import { Refresh, BadgeCheck, ArrowRight, Pencil, Sparkle, Alert } from './icons.js';
 
 // place the card below a rect (labels hang ~70px under a span, so a span rect gets extra room);
 // flip above if it would overflow
@@ -33,7 +34,7 @@ function onDragStart(e) {
 function Card({ n, running, actions }) {
   const unverified = n.author === 'quick' && !n.verified;
   const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind,
-    n.style === 'eli5' && 'ELI5', n.edited && '已編輯', n.verified && '✓ agent 已驗證'].filter(Boolean);
+    n.style === 'eli5' && 'ELI5', n.edited && '已編輯', n.verified && 'agent 已驗證'].filter(Boolean);
   const busy = running ? { disabled: true, title: 'agent 忙碌中' } : {};
   return html`
     <${Fragment}>
@@ -49,11 +50,11 @@ function Card({ n, running, actions }) {
       <div className="ft">
         <button id="edit" onClick=${actions.edit}>編輯</button>
         <button id="del" className="danger" onClick=${actions.del}>刪除</button>
-        ${n.author === 'quick' && n.anchor ? html`<button id="regen" title="用模型重寫這條" onClick=${actions.regen}>🔄 重新產生</button>`
-          : n.author === 'agent' ? html`<button id="rewrite" title="請 agent 重新查證並重寫這條" ...${busy} onClick=${actions.rewrite}>🔄 請 agent 重寫</button>`
+        ${n.author === 'quick' && n.anchor ? html`<button id="regen" title="用模型重寫這條" onClick=${actions.regen}><${Refresh} />重新產生</button>`
+          : n.author === 'agent' ? html`<button id="rewrite" title="請 agent 重新查證並重寫這條" ...${busy} onClick=${actions.rewrite}><${Refresh} />請 agent 重寫</button>`
           : null}
-        ${unverified ? html`<button id="verify" ...${busy} onClick=${actions.verify}>🔍 請 agent 驗證</button>` : null}
-        <button id="ask" ...${busy} onClick=${actions.ask}>追問 →</button>
+        ${unverified ? html`<button id="verify" ...${busy} onClick=${actions.verify}><${BadgeCheck} />請 agent 驗證</button>` : null}
+        <button id="ask" ...${busy} onClick=${actions.ask}>追問<${ArrowRight} /></button>
       </div>
     <//>`;
 }
@@ -86,7 +87,7 @@ function Editor({ n, quote, onCancel, onSave }) {
 // FHL 回的是純文字（音譯、欽定本次數、字義樹），不是 markdown，所以只放進 <pre>，不 render
 function Lexicon({ lex }) {
   if (!lex) return html`<div className="lex"><span className="spin"></span> 查字典…</div>`;
-  if (lex.error) return html`<pre className="lex">✗ ${lex.error}</pre>`;
+  if (lex.error) return html`<p className="lex err"><${Alert} /> ${lex.error}</p>`;
   return html`
     <${Fragment}>
       <div className="hd"><b>${lex.orig}</b></div>
@@ -124,7 +125,7 @@ export function Detail({ detail, setDetail, running, verses, notes, setNotes, se
       onCancel=${() => (n.id ? setDetail({ ...detail, mode: 'card' }) : setDetail(null))}
       onSave=${async patch => {
         const saved = n.id ? await api('/api/notes/' + n.id, 'PUT', patch) : await api('/api/notes', 'POST', { ...n, ...patch });
-        if (saved.error) { banner(`✗ ${saved.error}`, { spin: false, hideAfter: 4000 }); return; }
+        if (saved.error) { banner(saved.error, { spin: false, tone: 'err', hideAfter: 4000 }); return; }
         setNotes(cur => (n.id ? cur.map(x => (x.id === n.id ? { ...x, ...saved } : x)) : [...cur, saved]));
         setDetail(null);
       }} />`;
@@ -178,8 +179,8 @@ export function SelectionMenu({ sel, onClose, onManual, onAi }) {
   }, [onClose]);
   return html`
     <div id="selmenu" popover="auto" ref=${ref}>
-      <button type="button" id="selManual" onClick=${onManual}>✎ 手動筆記</button>
-      <button type="button" id="selAi" title="用模型針對這幾個字寫一條淺顯易懂的筆記" onClick=${onAi}>✨ ELI5 筆記</button>
+      <button type="button" id="selManual" onClick=${onManual}><${Pencil} />手動筆記</button>
+      <button type="button" id="selAi" title="用模型針對這幾個字寫一條淺顯易懂的筆記" onClick=${onAi}><${Sparkle} />ELI5 筆記</button>
     </div>`;
 }
 

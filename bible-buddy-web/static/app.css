@@ -22,7 +22,7 @@
   #root.chat-hidden { grid-template-columns:1fr 0; } #root.chat-hidden #chat { display:none; }
   #gutter { position:absolute; left:-4px; top:0; bottom:0; width:8px; cursor:col-resize; z-index:6; }
   #gutter:hover, #gutter.on { background:var(--pen); opacity:.3; }
-  #chatToggle.on, #parToggle.on { border-color:var(--pen); color:var(--pen); }
+  #chatToggle.on, #parToggle.on { border-color:var(--pen); color:var(--pen); }   /* the .on fill lives with the icon rules above */
   #reader, #chat { min-height:0; }   /* grid items default to min-height:auto and would grow past the row */
   button, input, select { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:6px 10px; }
   button { cursor:pointer; } button:hover { border-color:var(--pen); color:var(--pen); }
@@ -30,6 +30,15 @@
   button:disabled, input:disabled { cursor:not-allowed; opacity:.55; } button:disabled:hover { border-color:var(--rule); color:inherit; }
   form#f:has(#q:disabled) { cursor:not-allowed; }
   button.primary { background:var(--pen); color:var(--paper); border-color:var(--pen); }
+  /* icons are drawn inline (src/icons.js) at 16px on the text's own colour; a button holding one
+     becomes a row so the glyph and the label share a baseline instead of stacking odd whitespace */
+  .icon { width:16px; height:16px; flex:none; }
+  button:has(> .icon), a:has(> .icon) { display:inline-flex; align-items:center; gap:6px; }
+  /* icon-only controls are square: the padding that suits a label makes a lone 16px glyph look lost */
+  .top .icons button { width:34px; height:34px; padding:0; justify-content:center; }
+  .top .icons button:hover { background:var(--card); }
+  /* a toggle that is on reads as filled, not just recoloured */
+  #chatToggle.on, #parToggle.on { background:var(--card); }
 
   /* reader = a notebook page */
   #reader { overflow:auto; padding:0 32px 40px 24px; }
@@ -41,12 +50,14 @@
   .top .pgrp input { flex:1 1 8em; min-width:6em; width:auto; }
   .top .pgrp select { flex:0 1 auto; min-width:0; }
   .top .icons { display:flex; gap:8px; flex:none; }
+  /* the passage actions live in the sticky bar so they hold the top-right corner as the page scrolls;
+     margin-left:auto keeps them there once the brand hides on a narrow reader */
+  .top .actions { margin-left:auto; flex:none; }
   /* narrow reader (chat open, small window): brand and icons share the first row, the passage controls take the second */
   #reader { container-type:inline-size; }
   @container (max-width: 860px) {
     .top .pgrp { order:9; flex-basis:100%; }
-    .top .icons { margin-left:auto; }
-    .top .brand { margin-right:0; }
+    .top .brand { margin-right:0; }   /* .top .actions already carries the margin-left:auto that pushes both groups right */
   }
   @container (max-width: 560px) { .top .brand { display:none; } }
   .page { position:relative; background:var(--card); border:1px solid var(--rule); border-radius:4px; box-shadow:var(--shadow); padding:22px 28px 28px 78px; min-height:60vh; }
@@ -73,25 +84,36 @@
   .fns li.flash { background:var(--paper-2); transition:none; }
   .verse { transition:background 1.5s; border-radius:4px; } .verse.flash { background:var(--paper-2); transition:none; }  /* ↩ from a footnote lights the verse briefly */
   .fns .v { font-family:var(--hand); color:var(--margin); margin-right:6px; } .fns .back { margin-left:6px; color:var(--pen); text-decoration:none; }
+  .fns .back .icon { width:13px; height:13px; vertical-align:-2px; }
   .fn { font-size:.6em; vertical-align:super; color:var(--pen); cursor:pointer; user-select:none; margin:0 1px; font-family:var(--sans); }  /* translator footnote marker */
   .chip { display:inline-block; font-size:.8rem; padding:1px 8px; margin:2px 4px 0 0; border:1px solid var(--c); color:var(--c); border-radius:999px; cursor:pointer; opacity:.85; background:var(--paper); }
 
   /* 原文：每節左欄一顆「原」，展開逐字分析；對照譯本另成一欄 */
   .verse .ob { position:absolute; left:-52px; top:34px; width:32px; padding:0; font-family:var(--hand); font-size:.72rem; line-height:1.6; color:var(--ink-2); background:transparent; border-color:transparent; }
   .verse .ob:hover, .verse .ob.on { color:var(--pen); border-color:var(--rule); background:var(--paper-2); }
-  .inter { margin:6px 0 2px; padding:10px 12px; border-left:2px solid var(--rule); background:var(--paper-2); border-radius:0 6px 6px 0; font-size:.9rem; line-height:1.6; }
-  .inter .ot { margin:0 0 8px; font-size:1.25rem; line-height:1.9; }
-  .inter .lit { margin:8px 0 0; font-family:var(--sans); font-size:.8rem; color:var(--ink-2); }
-  .inter .ws { display:flex; flex-wrap:wrap; gap:6px; }
-  .inter .w { display:flex; flex-direction:column; gap:1px; align-items:flex-start; text-align:start; padding:4px 8px; background:var(--card); }
+  .inter { margin:10px 0 4px; padding:12px 16px; border-left:2px solid var(--rule); background:var(--paper-2); border-radius:0 8px 8px 0; font-size:.9rem; line-height:1.6; }
+  /* the verse in its own script, set apart from the word grid; Hebrew needs the extra room for its pointing */
+  .inter .ot { margin:0 0 11px; padding-bottom:11px; border-bottom:1px dashed var(--rule); font-family:var(--serif); font-size:1.3rem; line-height:1.9; }
+  .inter.he .ot { font-size:1.45rem; line-height:2.2; }
+  .inter .lit { display:flex; gap:8px; margin:11px 0 0; padding-top:9px; border-top:1px dashed var(--rule); font-family:var(--sans); font-size:.82rem; line-height:1.75; color:var(--ink-2); }
+  .inter .lit .lb { flex:none; font-family:var(--hand); font-size:.78rem; color:var(--margin); }
+  /* even columns, not flex-wrap: one long 字義 used to stretch its card to three times a neighbour's width */
+  .inter .ws { display:grid; grid-template-columns:repeat(auto-fill, minmax(9.5rem, 1fr)); gap:8px; }
+  .inter .w { display:flex; flex-direction:column; gap:3px; text-align:start; padding:7px 9px; background:var(--card); border-radius:6px; overflow:hidden; }
   /* arrow labels hang ~70px under their span; the block has to clear them, unless the chip row already did */
   .verse.has-notes .inter { margin-top:74px; }
   .verse.has-notes:has(.chips) .inter { margin-top:6px; }
   .inter .w:hover { border-color:var(--pen); }
-  .inter .w b { font-size:1.15rem; font-weight:400; }
+  .inter .w b { font-family:var(--serif); font-size:1.15rem; font-weight:400; line-height:1.5; }
+  .inter.he .w b { font-size:1.3rem; line-height:1.8; }
   .inter .w i, .inter .w em { font-style:normal; font-family:var(--sans); color:var(--ink-2); }
-  .inter .w i { font-size:.78rem; max-width:16em; }
-  .inter .w em { font-size:.68rem; opacity:.75; }
+  /* the gloss and the parsing are Chinese even in a Hebrew card; left in the RTL flow, bidi reorders
+     their embedded Hebrew (「冠詞 הַ + 名詞」 came out backwards). Own direction, card's alignment. */
+  .inter.he .w i, .inter.he .w em { direction:ltr; text-align:right; }
+  /* 字義 clipped at two lines so the grid keeps a steady row height; the full text is the tooltip and the card */
+  .inter .w i { font-size:.78rem; line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  /* the parsing wraps rather than ellipsing: it is the one field the Strong's card does not repeat */
+  .inter .w em { margin-top:auto; padding-top:2px; font-size:.66rem; line-height:1.4; opacity:.7; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   /* 對照：整章兩欄，譯註橫跨兩欄 */
   #verses.par { display:grid; grid-template-columns:1fr 1fr; column-gap:26px; }
   #verses.par .fns { grid-column:1 / -1; }
@@ -113,7 +135,8 @@
   #detail .body { margin-left:18px; }
   #detail .body > :first-child { margin-top:0; } #detail .body > :last-child { margin-bottom:0; }
   #detail .ft { display:flex; gap:2px; margin-top:10px; padding-top:8px; border-top:1px solid var(--rule); }
-  #detail .ft button { font-size:.8rem; padding:3px 10px; border-color:transparent; background:transparent; color:var(--ink-2); }
+  #detail .ft button { font-size:.8rem; padding:3px 8px; gap:4px; border-color:transparent; background:transparent; color:var(--ink-2); }
+  #detail .ft .icon { width:14px; height:14px; }
   #detail .ft button:hover { color:var(--pen); background:var(--paper-2); }
   #detail .ft button.danger:hover { color:#c45a38; }
   #detail .ft #ask { margin-left:auto; color:var(--pen); }
@@ -139,23 +162,32 @@
   /* selection menu: sits just under the highlighted text */
   #selmenu { position:fixed; margin:0; inset:auto; padding:4px; gap:4px; border:1px solid var(--rule); border-radius:8px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
   #selmenu:popover-open { display:flex; }
-  #selmenu button { font-size:.85rem; padding:4px 10px; }
+  #selmenu button { font-size:.85rem; padding:4px 10px; gap:5px; }
+  #selmenu .icon { width:14px; height:14px; }
   /* loading states: a banner on the page for passage/quick-notes waits, a pending bubble for agent turns */
   /* status pill sits in the fixed-height heading row, so showing/hiding it never shifts the verses */
-  .hrow { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; margin:0 0 8px; }
+  .hrow { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; min-height:34px; margin:0 0 14px; }
   .hrow h1 { margin:0; }
-  /* tools row: action pills left, status pill right; wraps on a narrow reader, fixed min-height so the pill's coming and going never shifts the verses */
-  .trow { display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; min-height:34px; margin:0 0 14px; }
-  /* passage actions: one group of identical pills at the right of the heading row */
+  /* passage actions: pills in the sticky bar; the heading row carries only the reference and the status pill */
   .actions { display:inline-flex; flex-wrap:wrap; gap:6px; }
   .actions button { font-size:.82rem; padding:4px 12px; border-radius:999px; background:var(--paper-2); }
   .actions button:hover { background:var(--card); }
-  /* the ELI5 button while its pass runs: same dashed, muted look as a pending chip, with a spinner in front of the label */
-  .actions button.busy, .actions button.busy:hover { border-style:dashed; color:var(--ink-2); background:var(--paper-2); opacity:1; cursor:progress; }
-  .actions button.busy::before { content:""; display:inline-block; width:10px; height:10px; margin-right:6px; vertical-align:-1px; border:1.5px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; }
+  /* the two passage actions are not peers: one writes notes, the other deletes them. The generative one
+     carries the pen accent so it reads as the thing to press; the destructive one stays quiet paper and
+     only turns red under the mouse, so it is never the button you hit by reflex. */
+  .actions #quick { color:var(--pen); border-color:color-mix(in srgb, var(--pen) 45%, var(--rule)); background:color-mix(in srgb, var(--pen) 9%, var(--card)); }
+  .actions #quick:hover { border-color:var(--pen); background:color-mix(in srgb, var(--pen) 16%, var(--card)); }
+  /* destructive, and rarely wanted: a bare bin the size of the pill beside it, named by its tooltip */
+  .actions #quickClear { width:34px; height:34px; padding:0; justify-content:center; color:var(--ink-2); }
+  /* the ELI5 button while its pass runs: same dashed, muted look as a pending chip; the orb in front of
+     the label is the same one the banner shows, so one job never reads as two different waits.
+     Written at id strength so it beats the accent rules above. */
+  .actions #quick.busy, .actions #quick.busy:hover { border-style:dashed; border-color:var(--rule); color:var(--ink-2); background:var(--paper-2); opacity:1; cursor:progress; }
+  .actions #quick.busy .orb { margin:-5px 0; }
+  .actions #quick .icon.done { color:#2f8f5b; margin-left:-1px; }
+  .actions button .icon { width:14px; height:14px; }
   .actions #quickClear:hover { border-color:#c45a38; color:#c45a38; }
   #quickClear[hidden] { display:none; }
-  .actions + #banner { margin-left:0; }
 
   /* the pill can never widen the row: it shrinks and clips, the full text lives in its title tooltip */
   #banner { min-width:0; max-width:100%; }
@@ -163,18 +195,23 @@
   #banner[hidden] { display:none; }                     /* the display rule above would otherwise beat the hidden attribute */
   #bannerText { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
   #banner .t { flex:none; font-variant-numeric:tabular-nums; color:var(--ink-2); }
+  #banner .icon { color:var(--ink-2); }
+  #banner.ok { border-color:#2f8f5b; } #banner.ok .icon { color:#2f8f5b; }
+  #banner.err { border-color:#c45a38; } #banner.err .icon { color:#c45a38; }
   .spin { width:14px; height:14px; border:2px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; flex:none; }
   @keyframes spin { to { transform:rotate(360deg); } }
-  .dots { display:inline-flex; align-items:center; gap:4px; }  /* a flex box, not baseline-aligned inline boxes, so the dots sit on the text's centre line */
-  .dots span { display:block; width:6px; height:6px; border-radius:50%; background:var(--pen); animation:blink 1.2s infinite; }
-  .dots span:nth-child(2) { animation-delay:.2s; } .dots span:nth-child(3) { animation-delay:.4s; }
-  @keyframes blink { 0%,80%,100% { opacity:.2; } 40% { opacity:1; } }
+  /* thinking-orbs paints a canvas and sizes itself; only 20 and 64 have presets, so 20 it is everywhere */
+  .orb { flex:none; }
+  #banner .orb { margin:-4px 0; }                        /* a 20px canvas must not grow the pill's line box */
+  /* border-beam wraps the pending bubble in its own container: keep it a plain block in the log's flow */
+  #log .beam { display:block; }
   #log .msg.pending { border-color:var(--pen); }
   #log .msg.pending .act { display:flex; align-items:center; gap:10px; color:var(--ink-2); font-size:.85rem; }
   #log .msg.pending .act .t { margin-left:auto; font-variant-numeric:tabular-nums; }
-  #status { padding:4px 12px; font-size:.8rem; color:var(--ink-2); font-family:var(--sans); min-height:1.6em; }
+  #status { display:flex; align-items:center; gap:5px; padding:4px 12px; font-size:.8rem; color:var(--ink-2); font-family:var(--sans); min-height:1.6em; }
+  #status.ok .icon { color:#2f8f5b; } #status.err { color:#c45a38; }
   form#f button.stop { background:#c45a38; border-color:#c45a38; color:#fff; }
-  @media (prefers-reduced-motion: reduce) { .spin, .dots span { animation:none; } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation:none; } }
   #detail p { margin:.4em 0; }
 
   /* chat = sticky notes column */
@@ -191,12 +228,16 @@
   #log .msg { background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:8px 12px; margin:.5em 0; box-shadow:0 1px 3px #0001; }
   #log details.steps { margin:.2em 0 .2em 6px; }
   #log details.steps summary { cursor:pointer; color:var(--ink-2); font-size:.76rem; list-style:none; }
-  #log details.steps summary::before { content:'▸ '; } #log details.steps[open] summary::before { content:'▾ '; }
+  #log details.steps summary::before { content:''; display:inline-block; width:0; height:0; margin-right:6px; vertical-align:1px;
+    border:4px solid transparent; border-left-color:currentColor; border-right-width:0; transition:transform .15s ease; }
+  #log details.steps[open] summary::before { transform:rotate(90deg); }
   /* the user's own message: keeps its line breaks; a long one folds to its first line */
   #log .msg.me .body { white-space:pre-wrap; }
   #log .msg.me.fold .body { display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
   #log .msg.me .more { border:none; background:transparent; color:var(--pen); font-size:.78rem; padding:2px 0 0; }
-  #log .tool { color:var(--ink-2); font-size:.74rem; font-family:ui-monospace, monospace; padding:1px 6px; }
+  #log .tool { display:flex; align-items:center; gap:5px; color:var(--ink-2); font-size:.74rem; font-family:ui-monospace, monospace; padding:1px 6px; }
+  #log .tool .icon { width:13px; height:13px; }
+  #log .tool.ok .icon { color:#2f8f5b; } #log .tool.err { color:#c45a38; }
   #log .opts button { display:block; width:100%; margin:4px 0; text-align:left; }
   form#f { display:flex; gap:6px; padding:10px; border-top:1px solid var(--rule); }
   form#f input { flex:1; }

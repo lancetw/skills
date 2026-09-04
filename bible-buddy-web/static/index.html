@@ -5,14 +5,20 @@
 <title>Bible Buddy ELI5</title>
 <!-- every CDN asset is pinned and carries an SRI hash: a changed upstream file fails to load instead of running.
      Google Fonts is exempt (its CSS varies by user agent, so no hash can match); the slot-text ES module import
-     in src/lib.js cannot carry SRI either, so it is version-pinned only. React itself is not on a CDN at all —
-     static/vendor/ holds it, so the page keeps working offline and there is nothing upstream left to pin. -->
+     in src/lib.js cannot carry SRI either, so it is version-pinned only. React, thinking-orbs and border-beam
+     are not on a CDN at all — static/vendor/ holds them, so the page keeps working offline and there is
+     nothing upstream left to pin. -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/syabro/neat-annotations@83199c8c7420b85f775c770c5ee481df69b840bc/neat-annotations.css" integrity="sha384-dG94PO7yurmhlfEL3nfOYPfaQy9Ii/6gyNKlZvhjCvI0eBM+hPOnnnE6+zzv6F+U" crossorigin="anonymous">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@500;600;700&family=Iansui&family=LXGW+WenKai+TC&family=Noto+Sans+Hebrew:wght@400;700&family=Noto+Serif+Hebrew:wght@400;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js" integrity="sha384-948ahk4ZmxYVYOc+rxN1H2gM1EJ2Duhp7uHtZ4WSLkV4Vtx5MUqnV+l7u9B+jFv+" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.3.1/dist/purify.min.js" integrity="sha384-80VlBZnyAwkkqtSfg5NhPyZff6nU4K/qniLBL8Jnm4KDv6jZhLiYtJbhglg/i9ww" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slot-text@0.3.4/style.css" integrity="sha384-NCI84A2P1g2em3UcaUnXE8lFIWWhuKqgovI5GaxGXWHOfCadroHk8HfSjpA2Sa6m" crossorigin="anonymous">
 <link rel="stylesheet" href="/static/app.css">
+<!-- thinking-orbs and border-beam are compiled against bare "react" / "react/jsx-runtime": the map points
+     both at the vendored copies, so they share the one React instance the rest of the page already uses. -->
+<script type="importmap">
+{"imports":{"react":"/static/vendor/react.mjs","react/jsx-runtime":"/static/vendor/react-jsx-runtime.mjs"}}
+</script>
 </head>
 <body>
 <div id="root"></div>
