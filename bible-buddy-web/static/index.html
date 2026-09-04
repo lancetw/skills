@@ -123,6 +123,9 @@
   .actions { display:inline-flex; flex-wrap:wrap; gap:6px; }
   .actions button { font-size:.82rem; padding:4px 12px; border-radius:999px; background:var(--paper-2); }
   .actions button:hover { background:var(--card); }
+  /* the ELI5 button while its pass runs: same dashed, muted look as a pending chip, with a spinner in front of the label */
+  .actions button.busy, .actions button.busy:hover { border-style:dashed; color:var(--ink-2); background:var(--paper-2); opacity:1; cursor:progress; }
+  .actions button.busy::before { content:""; display:inline-block; width:10px; height:10px; margin-right:6px; vertical-align:-1px; border:1.5px solid var(--rule); border-top-color:var(--pen); border-radius:50%; animation:spin .8s linear infinite; }
   .actions #quickClear:hover { border-color:#c45a38; color:#c45a38; }
   #quickClear[hidden] { display:none; }
   .actions + #banner { margin-left:0; }
@@ -251,24 +254,24 @@ async function loadPassage(refStr, version) {
 // the model pass is manual: it costs money and a minute, and a 529 on page load used to look like "0 notes"
 let quickBusy = false;
 async function runQuick() {
-  const b = $('#quick'); quickBusy = true; b.disabled = true;
+  const b = $('#quick'); quickBusy = true; b.disabled = true; b.classList.add('busy');
+  slot('#quick').set('ELI5 筆記產生中');
   banner('ELI5 筆記產生中', { timer: true });
   // the CLI retries 529s with backoff; poll the server's progress line so the wait explains itself
   const poll = setInterval(async () => {
     try { const { status } = await (await fetch('/api/auto-notes/quick/status')).json(); if (status) slot('#bannerText').set(`ELI5 筆記產生中 · ${status}`, { stagger: 0 }); } catch {}
   }, 2000);
   const n = await addAuto('/api/auto-notes/quick');
-  clearInterval(poll); quickBusy = false; b.disabled = running;
-  if (n >= 0) banner(`✓ ELI5 筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}${usd(lastAuto.cost)}`, { spin: false, hideAfter: 4000 });
+  clearInterval(poll); quickBusy = false; b.disabled = running; b.classList.remove('busy');
+  if (n >= 0) banner(`✓ ELI5 筆記 ${notes.filter(x => x.author === 'quick').length} 條${lastAuto.cached ? '（快取）' : ''}`, { spin: false, hideAfter: 4000 });
   quickLabel();
 }
-const usd = c => c == null ? '' : ` · $${c.toFixed(3)}`;
-let lastAuto = {};  // the last auto-notes response: cost and cached flag for the banner
+let lastAuto = {};  // the last auto-notes response: its cached flag feeds the banner
 // returns the number of new notes, or -1 on failure (the error stays on the banner until the next action)
 async function addAuto(url) {
   let fresh;
   try { fresh = await (await fetch(url)).json(); } catch (e) { fresh = { error: e.message }; }
-  if (fresh && !Array.isArray(fresh) && Array.isArray(fresh.notes)) { lastAuto = fresh; fresh = fresh.notes; }  // quick pass wraps its list with cost
+  if (fresh && !Array.isArray(fresh) && Array.isArray(fresh.notes)) { lastAuto = fresh; fresh = fresh.notes; }  // quick pass wraps its list
   if (!Array.isArray(fresh)) {
     const msg = fresh?.error || '伺服器回傳異常';
     $('#banner').title = msg;                      // the pill clips long text; the full error lives in the tooltip
@@ -350,7 +353,7 @@ function placeDetail(r, gap = 8) {
 function showCard(n, rect, gap) {
   const d = $('#detail');
   const unverified = n.author === 'quick' && !n.verified;
-  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.style === 'eli5' && 'ELI5', n.edited && '已編輯', n.verified && '✓ agent 已驗證', n.cost != null && `$${n.cost.toFixed(3)}`, n.pass_cost != null && `整段 $${n.pass_cost.toFixed(3)}`].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
+  const tags = [`第 ${n.verse} 節`, AUTHOR[n.author] || n.author, KIND_ZH[n.kind] || n.kind, n.style === 'eli5' && 'ELI5', n.edited && '已編輯', n.verified && '✓ agent 已驗證'].filter(Boolean).map(t => `<span class="tag">${esc(t)}</span>`).join('')
     + (unverified ? '<span class="tag unv" title="AI 筆記，未經 bible-buddy 驗證流程">未驗證</span>' : '');
   d.innerHTML = `<div class="hd"><span class="dot" style="--c:${DOTC[COLOR[n.kind]]}"></span><b></b></div><div class="meta">${tags}</div><div class="body">${marked.parse((n.body || '（沒有內文）').replace(/\n*（速讀筆記，未經 bible-buddy 驗證流程）$/, ''))}</div><div class="ft"><button id="edit">編輯</button><button id="del" class="danger">刪除</button>${n.author === 'quick' && n.anchor ? '<button id="regen" title="用模型重寫這條">🔄 重新產生</button>' : n.author === 'agent' ? `<button id="rewrite" title="請 agent 重新查證並重寫這條" ${running ? 'disabled' : ''}>🔄 請 agent 重寫</button>` : ''}${unverified ? `<button id="verify" ${running ? 'disabled title="agent 忙碌中"' : ''}>🔍 請 agent 驗證</button>` : ''}<button id="ask" ${running ? 'disabled title="agent 忙碌中"' : ''}>追問 →</button></div>`;
   cardSlot?.destroy(); cardSlot = slotText(d.querySelector('.hd b'), ''); cardSlot.set(n.label, { stagger: 25 });
@@ -539,7 +542,7 @@ async function consume(res, cur, act, finish, setBuf, getBuf) {
       if (ev.type === 'text') { setBuf(getBuf() + ev.text + '\n'); const a = cur.querySelector('.act'); cur.innerHTML = marked.parse(getBuf()); if (a) cur.prepend(a); slot('#status').set('✍ 撰寫中…'); act.set('撰寫中…'); }
       else if (ev.type === 'tool') { const z = TOOL_ZH[ev.name] || ev.name; slot('#status').set(`⚙ ${z}…`); act.set(`${z}…`); stepSink(`⚙ ${esc(ev.name)} ${esc(ev.input)}`); }
       else if (ev.type === 'note') { const i = notes.findIndex(x => x.id === ev.note.id); if (i >= 0) notes[i] = ev.note; else notes.push(ev.note); render(); }
-      else if (ev.type === 'done') { end(); slot('#status').set(`✓ 完成 · ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns · $${(ev.cost||0).toFixed(2)}${ev.is_error ? ' · ERROR' : ''}`); renderOptions(getBuf()); }
+      else if (ev.type === 'done') { end(); slot('#status').set(`✓ 完成 · ${ev.turns} turns`); slot('#send').flash('完成 ✓'); logLine('tool', `✓ ${ev.turns} turns${ev.is_error ? ' · ERROR' : ''}`); renderOptions(getBuf()); }
       else if (ev.type === 'error') { end(); slot('#status').set('✗ 出錯'); logLine('tool', `✗ ${esc(ev.text)}`); }
       $('#log').scrollTop = 1e9;
     }
@@ -565,8 +568,8 @@ $('#f').onsubmit = e => {
   const t = $('#q').value.trim(); if (!t) return; $('#q').value = ''; send(t);
 };
 $('#quick').onclick = runQuick;
-// the button itself shows what the pass for this passage cost, so the number does not vanish with the banner
-function quickLabel() { slot('#quick').set(notes.some(x => x.author === 'quick') ? '✨ ELI5 筆記 ✓' : '✨ 生成 ELI5 筆記'); $('#quickClear').hidden = !notes.some(x => x.author !== 'user'); }  // cost stays on the cards and the banner
+// the button itself says whether this passage already has its ELI5 pass
+function quickLabel() { slot('#quick').set(notes.some(x => x.author === 'quick') ? '✨ ELI5 筆記 ✓' : '✨ 生成 ELI5 筆記'); $('#quickClear').hidden = !notes.some(x => x.author !== 'user'); }
 // delete every automatic note of the passage (ELI5, agent, references) after a native confirm
 $('#quickClear').onclick = async () => {
   const n = notes.filter(x => x.author !== 'user').length;
