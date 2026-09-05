@@ -802,12 +802,13 @@ def _retry_line(d: dict) -> str:
     return f"API {d.get('error_status') or '?'}，重試 {d.get('attempt')}/{d.get('max_retries')}（{round((d.get('retry_delay_ms') or 0) / 1000)}s 後）"
 
 
-async def _structured(prompt: str, schema: dict, key: str) -> tuple[dict, float | None]:
+async def _structured(prompt: str, schema: dict, key: str, *, timeout: float | None = None) -> tuple[dict, float | None]:
     """One model call, watched. Retries are capped and a ceiling applies, so it always ends; an API failure
     (529 overloaded, timeout) arrives as an error ResultMessage, not an exception, and is raised here."""
     p = _pass(key)
+    timeout = QUICK_TIMEOUT_S if timeout is None else timeout
     try:
-        async with asyncio.timeout(QUICK_TIMEOUT_S):
+        async with asyncio.timeout(timeout):
             async for m in MODEL(prompt, schema):
                 if isinstance(m, dict):
                     return m, None  # Codex reports no USD cost; do not invent one.
@@ -820,7 +821,7 @@ async def _structured(prompt: str, schema: dict, key: str) -> tuple[dict, float 
                     print("model pass:", key, m.total_cost_usd, "USD", file=sys.stderr)
                     return m.structured_output or {}, m.total_cost_usd
     except TimeoutError:
-        raise RuntimeError(f"逾時：{QUICK_TIMEOUT_S}s 內沒有結果（API 可能過載）") from None
+        raise RuntimeError(f"逾時：{timeout}s 內沒有結果（API 可能過載）") from None
     finally:
         p.status = ""
         if p.task is None and p.notes is None:
