@@ -19,7 +19,21 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-_SCRIPTS = str(Path(__file__).parent / ".claude/skills/bible-buddy/scripts")
+def skill_path() -> Path:
+    """Use the installed sibling first; retain the legacy Claude project link."""
+    here = Path(__file__).resolve().parent
+    candidates = [here.parent / "bible-buddy", here / ".claude/skills/bible-buddy",
+                  Path.home() / ".agents/skills/bible-buddy",
+                  Path.home() / ".codex/skills/bible-buddy",
+                  Path.home() / ".claude/skills/bible-buddy"]
+    for candidate in candidates:
+        if (candidate / "scripts/fetch_fhl.py").is_file():
+            return candidate.resolve()
+    raise RuntimeError("找不到 bible-buddy；請先安裝：npx skills add lancetw/skills -g -s bible-buddy")
+
+
+SKILL = skill_path()
+_SCRIPTS = str(SKILL / "scripts")
 if _SCRIPTS not in sys.path:
     sys.path.append(_SCRIPTS)  # append, not insert(0): position 0 would let scripts/ shadow a stdlib module
 from book_names import lookup  # noqa: E402

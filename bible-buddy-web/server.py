@@ -40,10 +40,11 @@ for _k in [k for k in os.environ if k.lower() in ("http_proxy", "https_proxy", "
         del os.environ[_k]
 
 import corpus  # every call out to FHL; nothing else in this file talks to the network
-from corpus import MERGED_NOTE, lookup
+from corpus import MERGED_NOTE, SKILL, lookup
+from codex_backend import CodexClient, structured as codex_structured, selected_backend
 
 HERE = Path(__file__).parent
-SKILL = HERE / ".claude/skills/bible-buddy"
+BACKEND = selected_backend()
 _SCRIPTS = str(SKILL / "scripts")
 if _SCRIPTS not in sys.path:
     sys.path.append(_SCRIPTS)  # append, not insert(0): position 0 would let scripts/ shadow a stdlib module
@@ -63,7 +64,11 @@ async def _lifespan(_app):
         if "--port" in sys.argv:
             port = sys.argv[sys.argv.index("--port") + 1]
         webbrowser.open(f"http://127.0.0.1:{port}")
-    yield
+    try:
+        yield
+    finally:
+        if _client is not None:
+            await _client.disconnect()
 
 
 app = FastAPI(lifespan=_lifespan)
@@ -71,7 +76,7 @@ passage: dict = {"reference": "", "version": "rcuv", "verses": []}
 notes: list[dict] = []
 hidden: set[str] = set()  # ids the user deleted; the auto passes are cached and must not resurrect them
 events: asyncio.Queue = asyncio.Queue()  # ponytail: one global queue = one user
-# What the page should be showing. Claude Code writes here (POST /api/display); the page polls the rev
+# What the page should be showing. The host agent writes here (POST /api/display); the page polls the rev
 # and reloads when it moves. Passage state above is what the *server* last fetched — the two only agree
 # after the page has acted on a command.
 display: dict = {"rev": 0, "ref": "", "version": ""}
@@ -470,11 +475,11 @@ async def update_annotation(args: dict) -> dict:
     return {"content": [{"type": "text", "text": f"已更新筆記 {n['id']}"}]}
 
 
-_client: ClaudeSDKClient | None = None
+_client: ClaudeSDKClient | CodexClient | None = None
 _client_stale = False
 
 
-async def get_client() -> ClaudeSDKClient:
+async def get_client() -> ClaudeSDKClient | CodexClient:
     global _client, _client_stale
     if _client is not None and _client_stale:
         try:
@@ -483,6 +488,10 @@ async def get_client() -> ClaudeSDKClient:
             print("old agent session:", repr(e), file=sys.stderr)
         _client = None
     _client_stale = False
+    if _client is None and BACKEND == "codex":
+        client = CodexClient(HERE, SYSTEM_APPEND, SKILL, [add_annotation, update_annotation])
+        await client.connect()
+        _client = client
     if _client is None:
         opts = ClaudeAgentOptions(
             cwd=str(HERE),
@@ -522,6 +531,8 @@ def _turn_prompt(message: str) -> str:
 
 def _turn_event(m) -> list[dict]:
     """One SDK message as the frames the page reads. Anything else on the stream is not the page's business."""
+    if isinstance(m, dict):
+        return [m]
     if isinstance(m, SystemMessage) and m.subtype == "init":
         print("skills loaded:", m.data.get("skills"), file=sys.stderr)
     elif isinstance(m, AssistantMessage):
@@ -534,7 +545,7 @@ def _turn_event(m) -> list[dict]:
 
 
 async def run_turn(message: str) -> None:
-    global _turn_running
+    global _turn_running, _client_stale
     _turn_running = True
     try:
         if not await _ensure_passage():
@@ -546,6 +557,7 @@ async def run_turn(message: str) -> None:
             for ev in _turn_event(m):
                 await events.put(ev)
     except Exception as e:  # surface to the page, don't swallow
+        _client_stale = True  # a dead backend must reconnect on the next question
         await events.put({"type": "error", "text": repr(e)})
     finally:
         _turn_running = False
@@ -554,7 +566,7 @@ async def run_turn(message: str) -> None:
 @app.get("/api/chat/status")
 async def chat_status():
     """Is a turn in flight? The page asks on load (to reattach after a refresh) and the operator before a restart."""
-    return {"running": _turn_running}
+    return {"running": _turn_running, "backend": BACKEND}
 
 
 _stream_task: asyncio.Task | None = None
@@ -775,6 +787,8 @@ class LiveModel:
     so the pass cannot read the disk or spend a turn on anything but the notes it was asked for."""
 
     def __call__(self, prompt: str, schema: dict):
+        if BACKEND == "codex":
+            return codex_structured(prompt, schema)
         opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
                                   output_format=schema, env={"CLAUDE_CODE_MAX_RETRIES": str(QUICK_RETRIES)})
         return query(prompt=prompt, options=opts)
@@ -795,6 +809,8 @@ async def _structured(prompt: str, schema: dict, key: str) -> tuple[dict, float 
     try:
         async with asyncio.timeout(QUICK_TIMEOUT_S):
             async for m in MODEL(prompt, schema):
+                if isinstance(m, dict):
+                    return m, None  # Codex reports no USD cost; do not invent one.
                 if isinstance(m, SystemMessage) and m.subtype == "api_retry":
                     p.status = _retry_line(m.data)
                     print("model retry:", key, p.status, file=sys.stderr)
