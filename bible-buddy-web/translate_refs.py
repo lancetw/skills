@@ -33,7 +33,7 @@ PROMPT = """把下面每一條聖經筆記翻成台灣繁體中文。這些筆�
 
 async def run(batch: dict) -> list[dict]:
     rows = "\n\n".join(f"id: {k}\nlabel: {v['label']}\nbody: {v['body']}" for k, v in batch.items())
-    data, cost = await _structured(PROMPT.format(rows=rows), SCHEMA, "translate-refs")
+    data, cost = await _structured(PROMPT.format(rows=rows), SCHEMA, "translate-refs", timeout=300)
     print(f"  {cost} USD" if cost is not None else "  cost unavailable", file=sys.stderr)
     return data.get("items", [])
 

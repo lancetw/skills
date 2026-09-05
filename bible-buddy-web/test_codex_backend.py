@@ -144,3 +144,17 @@ def test_changed_passage_replaces_codex_thread(desk, monkeypatch):
         second = await server.get_client()
         assert first.closed and second is not first
     run(exercise())
+
+
+def test_reference_translation_keeps_its_original_timeout(monkeypatch):
+    import runpy
+    calls = []
+    async def structured(prompt, schema, key, **kwargs):
+        calls.append(kwargs)
+        return {'items': []}, None
+    monkeypatch.setattr(server, '_structured', structured)
+    with monkeypatch.context() as patch:
+        patch.setattr(asyncio, 'run', lambda coro: coro.close())
+        module = runpy.run_path(str(server.HERE / 'translate_refs.py'))
+    run(module['run']({'sample': {'label': 'test', 'body': 'test'}}))
+    assert calls == [{'timeout': 300}]
