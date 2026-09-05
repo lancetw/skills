@@ -1,6 +1,6 @@
 ---
 name: bible-buddy-web
-description: "Local web reader for Bible passages with ELI5 annotations — a FastAPI + Claude Agent SDK page that loads a passage from FHL, drops plain-language notes onto the words themselves, and lets a bible-buddy agent verify or expand any of them. Use when the user wants to READ or STUDY scripture in a browser rather than in the terminal: 開網頁查經、網頁版 bible buddy、經文標注、ELI5 筆記、劃線筆記、annotate a passage, bible reader UI, start the bible web app. EXCLUDE: terminal Bible Q&A (bible-buddy), devotionals (bible-bread), content review (bible-fact-check)."
+description: "Local web reader for Bible passages with ELI5 annotations — a FastAPI page with Claude Code or Codex that loads a passage from FHL, drops plain-language notes onto the words themselves, and lets a bible-buddy agent verify or expand any of them. Use when the user wants to READ or STUDY scripture in a browser rather than in the terminal: 開網頁查經、網頁版 bible buddy、經文標注、ELI5 筆記、劃線筆記、annotate a passage, bible reader UI, start the bible web app. EXCLUDE: terminal Bible Q&A (bible-buddy), devotionals (bible-bread), content review (bible-fact-check)."
 allowed-tools: Read Write Edit Bash Glob Grep
 disable-model-invocation: true
 license: MIT
@@ -18,34 +18,57 @@ them through a custom tool.
 to one JSON per passage on the Desktop, one event queue serves one reader. It binds
 loopback only. Don't put it behind a shared port.
 
+## Backend selection — automatic for the user
+
+You, the agent executing this skill, know which host you run in. Set `{BACKEND}` to
+`codex` when executing in Codex, or `claude` when executing in Claude Code. Always pass
+`BIBLE_BUDDY_BACKEND={BACKEND}` on the launch command. Do not ask the user to choose,
+inspect parent processes, or infer the host from installed binaries. An explicit user
+request for a backend overrides the host. A manual launch without the variable retains
+Claude; an invalid value fails immediately instead of silently choosing a provider.
+
+Before reusing an existing server, read `GET /api/chat/status`: it reports `backend` and
+`running`. Reuse only when `backend` matches `{BACKEND}`. A missing field means an older
+server. For a mismatch, report the existing backend and explain that a restart is needed;
+do not silently reuse it, stop an active turn, or launch a second writer on the same notes.
+
 ## Path Resolution
 
-Resolve `{WEB}` to this skill's own installation directory. First path that has `server.py`:
+Use the directory of the SKILL.md you are currently reading when it contains `server.py`.
+Otherwise resolve `{WEB}` to this skill's own installation directory. First path that has `server.py`:
 
-1. `.claude/skills/bible-buddy-web/`
-2. `~/.claude/skills/bible-buddy-web/`
-3. `bible-buddy-web/` (relative to CWD, development)
+1. `.agents/skills/bible-buddy-web/` or `.codex/skills/bible-buddy-web/`
+2. `.claude/skills/bible-buddy-web/`
+3. `~/.agents/skills/bible-buddy-web/` or `~/.codex/skills/bible-buddy-web/`
+4. `~/.claude/skills/bible-buddy-web/`
+5. `bible-buddy-web/` (relative to CWD, development)
 
 ## Prerequisites
 
 `uv` must be installed (`which uv`). If missing, stop and tell the user:
 「bible-buddy-web 需要 uv 套件管理器。請參考 https://docs.astral.sh/uv/getting-started/installation/ 安裝後再試。」
 
-The **bible-buddy skill must be installed alongside it** — `{WEB}/.claude/skills/bible-buddy`
-is a symlink to the sibling skill, and the server imports its `scripts/` (FHL fetcher, book
-names, Desktop detection) and reads its `references/` tables. Verify before launching:
+The selected CLI (`codex` or `claude`) must be installed and already authenticated.
+Codex needs App Server dynamic-tool support and `exec --ignore-user-config`; use
+`codex app-server --help` and `codex exec --help` to check an older installation.
+Authentication failures are shown by the app; do not silently fall back to another backend.
+
+The **bible-buddy skill must be installed alongside it**. The server first resolves the
+sibling directory, then the legacy `{WEB}/.claude/skills/bible-buddy` link, then user-level
+`.agents`, `.codex`, and `.claude` installations. Its scripts and reference tables are shared
+by both backends. Verify before launching:
 
 ```bash
-test -d {WEB}/.claude/skills/bible-buddy/scripts && echo OK
+uv run --directory {WEB} python -c 'from corpus import SKILL; print(SKILL)'
 ```
 
-Not OK → tell the user to install bible-buddy the same way (`npx skills add lancetw/skills -g -s bible-buddy`).
+Missing → tell the user to install `npx skills add lancetw/skills -g -s bible-buddy`.
 
 ## Launch
 
 ```bash
 uv sync --directory {WEB}
-uv run --directory {WEB} uvicorn server:app --port 8765
+BIBLE_BUDDY_BACKEND={BACKEND} uv run --directory {WEB} uvicorn server:app --port 8765
 ```
 
 **The user named a passage** (`/bible-buddy-web 路加福音`)? Two cases, and neither is "launch and
@@ -54,7 +77,7 @@ let them type it in":
 - Server not running yet → put it in the launch environment. The page then opens straight on that
   passage; without this it opens on whatever the browser last read and flips a second later.
   ```bash
-  BIBLE_BUDDY_PASSAGE='路加福音' uv run --directory {WEB} uvicorn server:app --port 8765
+  BIBLE_BUDDY_PASSAGE='路加福音' BIBLE_BUDDY_BACKEND={BACKEND} uv run --directory {WEB} uvicorn server:app --port 8765
   ```
   `BIBLE_BUDDY_VERSION` sets the translation (default `rcuv`).
 - Server already running → `POST /api/display`, below.
@@ -73,7 +96,7 @@ The server drops loopback `HTTP(S)_PROXY` variables at import, on purpose. A pac
 guard exports a short-lived proxy that dies with it, and the Claude CLI the SDK spawns would
 inherit it and fail every call with "Connection refused". Leave that block alone.
 
-## Driving the page from Claude Code
+## Driving the page from Claude Code or Codex
 
 The page is not only steered from its own input box. `POST /api/display` sets what the browser
 should be showing; the page polls every 2s and loads it. Use this whenever the user asks for a
@@ -137,7 +160,11 @@ asked for that one). A `quick` note is flagged 未驗證; its card offers 🔍 �
 sends the agent a turn that ends in `mcp__notes__update_annotation` on the same id, so the
 note is rewritten in place rather than duplicated.
 
-**Chat** streams over SSE. A refreshed page reattaches to the running turn instead of losing
+**Chat** streams over SSE. Claude uses Claude Agent SDK; Codex uses App Server with
+host-executed annotation tools. Codex keeps a thread until reset or passage change, uses
+a read-only filesystem sandbox, and does not ask for interactive approvals. Codex quick
+notes use a separate ephemeral structured-output pass. Codex does not report USD cost;
+the app leaves it unknown rather than showing zero. A refreshed page reattaches to the running turn instead of losing
 it. Changing passage starts a fresh agent session, since the old history is about other verses.
 
 ### The reference tables are English
@@ -150,11 +177,11 @@ whose notes were saved before the file existed is re-translated when it is loade
 Upstream edits a row → its cells change → its id changes → it falls back to English until regenerated:
 
 ```bash
-uv run --directory {WEB} python translate_refs.py        # only the ids the file is missing
-uv run --directory {WEB} python translate_refs.py --force  # all 96 rows again
+BIBLE_BUDDY_BACKEND={BACKEND} uv run --directory {WEB} python translate_refs.py        # only the ids the file is missing
+BIBLE_BUDDY_BACKEND={BACKEND} uv run --directory {WEB} python translate_refs.py --force  # all 96 rows again
 ```
 
-That is a paid model pass (about US$2 for the whole set, ~$0.10 per batch of 6). Don't run it as a
+That is a paid model pass using the selected backend. Don't run it as a
 side effect of something else; the committed JSON is what makes these notes free at read time.
 
 ## Where the work is saved

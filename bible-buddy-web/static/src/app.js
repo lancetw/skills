@@ -237,7 +237,7 @@ function App() {
     loadPassage(pref.trim(), pver);
   };
 
-  // Claude Code drives the page: POST /api/display bumps rev, and the next poll loads what it asked for.
+  // The host agent drives the page: POST /api/display bumps rev, and the next poll loads what it asked for.
   // The boot effect already recorded the rev in force, so this only fires on commands sent since.
   useEffect(() => {
     const t = setInterval(async () => {

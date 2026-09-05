@@ -10,9 +10,7 @@ import asyncio
 import json
 import sys
 
-from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
-
-from server import HERE, ZH_REFS, _ref_notes, _short_label
+from server import ZH_REFS, _ref_notes, _short_label, _structured
 
 SCHEMA = {"type": "json_schema", "schema": {
     "type": "object", "required": ["items"],
@@ -35,16 +33,9 @@ PROMPT = """把下面每一條聖經筆記翻成台灣繁體中文。這些筆�
 
 async def run(batch: dict) -> list[dict]:
     rows = "\n\n".join(f"id: {k}\nlabel: {v['label']}\nbody: {v['body']}" for k, v in batch.items())
-    opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
-                              output_format=SCHEMA, env={"CLAUDE_CODE_MAX_RETRIES": "3"})
-    async with asyncio.timeout(300):
-        async for m in query(prompt=PROMPT.format(rows=rows), options=opts):
-            if isinstance(m, ResultMessage):
-                if m.is_error:
-                    raise RuntimeError(m.result or f"API error (HTTP {m.api_error_status})")
-                print(f"  {m.total_cost_usd} USD", file=sys.stderr)
-                return (m.structured_output or {}).get("items", [])
-    return []
+    data, cost = await _structured(PROMPT.format(rows=rows), SCHEMA, "translate-refs")
+    print(f"  {cost} USD" if cost is not None else "  cost unavailable", file=sys.stderr)
+    return data.get("items", [])
 
 
 def _batch_size() -> int:

@@ -1,7 +1,7 @@
 [project]
 name = "bible-buddy-web"
 version = "1.0.0"
-description = "Local web Bible reader. The Agent SDK runs the bible-buddy skill; annotations land on the passage."
+description = "Local web Bible reader. Claude Code or Codex runs bible-buddy; annotations land on the passage."
 requires-python = ">=3.10"
 dependencies = [
     "fastapi",
