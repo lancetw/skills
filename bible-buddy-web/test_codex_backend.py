@@ -146,7 +146,7 @@ def test_changed_passage_replaces_codex_thread(desk, monkeypatch):
     run(exercise())
 
 
-def test_reference_translation_keeps_its_original_timeout(monkeypatch):
+def test_reference_translation_uses_shared_180_second_timeout(monkeypatch):
     import runpy
     calls = []
     async def structured(prompt, schema, key, **kwargs):
@@ -157,4 +157,5 @@ def test_reference_translation_keeps_its_original_timeout(monkeypatch):
         patch.setattr(asyncio, 'run', lambda coro: coro.close())
         module = runpy.run_path(str(server.HERE / 'translate_refs.py'))
     run(module['run']({'sample': {'label': 'test', 'body': 'test'}}))
-    assert calls == [{'timeout': 300}]
+    assert calls == [{}]
+    assert server.QUICK_TIMEOUT_S == 180
