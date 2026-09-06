@@ -211,6 +211,19 @@
   #sres .hit b { display:block; font-size:.8rem; color:var(--pen); font-family:var(--sans); }
   #sres .hit span { font-family:'Noto Serif TC', serif; }
   #sres mark { background:transparent; color:var(--pen); font-weight:700; }
+  /* 經文目錄：跟搜尋同一種浮層；左邊書卷（舊約／新約），右邊那卷的章 */
+  #toc { position:fixed; inset:auto; top:70px; left:50%; transform:translateX(-50%); width:min(760px, calc(100vw - 24px)); height:min(560px, calc(100vh - 100px)); padding:12px; border:1px solid var(--rule); border-radius:10px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
+  #toc:popover-open { display:flex; gap:12px; }
+  #toc h3 { margin:0 0 6px; font-size:.8rem; font-weight:600; color:var(--ink-2); }
+  #toc .books { flex:1 1 0; min-width:0; overflow:auto; }
+  #toc .books h3 + .bks { margin-bottom:12px; }
+  #toc .chs { flex:0 0 40%; overflow:auto; border-left:1px solid var(--rule); padding-left:12px; }
+  #toc .bks { display:flex; flex-wrap:wrap; gap:4px; }
+  #toc .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(40px, 1fr)); gap:4px; }
+  #toc button { font-size:.85rem; padding:4px 8px; min-height:32px; background:var(--paper-2); }
+  #toc .grid button { padding:4px 0; }
+  #toc button.on { background:var(--pen); color:var(--paper); border-color:var(--pen); }
+  @media (max-width: 560px) { #toc:popover-open { flex-direction:column; } #toc .chs { flex:0 0 45%; border-left:0; border-top:1px solid var(--rule); padding:12px 0 0; } }
   /* selection menu: sits just under the highlighted text */
   #selmenu { position:fixed; margin:0; inset:auto; padding:4px; gap:4px; border:1px solid var(--rule); border-radius:8px; background:var(--card); color:var(--ink); box-shadow:var(--shadow); }
   #selmenu:popover-open { display:flex; }

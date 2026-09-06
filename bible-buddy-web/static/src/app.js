@@ -5,7 +5,7 @@ import { React, html, useState, useEffect, useRef, useCallback, Slot, local, Thi
 import { api, apiErrorText, parseRef, passageUrl } from './api.js';
 import { makeNotes } from './notes-store.js';
 import { createRoot } from '../vendor/react-dom-client.mjs';
-import { TopBar, Banner, Verses, SearchPopover, useFootnoteJump } from './reader.js';
+import { TopBar, Banner, Verses, SearchPopover, TocPopover, useFootnoteJump } from './reader.js';
 import { Sparkle, Trash, Check } from './icons.js';
 import { Doodle } from './doodles.js';
 import { Detail, SelectionMenu, useSelection } from './notes.js';
@@ -25,6 +25,7 @@ function App() {
   const [detail, setDetail] = useState(null);
   const [sel, setSel] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [tocOpen, setTocOpen] = useState(false);
   const [quickBusy, setQuickBusy] = useState(false);
   const savedPar = useRef(local.get('par', '')).current;
   const [par, setPar] = useState({ on: !!savedPar, version: savedPar || 'auto', map: {}, rtl: false, autoLabel: '原文' });
@@ -260,7 +261,7 @@ function App() {
     <${React.Fragment}>
       <section id="reader" ref=${readerRef}>
         <${TopBar} pref=${pref} setPref=${setPref} pver=${pver} setPver=${setPver}
-          loadLabel=${loadLabel} onLoad=${submitPassage}
+          loadLabel=${loadLabel} onLoad=${submitPassage} onToc=${() => setTocOpen(true)}
           par=${par} togglePar=${() => parallel(!par.on)} setParVersion=${v => parallel(true, v)}
           onSearch=${() => setSearchOpen(true)}
           theme=${theme} toggleTheme=${() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
@@ -308,6 +309,14 @@ function App() {
               el.classList.add('flash');
               setTimeout(() => el.classList.remove('flash'), 2000);
             }, 0);
+          }} />
+        <${TocPopover} open=${tocOpen} onClose=${() => setTocOpen(false)} current=${parseRef(pref)?.book}
+          onPick=${ref => {
+            setTocOpen(false);
+            setPref(ref);
+            local.set('passage', JSON.stringify({ ref, version: pver }));
+            setLoadLabel('載入中…');
+            loadPassage(ref, pver);
           }} />
         <${SelectionMenu} sel=${sel} onClose=${() => setSel(null)}
           onManual=${() => { const s = sel; setSel(null); if (s) setDetail({ mode: 'edit', note: { verse: s.verse, anchor: s.anchor, label: s.quote.slice(0, 20), body: '', kind: 'personal' }, rect: s.rect, gap: 8 }); }}

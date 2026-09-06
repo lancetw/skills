@@ -4,7 +4,8 @@ import {
   html, useRef, useState, useEffect, useLayoutEffect, useMemo, Fragment,
   Slot, MAX_ARROWS, MIN_GAP, COLOR, DOTC, useTicker, ThinkingOrb,
 } from './lib.js';
-import { Search, Columns, Moon, Sun, Chat, Close, Back, Check, Alert } from './icons.js';
+import { Search, Columns, Moon, Sun, Chat, Close, Back, Check, Alert, List } from './icons.js';
+import { OT, NT, BOOKS, findBook } from './books.js';
 import { api } from './api.js';
 import { Doodle, DOODLES, Book } from './doodles.js';
 
@@ -253,7 +254,7 @@ export function useFootnoteJump(scopeRef) {
 // ── title bar ─────────────────────────────────────────────────────────────────
 const VERSIONS = [['rcuv', '和合本修訂版'], ['lcc', '呂振中'], ['bhs', 'BHS 希伯來文'], ['fhlwh', 'NT 希臘文']];
 
-export function TopBar({ pref, setPref, pver, setPver, loadLabel, onLoad, par, setParVersion, togglePar, onSearch, theme, toggleTheme, chatOn, toggleChat, actions }) {
+export function TopBar({ pref, setPref, pver, setPver, loadLabel, onLoad, onToc, par, setParVersion, togglePar, onSearch, theme, toggleTheme, chatOn, toggleChat, actions }) {
   return html`
     <form id="pf" className="top" onSubmit=${e => { e.preventDefault(); onLoad(); }}>
       <span className="brand">
@@ -264,6 +265,7 @@ export function TopBar({ pref, setPref, pver, setPver, loadLabel, onLoad, par, s
         </span>
       </span>
       <div className="pgrp">
+        <button type="button" id="tocToggle" title="經文目錄：先選書卷，再選章" onClick=${onToc}><${List} />目錄</button>
         <input id="pref" value=${pref} onChange=${e => setPref(e.target.value)} />
         <select id="pver" value=${pver} onChange=${e => setPver(e.target.value)}>
           ${VERSIONS.map(([v, n]) => html`<option key=${v} value=${v}>${n}</option>`)}
@@ -350,6 +352,46 @@ export function SearchPopover({ open, onClose, onPick, version }) {
               <button type="button" className="hit" key=${i} onClick=${() => onPick(x)}>
                 <b>${x.ref}</b><span>${marked_(x.text, res.key)}</span>
               </button>`)}`}
+      </div>
+    </div>`;
+}
+
+// ── 經文目錄 ──────────────────────────────────────────────────────────────────
+// For the reader who does not yet know the book names: pick a book, then a chapter. Opens on the
+// book the page is showing, so 「下一章」 is one click away.
+export function TocPopover({ open, onClose, onPick, current }) {
+  const ref = useRef(null);
+  const [book, setBook] = useState(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (open) { setBook(findBook(current) || BOOKS[0][0]); el.showPopover(); }
+    else if (el.matches(':popover-open')) el.hidePopover();
+  }, [open]);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const on = e => { if (e.newState === 'closed') onClose(); };
+    el.addEventListener('toggle', on);
+    return () => el.removeEventListener('toggle', on);
+  }, [onClose]);
+
+  const chapters = BOOKS.find(([n]) => n === book)?.[1] || 0;
+  const group = (title, list) => html`
+    <h3>${title}</h3>
+    <div className="bks">
+      ${list.map(([n]) => html`
+        <button type="button" key=${n} className=${n === book ? 'on' : ''} onClick=${() => setBook(n)}>${n}</button>`)}
+    </div>`;
+  return html`
+    <div id="toc" popover="auto" ref=${ref}>
+      <div className="books">${group('舊約', OT)}${group('新約', NT)}</div>
+      <div className="chs">
+        <h3>${book} · ${chapters} 章</h3>
+        <div className="grid">
+          ${Array.from({ length: chapters }, (_, i) => html`
+            <button type="button" key=${i} onClick=${() => onPick(`${book} ${i + 1}`)}>${i + 1}</button>`)}
+        </div>
       </div>
     </div>`;
 }

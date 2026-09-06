@@ -67,3 +67,9 @@ export const Alert = svg(html`
 export const Back = svg(html`<path d="M12.4 3v4.6a1.6 1.6 0 0 1-1.6 1.6H3.9M6.4 11.7 3.7 9.2l2.7-2.5" />`);
 
 export const Stop = svg(html`<rect x="4.2" y="4.2" width="7.6" height="7.6" rx="1.2" />`);
+
+// 目錄 = a short list: three lines with a dot before each
+export const List = svg(html`
+  <circle cx="3" cy="4" r=".9" fill="currentColor" stroke="none" /><path d="M6 4h7.5" />
+  <circle cx="3" cy="8" r=".9" fill="currentColor" stroke="none" /><path d="M6 8h7.5" />
+  <circle cx="3" cy="12" r=".9" fill="currentColor" stroke="none" /><path d="M6 12h7.5" />`);

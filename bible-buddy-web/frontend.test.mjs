@@ -124,6 +124,26 @@ test('a span that is all blank trims to nothing', () => {
   assert.equal(a, b);
 });
 
+// ── the 目錄 table ────────────────────────────────────────────────────────────
+// A wrong count either hides a chapter or offers one FHL does not have; a name that differs from
+// bible-buddy's spelling loads nothing.
+
+const { BOOKS, OT, NT, findBook } = await import('./static/src/books.js');
+
+test('sixty-six books, thirty-nine before the gospels, 1189 chapters in all', () => {
+  assert.equal(BOOKS.length, 66);
+  assert.equal(OT.length, 39);
+  assert.equal(NT[0][0], '馬太福音');
+  assert.equal(BOOKS.reduce((n, [, c]) => n + c, 0), 1189);
+});
+
+test('the menu opens on the book the box names, short form included', () => {
+  assert.equal(findBook('約翰福音'), '約翰福音');
+  assert.equal(findBook('約翰一書'), '約翰一書');   // exact beats the partial match on 約翰福音
+  assert.equal(findBook('約翰'), '約翰福音');
+  assert.equal(findBook('nothing'), null);
+});
+
 // ── talking to the server ─────────────────────────────────────────────────────
 // Every call used to decide for itself what a failure looks like, so the same 529 reached the reader
 // in two different wordings and a 500 with an HTML body reached them as a SyntaxError.
