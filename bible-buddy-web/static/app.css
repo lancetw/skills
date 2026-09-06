@@ -85,6 +85,7 @@
   .top .pgrp { display:flex; gap:8px; flex:1 1 22em; min-width:0; }
   .top .pgrp input { flex:1 1 8em; min-width:6em; width:auto; }
   .top .pgrp select { flex:0 1 auto; min-width:0; }
+  #tocToggle { width:36px; padding:0; justify-content:center; flex:none; }   /* icon-only, square like the .icons buttons */
   .top .icons { display:flex; gap:8px; flex:none; }
   /* the passage actions live in the sticky bar so they hold the top-right corner as the page scrolls;
      margin-left:auto keeps them there once the brand hides on a narrow reader */

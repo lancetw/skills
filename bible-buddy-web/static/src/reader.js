@@ -265,7 +265,7 @@ export function TopBar({ pref, setPref, pver, setPver, loadLabel, onLoad, onToc,
         </span>
       </span>
       <div className="pgrp">
-        <button type="button" id="tocToggle" title="經文目錄：先選書卷，再選章" onClick=${onToc}><${List} />目錄</button>
+        <button type="button" id="tocToggle" title="經文目錄：先選書卷，再選章" aria-label="經文目錄" onClick=${onToc}><${List} /></button>
         <input id="pref" value=${pref} onChange=${e => setPref(e.target.value)} />
         <select id="pver" value=${pver} onChange=${e => setPver(e.target.value)}>
           ${VERSIONS.map(([v, n]) => html`<option key=${v} value=${v}>${n}</option>`)}
