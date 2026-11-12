@@ -21,4 +21,4 @@ Read before editing anything under `skills/`. The mechanical rules are pre-commi
 
 - The skill an agent runs is `~/.agents/skills/<name>`, installed from GitHub by `npx skills add|update -g`, not this checkout. Local commits reach it after push and `npx skills update <name> -g`.
 - The install lock (`~/.agents/.skill-lock.json`) records each skill's path in the repo. Moving a skill makes `npx skills update` report it as "deleted upstream" and skip it; re-add it once: `npx skills add lancetw/skills -g -s <name>`.
-- Simulating a fresh install or update: point `HOME` at an empty temp dir (`HOME=$(mktemp -d) npx skills add -g <source>`), so your own `~/.agents` is untouched.
+- Simulating a fresh install or update: `env -u CLAUDE_CONFIG_DIR HOME=$(mktemp -d) npx skills add -g <source>`. `CLAUDE_CONFIG_DIR` beats `HOME` for the Claude Code target, so leaving it set writes into your real `~/.claude/skills`.
