@@ -9,9 +9,10 @@ Skills live under `skills/<category>/<skill-name>/`. `npx skills` finds them rec
 ```
 skills/
 ├── bible/          # Bible study: interpretation, devotionals, fact-check, web reader
-├── knowledge/      # zh-TW learning docs, requirements docs, writing
+├── knowledge/      # zh-TW learning docs, requirements docs, writing, planning unknowns
 ├── productivity/   # Daily tools: Markdown to HTML, translation, weather
-└── dev/            # Engineering workflow: planning unknowns, architecture loop, app-*-fix sweeps
+├── app/            # app-*-fix sweeps: find, fix what is proven safe, list the rest
+└── matt/           # Workflows built on Matt Pocock's skills
 ```
 
 ### Bible &nbsp;·&nbsp; `skills/bible/`
@@ -30,6 +31,7 @@ skills/
 | [learn-tw](skills/knowledge/learn-tw/SKILL.md) | Generate personalized learning docs in Taiwan Traditional Chinese |
 | [prd-tw](skills/knowledge/prd-tw/SKILL.md) | Help non-technical stakeholders write clear requirements documents in Taiwan Traditional Chinese |
 | [humanizer-zh-tw](skills/knowledge/humanizer-zh-tw/SKILL.md) | Remove AI-generated traces from Chinese text |
+| [know-your-unknowns](skills/knowledge/know-your-unknowns/SKILL.md) | Surface unknowns as interactive HTML artifacts — 11 techniques for before, during, and after implementation |
 
 ### Productivity &nbsp;·&nbsp; `skills/productivity/`
 
@@ -39,16 +41,20 @@ skills/
 | [babel](skills/productivity/babel/SKILL.md) | Translate Claude's previous response via an external CLI model (codex / agy / claude) in a forked context |
 | [weather-hint-tw](skills/productivity/weather-hint-tw/SKILL.md) | Friendly weather reminders with outfit advice, auto IP detection |
 
-### Dev &nbsp;·&nbsp; `skills/dev/`
+### App &nbsp;·&nbsp; `skills/app/`
 
 | Skill | Description |
 |-------|-------------|
-| [know-your-unknowns](skills/dev/know-your-unknowns/SKILL.md) | Surface unknowns as interactive HTML artifacts — 11 techniques for before, during, and after implementation |
-| [improve-loop](skills/dev/improve-loop/SKILL.md) | Autonomous-safe architecture deepening loop: one behavior-preserving change per run, test-first on a `wt` branch, never merges |
-| [app-fresh-fix](skills/dev/app-fresh-fix/SKILL.md) | Whole-project sweep after a new model release: fix what is proven broken, inconsistent, inefficient or unneeded; list the rest |
-| [app-state-fix](skills/dev/app-state-fix/SKILL.md) | Find implicit state machines, make the safe ones explicit without behavior change, list impossible states for review |
-| [app-device-fix](skills/dev/app-device-fix/SKILL.md) | Browser sweep across widths, touch and throttled 3G; fix what breaks with before/after screenshots |
-| [app-unwaterfall-fix](skills/dev/app-unwaterfall-fix/SKILL.md) | Make independent awaits on hot paths concurrent, pinned by tests; list unsure or ordering-sensitive ones for review |
+| [app-fresh-fix](skills/app/app-fresh-fix/SKILL.md) | Whole-project sweep after a new model release: fix what is proven broken, inconsistent, inefficient or unneeded; list the rest |
+| [app-state-fix](skills/app/app-state-fix/SKILL.md) | Find implicit state machines, make the safe ones explicit without behavior change, list impossible states for review |
+| [app-device-fix](skills/app/app-device-fix/SKILL.md) | Browser sweep across widths, touch and throttled 3G; fix what breaks with before/after screenshots |
+| [app-unwaterfall-fix](skills/app/app-unwaterfall-fix/SKILL.md) | Make independent awaits on hot paths concurrent, pinned by tests; list unsure or ordering-sensitive ones for review |
+
+### Matt &nbsp;·&nbsp; `skills/matt/`
+
+| Skill | Description |
+|-------|-------------|
+| [improve-loop](skills/matt/improve-loop/SKILL.md) | Autonomous-safe architecture deepening loop: one behavior-preserving change per run, test-first on a `wt` branch, never merges |
 
 See each skill's `SKILL.md` for details.
 
