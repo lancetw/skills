@@ -1,0 +1,18 @@
+{
+  "name": "lancetw-skills",
+  "description": "Taiwan Traditional Chinese (繁體中文) skills for AI coding agents — Bible study, zh-TW knowledge and writing, productivity and dev tools.",
+  "skills": [
+    "./skills/bible/bible-bread",
+    "./skills/bible/bible-buddy",
+    "./skills/bible/bible-buddy-web",
+    "./skills/bible/bible-fact-check",
+    "./skills/dev/improve-loop",
+    "./skills/dev/know-your-unknowns",
+    "./skills/knowledge/humanizer-zh-tw",
+    "./skills/knowledge/learn-tw",
+    "./skills/knowledge/prd-tw",
+    "./skills/productivity/babel",
+    "./skills/productivity/markdown-to-html",
+    "./skills/productivity/weather-hint-tw"
+  ]
+}

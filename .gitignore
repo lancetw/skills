@@ -1,6 +1,7 @@
 .DS_Store
 ._*
-*/CLAUDE.md
+**/CLAUDE.md
+!/CLAUDE.md
 __pycache__/
 .venv/
 .gstack/

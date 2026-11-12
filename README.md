@@ -4,19 +4,47 @@ Taiwan Traditional Chinese (繁體中文) skills for AI coding agents.
 
 ## Skills
 
+Skills live under `skills/<category>/<skill-name>/`. `npx skills` finds them recursively, so `-s <skill-name>` works whatever the category.
+
+```
+skills/
+├── bible/          # Bible study: interpretation, devotionals, fact-check, web reader
+├── knowledge/      # zh-TW learning docs, requirements docs, writing
+├── productivity/   # Daily tools: Markdown to HTML, translation, weather
+└── dev/            # Engineering workflow: planning unknowns, architecture loop
+```
+
+### Bible &nbsp;·&nbsp; `skills/bible/`
+
 | Skill | Description |
 |-------|-------------|
-| [learn-tw](learn-tw/SKILL.md) | Generate personalized learning docs in Taiwan Traditional Chinese |
-| [markdown-to-html](markdown-to-html/SKILL.md) | Convert any Markdown file into a styled, readable HTML page for long-form Traditional Chinese reading |
-| [prd-tw](prd-tw/SKILL.md) | Help non-technical stakeholders write clear requirements documents in Taiwan Traditional Chinese |
-| [humanizer-zh-tw](humanizer-zh-tw/SKILL.md) | Remove AI-generated traces from Chinese text |
-| [weather-hint-tw](weather-hint-tw/SKILL.md) | Friendly weather reminders with outfit advice, auto IP detection |
-| [know-your-unknowns](know-your-unknowns/SKILL.md) | Surface unknowns as interactive HTML artifacts — 11 techniques for before, during, and after implementation |
-| [babel](babel/SKILL.md) | Translate Claude's previous response via an external CLI model (codex / agy / claude) in a forked context |
-| [bible-buddy](bible-buddy/SKILL.md) | First-century Hebrew scripture interpretation from Yeshua's Jewish perspective |
-| [bible-fact-check](bible-fact-check/SKILL.md) | 10-point quality checklist for biblical content review |
-| [bible-bread](bible-bread/SKILL.md) | Daily devotional / QT guide with first-century Jewish pedagogy for mainstream Christians (requires bible-buddy) |
-| [bible-buddy-web](bible-buddy-web/SKILL.md) | Prototype local web reader — passage on screen, ELI5 notes on the words, agent verification (requires bible-buddy) |
+| [bible-buddy](skills/bible/bible-buddy/SKILL.md) | First-century Hebrew scripture interpretation from Yeshua's Jewish perspective |
+| [bible-fact-check](skills/bible/bible-fact-check/SKILL.md) | 10-point quality checklist for biblical content review |
+| [bible-bread](skills/bible/bible-bread/SKILL.md) | Daily devotional / QT guide with first-century Jewish pedagogy for mainstream Christians (requires bible-buddy) |
+| [bible-buddy-web](skills/bible/bible-buddy-web/SKILL.md) | Prototype local web reader — passage on screen, ELI5 notes on the words, agent verification (requires bible-buddy) |
+
+### Knowledge &nbsp;·&nbsp; `skills/knowledge/`
+
+| Skill | Description |
+|-------|-------------|
+| [learn-tw](skills/knowledge/learn-tw/SKILL.md) | Generate personalized learning docs in Taiwan Traditional Chinese |
+| [prd-tw](skills/knowledge/prd-tw/SKILL.md) | Help non-technical stakeholders write clear requirements documents in Taiwan Traditional Chinese |
+| [humanizer-zh-tw](skills/knowledge/humanizer-zh-tw/SKILL.md) | Remove AI-generated traces from Chinese text |
+
+### Productivity &nbsp;·&nbsp; `skills/productivity/`
+
+| Skill | Description |
+|-------|-------------|
+| [markdown-to-html](skills/productivity/markdown-to-html/SKILL.md) | Convert any Markdown file into a styled, readable HTML page for long-form Traditional Chinese reading |
+| [babel](skills/productivity/babel/SKILL.md) | Translate Claude's previous response via an external CLI model (codex / agy / claude) in a forked context |
+| [weather-hint-tw](skills/productivity/weather-hint-tw/SKILL.md) | Friendly weather reminders with outfit advice, auto IP detection |
+
+### Dev &nbsp;·&nbsp; `skills/dev/`
+
+| Skill | Description |
+|-------|-------------|
+| [know-your-unknowns](skills/dev/know-your-unknowns/SKILL.md) | Surface unknowns as interactive HTML artifacts — 11 techniques for before, during, and after implementation |
+| [improve-loop](skills/dev/improve-loop/SKILL.md) | Autonomous-safe architecture deepening loop: one behavior-preserving change per run, test-first on a `wt` branch, never merges |
 
 See each skill's `SKILL.md` for details.
 
@@ -44,6 +72,10 @@ npx skills check           # Check for updates
 npx skills update          # Update all skills
 npx skills remove -g learn-tw  # Remove a skill
 ```
+
+## Development
+
+`.claude-plugin/plugin.json` groups the skills under one "Lancetw Skills" heading in the `npx skills add` menu. It is generated: after adding, moving or removing a skill, run `./scripts/gen-plugin-manifest.sh` and commit the result (`--check` reports drift).
 
 ## License
 
