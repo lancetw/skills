@@ -17,6 +17,7 @@
     "./skills/matt/improve-loop",
     "./skills/productivity/babel",
     "./skills/productivity/markdown-to-html",
+    "./skills/productivity/share-preview",
     "./skills/productivity/weather-hint-tw"
   ]
 }

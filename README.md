@@ -10,7 +10,7 @@ Skills live under `skills/<category>/<skill-name>/`. `npx skills` finds them rec
 skills/
 ├── bible/          # Bible study: interpretation, devotionals, fact-check, web reader
 ├── knowledge/      # zh-TW learning docs, requirements docs, writing, planning unknowns
-├── productivity/   # Daily tools: Markdown to HTML, translation, weather
+├── productivity/   # Daily tools: Markdown to HTML, translation, weather, preview links
 ├── app/            # app-*-fix sweeps: find, fix what is proven safe, list the rest
 └── matt/           # Workflows built on Matt Pocock's skills
 ```
@@ -39,6 +39,7 @@ skills/
 |-------|-------------|
 | [markdown-to-html](skills/productivity/markdown-to-html/SKILL.md) | Convert any Markdown file into a styled, readable HTML page for long-form Traditional Chinese reading |
 | [babel](skills/productivity/babel/SKILL.md) | Translate Claude's previous response via an external CLI model (codex / agy / claude) in a forked context |
+| [share-preview](skills/productivity/share-preview/SKILL.md) | Hand over a checked link to a page served on this computer: a Tailscale `*.ts.net` link for your own devices, or a Cloudflare Quick Tunnel link only listed emails can open |
 | [weather-hint-tw](skills/productivity/weather-hint-tw/SKILL.md) | Friendly weather reminders with outfit advice, auto IP detection |
 
 ### App &nbsp;·&nbsp; `skills/app/`
