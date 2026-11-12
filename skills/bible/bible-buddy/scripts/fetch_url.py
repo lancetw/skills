@@ -13,25 +13,29 @@ Falls back to patchright (headless Chromium) when blocked (403, empty).
 """
 
 import sys
-
-sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 import time
-from urllib.request import urlopen, Request
-from urllib.error import URLError, HTTPError
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 import trafilatura
+
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def fetch_urllib(url: str, timeout: int = 15) -> str | None:
     """Fast path: urllib with browser-spoofing headers."""
-    req = Request(url, headers={
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                      "AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/131.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml",
-        "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8",
-    })
-    with urlopen(req, timeout=timeout) as resp:
+    req = Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml",
+            "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8",
+        },
+    )
+    with urlopen(req, timeout=timeout) as resp:  # nosec B310 - main() admits only http(s)
         return resp.read().decode(resp.headers.get_content_charset() or "utf-8", errors="replace")
 
 
@@ -68,6 +72,10 @@ def main() -> None:
         sys.exit(1)
 
     url = sys.argv[1]
+    # urllib and the browser both open file:// and other local schemes; only web pages are in scope
+    if urlparse(url).scheme not in ("http", "https"):
+        print(f"Only http(s) URLs are supported: {url}", file=sys.stderr)
+        sys.exit(1)
 
     # --- fast path: urllib ---
     html = None
