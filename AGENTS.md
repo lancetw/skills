@@ -14,3 +14,8 @@
 - ✅ `from core.module import Foo` — works without `__init__.py`
 
 Never create `__init__.py` in skill scripts directories.
+
+## Pointers
+
+- Writing or changing a skill: read `docs/skill-design.md` first.
+- `.claude-plugin/plugin.json` is generated: run `./scripts/gen-plugin-manifest.sh` after adding, moving or removing a skill (`--check` reports drift).
