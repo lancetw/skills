@@ -11,7 +11,7 @@ skills/
 ├── bible/          # Bible study: interpretation, devotionals, fact-check, web reader
 ├── knowledge/      # zh-TW learning docs, requirements docs, writing
 ├── productivity/   # Daily tools: Markdown to HTML, translation, weather
-└── dev/            # Engineering workflow: planning unknowns, architecture loop
+└── dev/            # Engineering workflow: planning unknowns, architecture loop, app-*-fix sweeps
 ```
 
 ### Bible &nbsp;·&nbsp; `skills/bible/`
@@ -45,6 +45,9 @@ skills/
 |-------|-------------|
 | [know-your-unknowns](skills/dev/know-your-unknowns/SKILL.md) | Surface unknowns as interactive HTML artifacts — 11 techniques for before, during, and after implementation |
 | [improve-loop](skills/dev/improve-loop/SKILL.md) | Autonomous-safe architecture deepening loop: one behavior-preserving change per run, test-first on a `wt` branch, never merges |
+| [app-fresh-fix](skills/dev/app-fresh-fix/SKILL.md) | Whole-project sweep after a new model release: fix what is proven broken, inconsistent, inefficient or unneeded; list the rest |
+| [app-state-fix](skills/dev/app-state-fix/SKILL.md) | Find implicit state machines, make the safe ones explicit without behavior change, list impossible states for review |
+| [app-device-fix](skills/dev/app-device-fix/SKILL.md) | Browser sweep across widths, touch and throttled 3G; fix what breaks with before/after screenshots |
 
 See each skill's `SKILL.md` for details.
 
