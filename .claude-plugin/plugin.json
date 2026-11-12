@@ -9,6 +9,7 @@
     "./skills/dev/app-device-fix",
     "./skills/dev/app-fresh-fix",
     "./skills/dev/app-state-fix",
+    "./skills/dev/app-unwaterfall-fix",
     "./skills/dev/improve-loop",
     "./skills/dev/know-your-unknowns",
     "./skills/knowledge/humanizer-zh-tw",

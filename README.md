@@ -48,6 +48,7 @@ skills/
 | [app-fresh-fix](skills/dev/app-fresh-fix/SKILL.md) | Whole-project sweep after a new model release: fix what is proven broken, inconsistent, inefficient or unneeded; list the rest |
 | [app-state-fix](skills/dev/app-state-fix/SKILL.md) | Find implicit state machines, make the safe ones explicit without behavior change, list impossible states for review |
 | [app-device-fix](skills/dev/app-device-fix/SKILL.md) | Browser sweep across widths, touch and throttled 3G; fix what breaks with before/after screenshots |
+| [app-unwaterfall-fix](skills/dev/app-unwaterfall-fix/SKILL.md) | Make independent awaits on hot paths concurrent, pinned by tests; list unsure or ordering-sensitive ones for review |
 
 See each skill's `SKILL.md` for details.
 

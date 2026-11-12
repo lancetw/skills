@@ -1,0 +1,3 @@
+# Codex runs this skill only when typed ($app-unwaterfall-fix), as disable-model-invocation does in Claude Code (scripts/check-codex-policy.sh)
+policy:
+  allow_implicit_invocation: false
