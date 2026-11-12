@@ -24,19 +24,40 @@ import http.cookiejar
 import json
 import re
 import sys
-
-sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 import urllib.request
-import os
 
-sys.path.insert(0, os.path.dirname(__file__))
 from book_names import lookup
 
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 NT_BOOKS = {
-    "Matt", "Mark", "Luke", "John", "Acts", "Rom", "1Cor", "2Cor",
-    "Gal", "Eph", "Phil", "Col", "1Thess", "2Thess", "1Tim", "2Tim",
-    "Titus", "Phlm", "Heb", "Jas", "1Pet", "2Pet", "1John", "2John",
-    "3John", "Jude", "Rev",
+    "Matt",
+    "Mark",
+    "Luke",
+    "John",
+    "Acts",
+    "Rom",
+    "1Cor",
+    "2Cor",
+    "Gal",
+    "Eph",
+    "Phil",
+    "Col",
+    "1Thess",
+    "2Thess",
+    "1Tim",
+    "2Tim",
+    "Titus",
+    "Phlm",
+    "Heb",
+    "Jas",
+    "1Pet",
+    "2Pet",
+    "1John",
+    "2John",
+    "3John",
+    "Jude",
+    "Rev",
 }
 
 
@@ -70,14 +91,16 @@ def _fetch_ot(osis, chinese_name, chapter, start_v, end_v, ref):
         if not csrf:
             return {"error": "No CSRF token", "reference": ref}
 
-        payload = json.dumps({
-            "csrf_test_name": csrf.group(1),
-            "table": "bible_ccv",
-            "book": osis,
-            "chapter": str(chapter),
-            "verse": "",
-            "typesettingStyleObj": None,
-        }).encode("utf-8")
+        payload = json.dumps(
+            {
+                "csrf_test_name": csrf.group(1),
+                "table": "bible_ccv",
+                "book": osis,
+                "chapter": str(chapter),
+                "verse": "",
+                "typesettingStyleObj": None,
+            }
+        ).encode("utf-8")
 
         req = urllib.request.Request(api, data=payload, method="POST")
         req.add_header("Content-Type", "application/json")
@@ -163,11 +186,11 @@ def _fetch_nt(osis, chinese_name, chapter, start_v, end_v, ref):
 
 def _parse_osis(content: str) -> str:
     """Parse OSIS XML to plain text."""
-    text = re.sub(r'<title[^>]*>.*?</title>', '', content, flags=re.DOTALL)
-    text = re.sub(r'<note[^>]*>.*?</note>', '', text, flags=re.DOTALL)
-    text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r"<title[^>]*>.*?</title>", "", content, flags=re.DOTALL)
+    text = re.sub(r"<note[^>]*>.*?</note>", "", text, flags=re.DOTALL)
+    text = re.sub(r"<[^>]+>", "", text)
     text = html_mod.unescape(text)
-    return re.sub(r'\s+', ' ', text).strip()
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def _parse_nt_html(page: str, start_v, end_v) -> list[dict]:
@@ -178,7 +201,7 @@ def _parse_nt_html(page: str, start_v, end_v) -> list[dict]:
     parts = re.split(r'<span\s+class="verse"[^>]*>', page)
 
     for part in parts[1:]:
-        num_match = re.match(r'(\d+)\s*</span>(.*)', part, re.DOTALL)
+        num_match = re.match(r"(\d+)\s*</span>(.*)", part, re.DOTALL)
         if not num_match:
             continue
         num = int(num_match.group(1))
@@ -190,13 +213,13 @@ def _parse_nt_html(page: str, start_v, end_v) -> list[dict]:
             continue
 
         # Remove footnote <a> tags entirely (they contain onclick with footnote text)
-        clean = re.sub(r'<a[^>]*class="footnote_normal"[^>]*>.*?</a>', '', raw, flags=re.DOTALL)
+        clean = re.sub(r'<a[^>]*class="footnote_normal"[^>]*>.*?</a>', "", raw, flags=re.DOTALL)
         # Remove section title divs
-        clean = re.sub(r'<div[^>]*class="title"[^>]*>.*?</div>', '', clean, flags=re.DOTALL)
+        clean = re.sub(r'<div[^>]*class="title"[^>]*>.*?</div>', "", clean, flags=re.DOTALL)
         # Remove all remaining HTML tags
-        clean = re.sub(r'<[^>]+>', '', clean)
+        clean = re.sub(r"<[^>]+>", "", clean)
         clean = html_mod.unescape(clean)
-        clean = re.sub(r'\s+', ' ', clean).strip()
+        clean = re.sub(r"\s+", " ", clean).strip()
 
         if clean:
             verses.append({"verse": str(num), "text": clean})

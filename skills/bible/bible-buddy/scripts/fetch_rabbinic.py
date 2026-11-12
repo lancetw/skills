@@ -26,95 +26,94 @@ Examples:
 import json
 import re
 import sys
-
-sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+import urllib.error
 import urllib.parse
 import urllib.request
-import urllib.error
 
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 # ── Tractate registry ────────────────────────────────────────────────
 # (english, sefaria_key, chinese, seder, has_bavli)
 
 TRACTATES = [
     # ── Zeraim 種子篇 ──
-    ("Berakhot",       "Berakhot",       "祝禱篇",     "Zeraim",   True),
-    ("Peah",           "Peah",           "田角篇",     "Zeraim",   False),
-    ("Demai",          "Demai",          "存疑篇",     "Zeraim",   False),
-    ("Kilayim",        "Kilayim",        "混種篇",     "Zeraim",   False),
-    ("Sheviit",        "Sheviit",        "安息年篇",   "Zeraim",   False),
-    ("Terumot",        "Terumot",        "舉祭篇",     "Zeraim",   False),
-    ("Maaserot",       "Maaserot",       "什一篇",     "Zeraim",   False),
-    ("Maaser Sheni",   "Maaser Sheni",   "第二什一篇", "Zeraim",   False),
-    ("Challah",        "Challah",        "麵餅篇",     "Zeraim",   False),
-    ("Orlah",          "Orlah",          "未熟果篇",   "Zeraim",   False),
-    ("Bikkurim",       "Bikkurim",       "初熟篇",     "Zeraim",   False),
+    ("Berakhot", "Berakhot", "祝禱篇", "Zeraim", True),
+    ("Peah", "Peah", "田角篇", "Zeraim", False),
+    ("Demai", "Demai", "存疑篇", "Zeraim", False),
+    ("Kilayim", "Kilayim", "混種篇", "Zeraim", False),
+    ("Sheviit", "Sheviit", "安息年篇", "Zeraim", False),
+    ("Terumot", "Terumot", "舉祭篇", "Zeraim", False),
+    ("Maaserot", "Maaserot", "什一篇", "Zeraim", False),
+    ("Maaser Sheni", "Maaser Sheni", "第二什一篇", "Zeraim", False),
+    ("Challah", "Challah", "麵餅篇", "Zeraim", False),
+    ("Orlah", "Orlah", "未熟果篇", "Zeraim", False),
+    ("Bikkurim", "Bikkurim", "初熟篇", "Zeraim", False),
     # ── Moed 節期篇 ──
-    ("Shabbat",        "Shabbat",        "安息日篇",   "Moed",     True),
-    ("Eruvin",         "Eruvin",         "合域篇",     "Moed",     True),
-    ("Pesachim",       "Pesachim",       "逾越節篇",   "Moed",     True),
-    ("Shekalim",       "Shekalim",       "舍客勒篇",   "Moed",     True),
-    ("Yoma",           "Yoma",           "贖罪日篇",   "Moed",     True),
-    ("Sukkah",         "Sukkah",         "住棚節篇",   "Moed",     True),
-    ("Beitzah",        "Beitzah",        "節日篇",     "Moed",     True),
-    ("Rosh Hashanah",  "Rosh Hashanah",  "新年篇",     "Moed",     True),
-    ("Taanit",         "Taanit",         "禁食篇",     "Moed",     True),
-    ("Megillah",       "Megillah",       "書卷篇",     "Moed",     True),
-    ("Moed Katan",     "Moed Katan",     "小節期篇",   "Moed",     True),
-    ("Chagigah",       "Chagigah",       "節期獻祭篇", "Moed",     True),
+    ("Shabbat", "Shabbat", "安息日篇", "Moed", True),
+    ("Eruvin", "Eruvin", "合域篇", "Moed", True),
+    ("Pesachim", "Pesachim", "逾越節篇", "Moed", True),
+    ("Shekalim", "Shekalim", "舍客勒篇", "Moed", True),
+    ("Yoma", "Yoma", "贖罪日篇", "Moed", True),
+    ("Sukkah", "Sukkah", "住棚節篇", "Moed", True),
+    ("Beitzah", "Beitzah", "節日篇", "Moed", True),
+    ("Rosh Hashanah", "Rosh Hashanah", "新年篇", "Moed", True),
+    ("Taanit", "Taanit", "禁食篇", "Moed", True),
+    ("Megillah", "Megillah", "書卷篇", "Moed", True),
+    ("Moed Katan", "Moed Katan", "小節期篇", "Moed", True),
+    ("Chagigah", "Chagigah", "節期獻祭篇", "Moed", True),
     # ── Nashim 婦女篇 ──
-    ("Yevamot",        "Yevamot",        "叔嫂婚篇",   "Nashim",   True),
-    ("Ketubot",        "Ketubot",        "婚約篇",     "Nashim",   True),
-    ("Nedarim",        "Nedarim",        "許願篇",     "Nashim",   True),
-    ("Nazir",          "Nazir",          "拿細耳篇",   "Nashim",   True),
-    ("Sotah",          "Sotah",          "疑妻篇",     "Nashim",   True),
-    ("Gittin",         "Gittin",         "休書篇",     "Nashim",   True),
-    ("Kiddushin",      "Kiddushin",      "婚姻篇",     "Nashim",   True),
+    ("Yevamot", "Yevamot", "叔嫂婚篇", "Nashim", True),
+    ("Ketubot", "Ketubot", "婚約篇", "Nashim", True),
+    ("Nedarim", "Nedarim", "許願篇", "Nashim", True),
+    ("Nazir", "Nazir", "拿細耳篇", "Nashim", True),
+    ("Sotah", "Sotah", "疑妻篇", "Nashim", True),
+    ("Gittin", "Gittin", "休書篇", "Nashim", True),
+    ("Kiddushin", "Kiddushin", "婚姻篇", "Nashim", True),
     # ── Nezikin 損害篇 ──
-    ("Bava Kamma",     "Bava Kamma",     "首門篇",     "Nezikin",  True),
-    ("Bava Metzia",    "Bava Metzia",    "中門篇",     "Nezikin",  True),
-    ("Bava Batra",     "Bava Batra",     "末門篇",     "Nezikin",  True),
-    ("Sanhedrin",      "Sanhedrin",      "公議會篇",   "Nezikin",  True),
-    ("Makkot",         "Makkot",         "鞭刑篇",     "Nezikin",  True),
-    ("Shevuot",        "Shevuot",        "誓言篇",     "Nezikin",  True),
-    ("Eduyot",         "Eduyot",         "見證篇",     "Nezikin",  False),
-    ("Avodah Zarah",   "Avodah Zarah",   "偶像崇拜篇", "Nezikin",  True),
-    ("Avot",           "Avot",           "先賢篇",     "Nezikin",  False),
-    ("Horayot",        "Horayot",        "裁決篇",     "Nezikin",  True),
+    ("Bava Kamma", "Bava Kamma", "首門篇", "Nezikin", True),
+    ("Bava Metzia", "Bava Metzia", "中門篇", "Nezikin", True),
+    ("Bava Batra", "Bava Batra", "末門篇", "Nezikin", True),
+    ("Sanhedrin", "Sanhedrin", "公議會篇", "Nezikin", True),
+    ("Makkot", "Makkot", "鞭刑篇", "Nezikin", True),
+    ("Shevuot", "Shevuot", "誓言篇", "Nezikin", True),
+    ("Eduyot", "Eduyot", "見證篇", "Nezikin", False),
+    ("Avodah Zarah", "Avodah Zarah", "偶像崇拜篇", "Nezikin", True),
+    ("Avot", "Avot", "先賢篇", "Nezikin", False),
+    ("Horayot", "Horayot", "裁決篇", "Nezikin", True),
     # ── Kodashim 聖物篇 ──
-    ("Zevachim",       "Zevachim",       "祭牲篇",     "Kodashim", True),
-    ("Menachot",       "Menachot",       "素祭篇",     "Kodashim", True),
-    ("Chullin",        "Chullin",        "俗物篇",     "Kodashim", True),
-    ("Bekhorot",       "Bekhorot",       "頭生篇",     "Kodashim", True),
-    ("Arakhin",        "Arakhin",        "估價篇",     "Kodashim", True),
-    ("Temurah",        "Temurah",        "替換篇",     "Kodashim", True),
-    ("Keritot",        "Keritot",        "切斷篇",     "Kodashim", True),
-    ("Meilah",         "Meilah",         "褻瀆篇",     "Kodashim", True),
-    ("Tamid",          "Tamid",          "常獻篇",     "Kodashim", True),
-    ("Middot",         "Middot",         "度量篇",     "Kodashim", False),
-    ("Kinnim",         "Kinnim",         "鳥巢篇",     "Kodashim", False),
+    ("Zevachim", "Zevachim", "祭牲篇", "Kodashim", True),
+    ("Menachot", "Menachot", "素祭篇", "Kodashim", True),
+    ("Chullin", "Chullin", "俗物篇", "Kodashim", True),
+    ("Bekhorot", "Bekhorot", "頭生篇", "Kodashim", True),
+    ("Arakhin", "Arakhin", "估價篇", "Kodashim", True),
+    ("Temurah", "Temurah", "替換篇", "Kodashim", True),
+    ("Keritot", "Keritot", "切斷篇", "Kodashim", True),
+    ("Meilah", "Meilah", "褻瀆篇", "Kodashim", True),
+    ("Tamid", "Tamid", "常獻篇", "Kodashim", True),
+    ("Middot", "Middot", "度量篇", "Kodashim", False),
+    ("Kinnim", "Kinnim", "鳥巢篇", "Kodashim", False),
     # ── Tohorot 潔淨篇 ──
-    ("Kelim",          "Kelim",          "器皿篇",     "Tohorot",  False),
-    ("Ohalot",         "Ohalot",         "帳幕篇",     "Tohorot",  False),
-    ("Negaim",         "Negaim",         "病症篇",     "Tohorot",  False),
-    ("Parah",          "Parah",          "紅母牛篇",   "Tohorot",  False),
-    ("Tohorot",        "Tohorot",        "潔淨物篇",   "Tohorot",  False),
-    ("Mikvaot",        "Mikvaot",        "浸禮池篇",   "Tohorot",  False),
-    ("Niddah",         "Niddah",         "經期篇",     "Tohorot",  True),
-    ("Makhshirin",     "Makhshirin",     "預備篇",     "Tohorot",  False),
-    ("Zavim",          "Zavim",          "漏症篇",     "Tohorot",  False),
-    ("Tevul Yom",      "Tevul Yom",      "當日浸者篇", "Tohorot",  False),
-    ("Yadayim",        "Yadayim",        "洗手篇",     "Tohorot",  False),
-    ("Uktzin",         "Uktzin",         "果柄篇",     "Tohorot",  False),
+    ("Kelim", "Kelim", "器皿篇", "Tohorot", False),
+    ("Ohalot", "Ohalot", "帳幕篇", "Tohorot", False),
+    ("Negaim", "Negaim", "病症篇", "Tohorot", False),
+    ("Parah", "Parah", "紅母牛篇", "Tohorot", False),
+    ("Tohorot", "Tohorot", "潔淨物篇", "Tohorot", False),
+    ("Mikvaot", "Mikvaot", "浸禮池篇", "Tohorot", False),
+    ("Niddah", "Niddah", "經期篇", "Tohorot", True),
+    ("Makhshirin", "Makhshirin", "預備篇", "Tohorot", False),
+    ("Zavim", "Zavim", "漏症篇", "Tohorot", False),
+    ("Tevul Yom", "Tevul Yom", "當日浸者篇", "Tohorot", False),
+    ("Yadayim", "Yadayim", "洗手篇", "Tohorot", False),
+    ("Uktzin", "Uktzin", "果柄篇", "Tohorot", False),
 ]
 
 SEDER_NAMES = {
-    "Zeraim":   "種子篇",
-    "Moed":     "節期篇",
-    "Nashim":   "婦女篇",
-    "Nezikin":  "損害篇",
+    "Zeraim": "種子篇",
+    "Moed": "節期篇",
+    "Nashim": "婦女篇",
+    "Nezikin": "損害篇",
     "Kodashim": "聖物篇",
-    "Tohorot":  "潔淨篇",
+    "Tohorot": "潔淨篇",
 }
 
 # Build lookup: lowercase english / chinese → (english, sefaria_key, chinese, seder, has_bavli)
@@ -127,12 +126,24 @@ for row in TRACTATES:
 
 # Extra aliases
 _EXTRA_ALIASES = {
-    "pirkei avot": "avot", "pirke avot": "avot", "先賢語錄": "avot",
-    "baba kama": "bava kamma", "baba metzia": "bava metzia", "baba batra": "bava batra",
-    "shabbos": "shabbat", "berachos": "berakhot", "berachot": "berakhot",
-    "yevamos": "yevamot", "kesubos": "ketubot", "gitin": "gittin",
-    "kidushin": "kiddushin", "arachin": "arakhin", "chulin": "chullin",
-    "megilah": "megillah", "taanis": "taanit", "makos": "makkot",
+    "pirkei avot": "avot",
+    "pirke avot": "avot",
+    "先賢語錄": "avot",
+    "baba kama": "bava kamma",
+    "baba metzia": "bava metzia",
+    "baba batra": "bava batra",
+    "shabbos": "shabbat",
+    "berachos": "berakhot",
+    "berachot": "berakhot",
+    "yevamos": "yevamot",
+    "kesubos": "ketubot",
+    "gitin": "gittin",
+    "kidushin": "kiddushin",
+    "arachin": "arakhin",
+    "chulin": "chullin",
+    "megilah": "megillah",
+    "taanis": "taanit",
+    "makos": "makkot",
 }
 for alias, target in _EXTRA_ALIASES.items():
     if target in _LOOKUP:
@@ -160,7 +171,7 @@ def _fetch_sefaria(ref: str) -> dict:
     url = f"https://www.sefaria.org/api/texts/{urllib.parse.quote(ref)}?lang=en"
     req = urllib.request.Request(url, headers={"User-Agent": "bible-buddy/1.0"})
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310 - fixed https host
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         return {"error": f"Sefaria {e.code}: {e.reason}"}
@@ -189,8 +200,7 @@ def _strip_html(text: str) -> str:
 # ── Fetch functions ──────────────────────────────────────────────────
 
 
-def fetch_mishnah(tractate: str, chapter: int,
-                  start: int = None, end: int = None) -> dict:
+def fetch_mishnah(tractate: str, chapter: int, start: int = None, end: int = None) -> dict:
     info = _resolve_tractate(tractate)
     if not info:
         return {"error": f"Unknown tractate: {tractate}"}
@@ -254,8 +264,7 @@ def fetch_talmud(tractate: str, daf: str) -> dict:
     }
 
 
-def fetch_tosefta(tractate: str, chapter: int,
-                  start: int = None, end: int = None) -> dict:
+def fetch_tosefta(tractate: str, chapter: int, start: int = None, end: int = None) -> dict:
     info = _resolve_tractate(tractate)
     if not info:
         return {"error": f"Unknown tractate: {tractate}"}
@@ -369,13 +378,14 @@ def main():
 
     corpus = args[0].lower()
     if corpus not in ("mishnah", "talmud", "tosefta"):
-        print(f"Error: unknown corpus '{corpus}'. Use: mishnah, talmud, tosefta",
-              file=sys.stderr)
+        print(f"Error: unknown corpus '{corpus}'. Use: mishnah, talmud, tosefta", file=sys.stderr)
         sys.exit(1)
 
     if len(args) < 3:
-        print(f"Usage: fetch_rabbinic.py {corpus} <tractate> <chapter|daf> [start] [end]",
-              file=sys.stderr)
+        print(
+            f"Usage: fetch_rabbinic.py {corpus} <tractate> <chapter|daf> [start] [end]",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Handle multi-word tractate names
@@ -389,7 +399,7 @@ def main():
         # Find first numeric arg = chapter
         ch_idx = next((i for i, a in enumerate(remaining) if a.isdigit()), None)
         if ch_idx is None:
-            print(f"Error: missing chapter number", file=sys.stderr)
+            print("Error: missing chapter number", file=sys.stderr)
             sys.exit(1)
         tractate = " ".join(remaining[:ch_idx])
         chapter = int(remaining[ch_idx])

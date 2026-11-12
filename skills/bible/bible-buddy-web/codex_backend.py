@@ -3,6 +3,7 @@
 Protocol: https://developers.openai.com/codex/app-server
 The host executes only the two supplied annotation tools; Codex never writes notes files.
 """
+
 import asyncio
 import json
 import os
@@ -51,12 +52,29 @@ async def structured(prompt, schema):
         spec, output = root / "schema.json", root / "result.json"
         spec.write_text(json.dumps(_strict_schema(schema["schema"])))
         process = await asyncio.create_subprocess_exec(
-            "codex", "exec", "--ignore-user-config", "--ignore-rules", "--ephemeral",
-            "--skip-git-repo-check", "--sandbox", "read-only", "-C", tmp,
-            "-c", "features.shell_tool=false", "-c", "web_search=\"disabled\"",
-            "--output-schema", str(spec), "--output-last-message", str(output), "-",
-            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.PIPE)
+            "codex",
+            "exec",
+            "--ignore-user-config",
+            "--ignore-rules",
+            "--ephemeral",
+            "--skip-git-repo-check",
+            "--sandbox",
+            "read-only",
+            "-C",
+            tmp,
+            "-c",
+            "features.shell_tool=false",
+            "-c",
+            'web_search="disabled"',
+            "--output-schema",
+            str(spec),
+            "--output-last-message",
+            str(output),
+            "-",
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
+        )
         try:
             _, error = await process.communicate(prompt.encode())
             if process.returncode:
@@ -119,32 +137,66 @@ class CodexClient:
 
     async def connect(self):
         self.process = await asyncio.create_subprocess_exec(
-            "codex", "app-server", "--listen", "stdio://",
-            cwd=str(self.cwd), stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
-            limit=4 * 1024 * 1024)
+            "codex",
+            "app-server",
+            "--listen",
+            "stdio://",
+            cwd=str(self.cwd),
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            limit=4 * 1024 * 1024,
+        )
         self.reader = asyncio.create_task(self._read())
         try:
-            await self._rpc("initialize", {"clientInfo": {"name": "bible_buddy_web", "version": "1.0"},
-                                           "capabilities": {"experimentalApi": True}})
+            await self._rpc(
+                "initialize",
+                {
+                    "clientInfo": {"name": "bible_buddy_web", "version": "1.0"},
+                    "capabilities": {"experimentalApi": True},
+                },
+            )
             await self._send({"method": "initialized", "params": {}})
-            settings = (await self._rpc(
-                "config/read", {"cwd": str(self.cwd), "includeLayers": False}
-            ))["config"]
-            config = {"mcp_servers": {name: {"enabled": False}
-                                      for name in (settings.get("mcp_servers") or {})}}
+            settings = (
+                await self._rpc("config/read", {"cwd": str(self.cwd), "includeLayers": False})
+            )["config"]
+            config = {
+                "mcp_servers": {
+                    name: {"enabled": False} for name in (settings.get("mcp_servers") or {})
+                }
+            }
             specs = []
             for name, tool in self.tools.items():
                 types = {str: "string", int: "integer", float: "number", bool: "boolean"}
-                schema = {"type": "object", "properties": {k: {"type": types[v]} for k, v in tool.input_schema.items()},
-                          "required": list(tool.input_schema), "additionalProperties": False}
-                specs.append({"type": "function", "name": name, "description": tool.description, "inputSchema": schema})
-            result = await self._rpc("thread/start", {
-                "cwd": str(self.cwd), "ephemeral": True, "approvalPolicy": "never", "sandbox": "read-only",
-                "developerInstructions": self.instructions.replace("mcp__notes__", "") + f"\nRead and follow {self.skill / 'SKILL.md'}. "
+                schema = {
+                    "type": "object",
+                    "properties": {k: {"type": types[v]} for k, v in tool.input_schema.items()},
+                    "required": list(tool.input_schema),
+                    "additionalProperties": False,
+                }
+                specs.append(
+                    {
+                        "type": "function",
+                        "name": name,
+                        "description": tool.description,
+                        "inputSchema": schema,
+                    }
+                )
+            result = await self._rpc(
+                "thread/start",
+                {
+                    "cwd": str(self.cwd),
+                    "ephemeral": True,
+                    "approvalPolicy": "never",
+                    "sandbox": "read-only",
+                    "developerInstructions": self.instructions.replace("mcp__notes__", "")
+                    + f"\nRead and follow {self.skill / 'SKILL.md'}. "
                     f"Resolve {{BIBLE_BUDDY}} to {self.skill}. You are Codex, not Claude Code. "
                     "Skip Claude-only setup/output-style instructions. Use the supplied notes tools for all notes; "
                     "do not write files. Ask questions in chat, not through request_user_input.",
-                "dynamicTools": specs, "config": config})
+                    "dynamicTools": specs,
+                    "config": config,
+                },
+            )
             self.thread = result["thread"]["id"]
         except BaseException:
             await self.disconnect()
@@ -152,8 +204,13 @@ class CodexClient:
 
     async def query(self, prompt):
         self.stopping = False
-        result = await self._rpc("turn/start", {"threadId": self.thread,
-            "input": [{"type": "text", "text": prompt.removeprefix("/bible-buddy ")}]})
+        result = await self._rpc(
+            "turn/start",
+            {
+                "threadId": self.thread,
+                "input": [{"type": "text", "text": prompt.removeprefix("/bible-buddy ")}],
+            },
+        )
         self.turn = result["turn"]["id"]
         if self.stopping:
             await self.interrupt()
@@ -178,30 +235,63 @@ class CodexClient:
                 method, p = message["method"], message.get("params", {})
                 if "id" in message:
                     if method == "item/tool/call":
-                        yield {"type": "tool", "name": p["tool"], "input": json.dumps(p.get("arguments"), ensure_ascii=False)[:160]}
+                        yield {
+                            "type": "tool",
+                            "name": p["tool"],
+                            "input": json.dumps(p.get("arguments"), ensure_ascii=False)[:160],
+                        }
                         try:
                             result = await self._tool_call(p)
-                            reply = {"success": not result.get("is_error", False), "contentItems": [
-                                {"type": "inputText", "text": c["text"]} for c in result["content"]]}
+                            reply = {
+                                "success": not result.get("is_error", False),
+                                "contentItems": [
+                                    {"type": "inputText", "text": c["text"]}
+                                    for c in result["content"]
+                                ],
+                            }
                         except Exception as e:
-                            reply = {"success": False, "contentItems": [{"type": "inputText", "text": str(e)}]}
+                            reply = {
+                                "success": False,
+                                "contentItems": [{"type": "inputText", "text": str(e)}],
+                            }
                         await self._send({"id": message["id"], "result": reply})
                     else:
                         # Never hang awaiting an approval/question that this web UI cannot answer.
-                        await self._send({"id": message["id"], "error": {"code": -32601, "message": "Unsupported request in Bible Buddy"}})
+                        await self._send(
+                            {
+                                "id": message["id"],
+                                "error": {
+                                    "code": -32601,
+                                    "message": "Unsupported request in Bible Buddy",
+                                },
+                            }
+                        )
                 elif method == "item/completed":
                     item = p["item"]
                     if item["type"] == "agentMessage":
                         yield {"type": "text", "text": item["text"]}
-                elif method == "item/started" and p["item"]["type"] in {"commandExecution", "webSearch", "mcpToolCall"}:
+                elif method == "item/started" and p["item"]["type"] in {
+                    "commandExecution",
+                    "webSearch",
+                    "mcpToolCall",
+                }:
                     item = p["item"]
-                    yield {"type": "tool", "name": item["type"], "input": str(item.get("command", item.get("query", "")))[:160]}
+                    yield {
+                        "type": "tool",
+                        "name": item["type"],
+                        "input": str(item.get("command", item.get("query", "")))[:160],
+                    }
                 elif method == "turn/completed":
                     turn = p["turn"]
                     if turn["status"] == "failed":
                         raise RuntimeError(str(turn.get("error") or "Codex turn failed"))
-                    yield {"type": "done", "cost": None, "turns": 1, "is_error": False,
-                           "result": "已停止" if turn["status"] == "interrupted" else ""}
+                    yield {
+                        "type": "done",
+                        "cost": None,
+                        "turns": 1,
+                        "is_error": False,
+                        "result": "已停止" if turn["status"] == "interrupted" else "",
+                    }
                     return
         finally:
             self.turn = None

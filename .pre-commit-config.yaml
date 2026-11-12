@@ -1,0 +1,75 @@
+# pre-commit install  # installs every type below (commit-msg and pre-push included)
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.2  # = pyproject.toml's ruff pin (scripts/check-ruff-pin.sh)
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      # open()/read_text() without encoding= breaks on Windows cp950 consoles.
+      # PLW1514 is preview-only in this ruff, so it runs alone rather than via --preview for all.
+      - id: ruff-check
+        alias: ruff-encoding
+        name: ruff (PLW1514 explicit encoding)
+        args: [--preview, --select, PLW1514]
+      - id: ruff-format
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.3
+    hooks:
+      - id: bandit
+        args: [-c, pyproject.toml]
+        additional_dependencies: ["bandit[toml]"]
+        # bandit 1.8.3 cannot parse files under Python 3.14+
+        language_version: python3.12
+        exclude: (^|/)(tests/|\.venv/|test_[^/]*\.py$|conftest\.py$)
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+
+  - repo: local
+    hooks:
+      - id: plugin-manifest-sync
+        name: .claude-plugin/plugin.json in sync with skills/
+        entry: scripts/gen-plugin-manifest.sh
+        args: [--check]
+        language: script
+        pass_filenames: false
+        always_run: true
+
+      - id: deny-list
+        name: no deny-listed names (.git/info/deny.txt)
+        entry: scripts/check-deny-list.sh
+        language: script
+        stages: [pre-commit, commit-msg]
+
+      - id: ruff-pin
+        name: pre-commit's ruff is the one pyproject.toml pins
+        entry: scripts/check-ruff-pin.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+
+      - id: codex-policy
+        name: a skill run only when typed says so to Codex too (agents/openai.yaml)
+        entry: scripts/check-codex-policy.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+
+      - id: skill-tests
+        name: tests for skills changed since upstream
+        entry: scripts/test-skills.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

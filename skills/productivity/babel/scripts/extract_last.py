@@ -9,6 +9,7 @@ to stdout. See extract_last_response for the boundary rule.
 
 Stdlib only. No __init__.py needed (skills install rule).
 """
+
 import json
 import os
 import re
@@ -20,9 +21,7 @@ def transcript_dir():
     return os.path.join(os.path.expanduser("~/.claude/projects"), sanitized)
 
 
-UUID_JSONL = re.compile(
-    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jsonl$"
-)
+UUID_JSONL = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jsonl$")
 
 
 def newest_jsonl(d):
@@ -54,11 +53,7 @@ def assistant_text(entry):
     if entry.get("type") != "assistant" or entry.get("isSidechain"):
         return None
     content = entry.get("message", {}).get("content", [])
-    texts = [
-        b.get("text", "")
-        for b in content
-        if isinstance(b, dict) and b.get("type") == "text"
-    ]
+    texts = [b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text"]
     joined = "\n\n".join(t for t in texts if t.strip())
     return joined or None
 
@@ -69,9 +64,7 @@ def has_tool_use(entry):
     if entry.get("type") != "assistant" or entry.get("isSidechain"):
         return False
     content = entry.get("message", {}).get("content", [])
-    return any(
-        isinstance(b, dict) and b.get("type") == "tool_use" for b in content
-    )
+    return any(isinstance(b, dict) and b.get("type") == "tool_use" for b in content)
 
 
 def session_jsonl(d):
@@ -98,9 +91,7 @@ def extract_last_response(entries):
     collect assistant text and stop at the first tool_use (or the user prompt
     that started the turn), so interim narration never leaks into the output.
     """
-    last_user = next(
-        (i for i in range(len(entries) - 1, -1, -1) if is_real_user(entries[i])), None
-    )
+    last_user = next((i for i in range(len(entries) - 1, -1, -1) if is_real_user(entries[i])), None)
     if last_user is None:
         return None
 

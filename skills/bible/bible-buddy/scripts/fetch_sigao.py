@@ -16,42 +16,83 @@ Examples:
 import html as html_mod
 import re
 import sys
+import urllib.error
+import urllib.request
+
+from book_names import lookup
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-import urllib.request
-import urllib.error
-import os
-
-sys.path.insert(0, os.path.dirname(__file__))
-from book_names import lookup
 
 BASE_URL = "https://www.ccreadbible.org/chinesebible/sigao"
 
 # ── Book ID mapping: OSIS code → ccreadbible URL slug ────────────────
 # Protestant canon (same OSIS codes as book_names.py)
 SIGAO_SLUG = {
-    "Gen": "Genesis", "Exod": "Exodus", "Lev": "Leviticus",
-    "Num": "Numbers", "Deut": "Deuteronomy", "Josh": "Joshua",
-    "Judg": "Judges", "Ruth": "Ruth", "1Sam": "1_Samuel",
-    "2Sam": "2_Samuel", "1Kgs": "1_Kings", "2Kgs": "2_Kings",
-    "1Chr": "1_Chronicles", "2Chr": "2_Chronicles", "Ezra": "Ezra",
-    "Neh": "Nehemiah", "Esth": "Esther", "Job": "Job",
-    "Ps": "Psalms", "Prov": "Proverbs", "Eccl": "Ecclesiastes",
-    "Song": "Song_of_Songs", "Isa": "Isaiah", "Jer": "Jeremiah",
-    "Lam": "Lamentations", "Ezek": "Ezekiel", "Dan": "Daniel",
-    "Hos": "Hosea", "Joel": "Joel", "Amos": "Amos",
-    "Obad": "Obadiah", "Jonah": "Jonah", "Mic": "Micah",
-    "Nah": "Nahum", "Hab": "Habakkuk", "Zeph": "Zephaniah",
-    "Hag": "Haggai", "Zech": "Zechariah", "Mal": "Malachi",
-    "Matt": "Matthew", "Mark": "Mark", "Luke": "Luke",
-    "John": "John", "Acts": "Acts", "Rom": "Romans",
-    "1Cor": "1_Corinthians", "2Cor": "2_Corinthians", "Gal": "Galatians",
-    "Eph": "Ephesians", "Phil": "Philippians", "Col": "Colossians",
-    "1Thess": "1_Thessalonians", "2Thess": "2_Thessalonians",
-    "1Tim": "1_Timothy", "2Tim": "2_Timothy", "Titus": "Titus",
-    "Phlm": "Philemon", "Heb": "Hebrews", "Jas": "James",
-    "1Pet": "1_Peter", "2Pet": "2_Peter", "1John": "1_John",
-    "2John": "2_John", "3John": "3_John", "Jude": "Jude",
+    "Gen": "Genesis",
+    "Exod": "Exodus",
+    "Lev": "Leviticus",
+    "Num": "Numbers",
+    "Deut": "Deuteronomy",
+    "Josh": "Joshua",
+    "Judg": "Judges",
+    "Ruth": "Ruth",
+    "1Sam": "1_Samuel",
+    "2Sam": "2_Samuel",
+    "1Kgs": "1_Kings",
+    "2Kgs": "2_Kings",
+    "1Chr": "1_Chronicles",
+    "2Chr": "2_Chronicles",
+    "Ezra": "Ezra",
+    "Neh": "Nehemiah",
+    "Esth": "Esther",
+    "Job": "Job",
+    "Ps": "Psalms",
+    "Prov": "Proverbs",
+    "Eccl": "Ecclesiastes",
+    "Song": "Song_of_Songs",
+    "Isa": "Isaiah",
+    "Jer": "Jeremiah",
+    "Lam": "Lamentations",
+    "Ezek": "Ezekiel",
+    "Dan": "Daniel",
+    "Hos": "Hosea",
+    "Joel": "Joel",
+    "Amos": "Amos",
+    "Obad": "Obadiah",
+    "Jonah": "Jonah",
+    "Mic": "Micah",
+    "Nah": "Nahum",
+    "Hab": "Habakkuk",
+    "Zeph": "Zephaniah",
+    "Hag": "Haggai",
+    "Zech": "Zechariah",
+    "Mal": "Malachi",
+    "Matt": "Matthew",
+    "Mark": "Mark",
+    "Luke": "Luke",
+    "John": "John",
+    "Acts": "Acts",
+    "Rom": "Romans",
+    "1Cor": "1_Corinthians",
+    "2Cor": "2_Corinthians",
+    "Gal": "Galatians",
+    "Eph": "Ephesians",
+    "Phil": "Philippians",
+    "Col": "Colossians",
+    "1Thess": "1_Thessalonians",
+    "2Thess": "2_Thessalonians",
+    "1Tim": "1_Timothy",
+    "2Tim": "2_Timothy",
+    "Titus": "Titus",
+    "Phlm": "Philemon",
+    "Heb": "Hebrews",
+    "Jas": "James",
+    "1Pet": "1_Peter",
+    "2Pet": "2_Peter",
+    "1John": "1_John",
+    "2John": "2_John",
+    "3John": "3_John",
+    "Jude": "Jude",
     "Rev": "Revelation",
 }
 
@@ -59,20 +100,20 @@ SIGAO_SLUG = {
 # (chinese_name, slug)
 DEUTERO_BOOKS = {
     "多俾亞傳": ("多俾亞傳", "Tobit"),
-    "tobit":    ("多俾亞傳", "Tobit"),
+    "tobit": ("多俾亞傳", "Tobit"),
     "友弟德傳": ("友弟德傳", "Judith"),
-    "judith":   ("友弟德傳", "Judith"),
+    "judith": ("友弟德傳", "Judith"),
     "瑪加伯上": ("瑪加伯上", "1_Maccabees"),
     "1 maccabees": ("瑪加伯上", "1_Maccabees"),
     "瑪加伯下": ("瑪加伯下", "2_Maccabees"),
     "2 maccabees": ("瑪加伯下", "2_Maccabees"),
-    "智慧篇":   ("智慧篇", "Wisdom"),
-    "wisdom":   ("智慧篇", "Wisdom"),
-    "德訓篇":   ("德訓篇", "Sirach"),
-    "sirach":   ("德訓篇", "Sirach"),
+    "智慧篇": ("智慧篇", "Wisdom"),
+    "wisdom": ("智慧篇", "Wisdom"),
+    "德訓篇": ("德訓篇", "Sirach"),
+    "sirach": ("德訓篇", "Sirach"),
     "ecclesiasticus": ("德訓篇", "Sirach"),
-    "巴路克":   ("巴路克", "Baruch"),
-    "baruch":   ("巴路克", "Baruch"),
+    "巴路克": ("巴路克", "Baruch"),
+    "baruch": ("巴路克", "Baruch"),
 }
 
 
@@ -105,18 +146,20 @@ def _resolve_book(name: str) -> tuple | None:
 
 def _fetch_html(url: str) -> str:
     """Fetch raw HTML from a URL."""
-    req = urllib.request.Request(url, headers={
-        "User-Agent": "bible-buddy-skill/1.0",
-        "Accept": "text/html",
-        "Accept-Language": "zh-TW,zh;q=0.9",
-    })
-    with urllib.request.urlopen(req, timeout=20) as resp:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "bible-buddy-skill/1.0",
+            "Accept": "text/html",
+            "Accept-Language": "zh-TW,zh;q=0.9",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=20) as resp:  # nosec B310 - fixed https host
         charset = resp.headers.get_content_charset() or "utf-8"
         return resp.read().decode(charset, errors="replace")
 
 
-def _parse_verses(page_html: str, start_verse: int = None,
-                  end_verse: int = None) -> list[dict]:
+def _parse_verses(page_html: str, start_verse: int = None, end_verse: int = None) -> list[dict]:
     """Extract verses from ccreadbible HTML.
 
     Structure: <td><sup>N</sup>verse text...</td>
@@ -125,10 +168,7 @@ def _parse_verses(page_html: str, start_verse: int = None,
 
     # Find all <sup>N</sup> or <sup>N-M</sup> followed by text within <td>
     # Pattern: <td ...><sup>N</sup>text</td> or <td ...><sup>N-M</sup>text</td>
-    for m in re.finditer(
-        r'<td[^>]*>\s*<sup>(\d+(?:-\d+)?)</sup>(.*?)</td>',
-        page_html, re.DOTALL
-    ):
+    for m in re.finditer(r"<td[^>]*>\s*<sup>(\d+(?:-\d+)?)</sup>(.*?)</td>", page_html, re.DOTALL):
         v_label = m.group(1)
         v_text = m.group(2)
 
@@ -141,9 +181,9 @@ def _parse_verses(page_html: str, start_verse: int = None,
             continue
 
         # Clean HTML
-        v_text = re.sub(r'<[^>]+>', '', v_text)
+        v_text = re.sub(r"<[^>]+>", "", v_text)
         v_text = html_mod.unescape(v_text)
-        v_text = re.sub(r'\s+', ' ', v_text).strip()
+        v_text = re.sub(r"\s+", " ", v_text).strip()
 
         if v_text:
             verses.append({"verse": v_label, "text": v_text})
@@ -151,8 +191,7 @@ def _parse_verses(page_html: str, start_verse: int = None,
     return verses
 
 
-def fetch(book: str, chapter: int,
-          start_verse: int = None, end_verse: int = None) -> dict:
+def fetch(book: str, chapter: int, start_verse: int = None, end_verse: int = None) -> dict:
     """Fetch a chapter from ccreadbible.org 思高譯本."""
     resolved = _resolve_book(book)
     if not resolved:

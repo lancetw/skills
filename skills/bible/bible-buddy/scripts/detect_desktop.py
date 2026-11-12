@@ -1,8 +1,8 @@
 """Detect Desktop path (handles OneDrive on Windows) and create output subdirectory."""
 
+import os
 import sys
 from pathlib import Path
-import os
 
 
 def detect_desktop(subdir: str) -> Path:

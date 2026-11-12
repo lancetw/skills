@@ -22,25 +22,19 @@ Examples:
 
 import re
 import sys
+import urllib.request
 from html.parser import HTMLParser
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-import urllib.request
 
 MANUSCRIPTS = {
     "shem-tov": "Shem-Tov (Even Bohan, c.1380)",
     "du-tillet": "Du Tillet (Heb. MSS 132, Paris, 1553)",
 }
 
-SHEM_TOV_URL = (
-    "https://raw.githubusercontent.com/hebreeuwsmattheus/data/master/he/{chapter}.txt"
-)
-DU_TILLET_URL_CH1 = (
-    "https://raw.githubusercontent.com/bjarnard/text/master/begin.html"
-)
-DU_TILLET_URL = (
-    "https://raw.githubusercontent.com/bjarnard/text/master/ch{chapter}.html"
-)
+SHEM_TOV_URL = "https://raw.githubusercontent.com/hebreeuwsmattheus/data/master/he/{chapter}.txt"
+DU_TILLET_URL_CH1 = "https://raw.githubusercontent.com/bjarnard/text/master/begin.html"
+DU_TILLET_URL = "https://raw.githubusercontent.com/bjarnard/text/master/ch{chapter}.html"
 
 
 # ── HTML parser for Du Tillet grid layout ─────────────────────────────
@@ -94,7 +88,7 @@ class _GridItemParser(HTMLParser):
 
 def _fetch_url(url: str) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": "bible-buddy/1.0"})
-    resp = urllib.request.urlopen(req, timeout=15)
+    resp = urllib.request.urlopen(req, timeout=15)  # nosec B310 - fixed https host
     return resp.read().decode("utf-8")
 
 
@@ -191,9 +185,7 @@ def fetch(
 ) -> dict:
     ms = manuscript.lower().strip()
     if ms not in MANUSCRIPTS:
-        return {
-            "error": f"Unknown manuscript: {manuscript}. Use: {', '.join(MANUSCRIPTS)}"
-        }
+        return {"error": f"Unknown manuscript: {manuscript}. Use: {', '.join(MANUSCRIPTS)}"}
 
     if chapter < 1 or chapter > 28:
         return {"error": f"Matthew has 28 chapters (got {chapter})"}
@@ -206,11 +198,7 @@ def fetch(
             raw = _fetch_url(url)
             verses = _parse_shem_tov(raw)
         else:
-            url = (
-                DU_TILLET_URL_CH1
-                if chapter == 1
-                else DU_TILLET_URL.format(chapter=chapter)
-            )
+            url = DU_TILLET_URL_CH1 if chapter == 1 else DU_TILLET_URL.format(chapter=chapter)
             raw = _fetch_url(url)
             verses = _parse_du_tillet(raw)
     except Exception as e:

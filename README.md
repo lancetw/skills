@@ -75,7 +75,22 @@ npx skills remove -g learn-tw  # Remove a skill
 
 ## Development
 
-`.claude-plugin/plugin.json` groups the skills under one "Lancetw Skills" heading in the `npx skills add` menu. It is generated: after adding, moving or removing a skill, run `./scripts/gen-plugin-manifest.sh` and commit the result (`--check` reports drift).
+Read [docs/skill-design.md](docs/skill-design.md) before changing a skill. Once per clone:
+
+```bash
+pre-commit install   # ruff, bandit, shellcheck, conventional commits, manifest sync; tests on push
+./scripts/test-skills.sh
+```
+
+`.claude-plugin/plugin.json` groups the skills under one "Lancetw Skills" heading in the `npx skills add` menu. It is generated: after adding, moving or removing a skill, run `./scripts/gen-plugin-manifest.sh` and commit the result.
+
+### Upgrading from the flat layout
+
+Skills moved from `<name>/` to `skills/<category>/<name>/`. If you installed before the move, `npx skills update` reports your skills as "deleted upstream" and skips them; re-add them once:
+
+```bash
+npx skills add lancetw/skills -g -s <name>
+```
 
 ## License
 

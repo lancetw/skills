@@ -18,51 +18,63 @@ Examples:
 import html as html_mod
 import re
 import sys
+import urllib.error
+import urllib.request
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-import urllib.request
-import urllib.error
 
 BASE_URL = "https://www.newadvent.org/fathers"
 
 # (lookup_keys, display_name, url_code, date)
 WORKS = [
-    (["didache", "十二使徒遺訓"],
-     "Didache", "0714", "~50-120 CE"),
-    (["1 clement", "克萊孟一書", "clement"],
-     "1 Clement", "1010", "~96 CE"),
-    (["barnabas", "巴拿巴書信"],
-     "Epistle of Barnabas", "0124", "~70-132 CE"),
-    (["hermas visions", "黑馬牧人書：異象", "shepherd visions"],
-     "Shepherd of Hermas: Visions", "02011", "~100-160 CE"),
-    (["hermas commandments", "黑馬牧人書：誡命", "shepherd commandments"],
-     "Shepherd of Hermas: Commandments", "02012", "~100-160 CE"),
-    (["hermas similitudes", "黑馬牧人書：比喻", "shepherd similitudes"],
-     "Shepherd of Hermas: Similitudes", "02013", "~100-160 CE"),
-    (["ignatius ephesians", "依格那丟致以弗所人書"],
-     "Ignatius to Ephesians", "0104", "~110 CE"),
-    (["ignatius magnesians", "依格那丟致馬格尼西亞人書"],
-     "Ignatius to Magnesians", "0105", "~110 CE"),
-    (["ignatius trallians", "依格那丟致特拉利安人書"],
-     "Ignatius to Trallians", "0106", "~110 CE"),
-    (["ignatius romans", "依格那丟致羅馬人書"],
-     "Ignatius to Romans", "0107", "~110 CE"),
-    (["ignatius philadelphians", "依格那丟致費城人書"],
-     "Ignatius to Philadelphians", "0108", "~110 CE"),
-    (["ignatius smyrnaeans", "依格那丟致士每拿人書"],
-     "Ignatius to Smyrnaeans", "0109", "~110 CE"),
-    (["ignatius polycarp", "依格那丟致坡旅甲書"],
-     "Ignatius to Polycarp", "0110", "~110 CE"),
-    (["polycarp", "坡旅甲致腓立比人書", "polycarp philippians"],
-     "Polycarp to Philippians", "0136", "~110-140 CE"),
-    (["martyrdom of polycarp", "坡旅甲殉道記"],
-     "Martyrdom of Polycarp", "0102", "~155 CE"),
-    (["diognetus", "致丟格那妥書"],
-     "Epistle to Diognetus", "0101", "~130-200 CE"),
-    (["2 clement", "克萊孟二書", "second clement"],
-     "2 Clement", "1011", "~100-140 CE"),
-    (["papias", "帕皮亞殘篇", "fragments of papias"],
-     "Fragments of Papias", "0125", "~60-130 CE"),
+    (["didache", "十二使徒遺訓"], "Didache", "0714", "~50-120 CE"),
+    (["1 clement", "克萊孟一書", "clement"], "1 Clement", "1010", "~96 CE"),
+    (["barnabas", "巴拿巴書信"], "Epistle of Barnabas", "0124", "~70-132 CE"),
+    (
+        ["hermas visions", "黑馬牧人書：異象", "shepherd visions"],
+        "Shepherd of Hermas: Visions",
+        "02011",
+        "~100-160 CE",
+    ),
+    (
+        ["hermas commandments", "黑馬牧人書：誡命", "shepherd commandments"],
+        "Shepherd of Hermas: Commandments",
+        "02012",
+        "~100-160 CE",
+    ),
+    (
+        ["hermas similitudes", "黑馬牧人書：比喻", "shepherd similitudes"],
+        "Shepherd of Hermas: Similitudes",
+        "02013",
+        "~100-160 CE",
+    ),
+    (["ignatius ephesians", "依格那丟致以弗所人書"], "Ignatius to Ephesians", "0104", "~110 CE"),
+    (
+        ["ignatius magnesians", "依格那丟致馬格尼西亞人書"],
+        "Ignatius to Magnesians",
+        "0105",
+        "~110 CE",
+    ),
+    (["ignatius trallians", "依格那丟致特拉利安人書"], "Ignatius to Trallians", "0106", "~110 CE"),
+    (["ignatius romans", "依格那丟致羅馬人書"], "Ignatius to Romans", "0107", "~110 CE"),
+    (
+        ["ignatius philadelphians", "依格那丟致費城人書"],
+        "Ignatius to Philadelphians",
+        "0108",
+        "~110 CE",
+    ),
+    (["ignatius smyrnaeans", "依格那丟致士每拿人書"], "Ignatius to Smyrnaeans", "0109", "~110 CE"),
+    (["ignatius polycarp", "依格那丟致坡旅甲書"], "Ignatius to Polycarp", "0110", "~110 CE"),
+    (
+        ["polycarp", "坡旅甲致腓立比人書", "polycarp philippians"],
+        "Polycarp to Philippians",
+        "0136",
+        "~110-140 CE",
+    ),
+    (["martyrdom of polycarp", "坡旅甲殉道記"], "Martyrdom of Polycarp", "0102", "~155 CE"),
+    (["diognetus", "致丟格那妥書"], "Epistle to Diognetus", "0101", "~130-200 CE"),
+    (["2 clement", "克萊孟二書", "second clement"], "2 Clement", "1011", "~100-140 CE"),
+    (["papias", "帕皮亞殘篇", "fragments of papias"], "Fragments of Papias", "0125", "~60-130 CE"),
 ]
 
 
@@ -83,26 +95,29 @@ def _lookup(name: str):
 
 
 def _fetch_html(url: str) -> str:
-    req = urllib.request.Request(url, headers={
-        "User-Agent": "bible-buddy-skill/1.0",
-        "Accept": "text/html",
-    })
-    with urllib.request.urlopen(req, timeout=20) as resp:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "bible-buddy-skill/1.0",
+            "Accept": "text/html",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=20) as resp:  # nosec B310 - fixed https host
         charset = resp.headers.get_content_charset() or "utf-8"
         return resp.read().decode(charset, errors="replace")
 
 
 def _clean(text: str) -> str:
-    text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r"<[^>]+>", "", text)
     text = html_mod.unescape(text)
-    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r"\s+", " ", text).strip()
     return text
 
 
 def _roman_to_int(s: str) -> int | None:
     """Convert Roman numeral to integer. Returns None if not a valid Roman numeral."""
     s = s.strip().upper()
-    vals = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100}
+    vals = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100}
     if not s or not all(c in vals for c in s):
         return None
     total = 0
@@ -119,11 +134,15 @@ def _parse_chapters(page_html: str, chapter: int = None) -> list[dict]:
     results = []
 
     # Remove ad divs
-    page_html = re.sub(r'<div[^>]*class=["\'](?:catholicadnet|CMtag)[^"\']*["\'][^>]*>.*?</div>',
-                       '', page_html, flags=re.DOTALL | re.IGNORECASE)
+    page_html = re.sub(
+        r'<div[^>]*class=["\'](?:catholicadnet|CMtag)[^"\']*["\'][^>]*>.*?</div>',
+        "",
+        page_html,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
 
     # Split by <h2> tags, then extract chapter number from content or attributes
-    chunks = re.split(r'<h2[^>]*>(.*?)</h2>', page_html, flags=re.IGNORECASE | re.DOTALL)
+    chunks = re.split(r"<h2[^>]*>(.*?)</h2>", page_html, flags=re.IGNORECASE | re.DOTALL)
 
     # chunks[0] = before first h2, chunks[1] = h2 content, chunks[2] = body, ...
     results_raw = []
@@ -134,33 +153,35 @@ def _parse_chapters(page_html: str, chapter: int = None) -> list[dict]:
 
         # Extract chapter/section number:
         # "Chapter 1. Title", "Vision 1", "Commandment 1", "Similitude 1", or bare "1. Title"
-        ch_match = re.match(r'(?:Chapter|Vision|Commandment|Similitude)?\s*(\d+)\.?\s*(.*)',
-                            clean_h2, re.IGNORECASE)
+        ch_match = re.match(
+            r"(?:Chapter|Vision|Commandment|Similitude)?\s*(\d+)\.?\s*(.*)", clean_h2, re.IGNORECASE
+        )
         if ch_match:
             results_raw.append((int(ch_match.group(1)), ch_match.group(2).strip(), body))
         else:
             # Try Roman numerals (e.g. "I", "II", "III" — used by Papias fragments)
-            roman_match = re.match(r'^([IVXLC]+)\s*$', clean_h2.strip())
+            roman_match = re.match(r"^([IVXLC]+)\s*$", clean_h2.strip())
             if roman_match:
                 num = _roman_to_int(roman_match.group(1))
                 if num:
                     results_raw.append((num, f"Fragment {num}", body))
 
     for ch_num, ch_title, ch_body in results_raw:
-
         if chapter is not None and ch_num != chapter:
             continue
 
         # Extract text from <p> tags
-        paragraphs = re.findall(r'<p[^>]*>(.*?)</p>', ch_body, re.DOTALL | re.IGNORECASE)
-        text = ' '.join(_clean(p) for p in paragraphs if _clean(p))
+        paragraphs = re.findall(r"<p[^>]*>(.*?)</p>", ch_body, re.DOTALL | re.IGNORECASE)
+        text = " ".join(_clean(p) for p in paragraphs if _clean(p))
 
         if text:
-            results.append({
-                "chapter": ch_num,
-                "title": ch_title,
-                "text": text,
-            })
+            results.append(
+                {
+                    "chapter": ch_num,
+                    "title": ch_title,
+                    "text": text,
+                }
+            )
 
     return results
 

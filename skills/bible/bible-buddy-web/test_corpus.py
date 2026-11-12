@@ -4,11 +4,11 @@ None of this could be tested before: the five callers each reached FHL themselve
 nowhere to stand between the caller and the wire. corpus.SOURCE is that place — this file puts a
 second adapter in it, which is what makes the seam real rather than hypothetical.
 """
+
 import asyncio
 
-import pytest
-
 import corpus
+import pytest
 
 
 class Recorded:
@@ -37,6 +37,7 @@ def source(monkeypatch):
         s = Recorded(**kw)
         monkeypatch.setattr(corpus, "SOURCE", s)
         return s
+
     return use
 
 
@@ -48,12 +49,23 @@ def run(coro):
 # se.php answers with a numeric book id and an abbreviation; the reader wants the full name, and
 # some versions are indexed in their Strong's edition, so the hit arrives full of markup.
 
-SE_HIT = {"bid": 23, "chap": 7, "sec": 14, "chineses": "賽",
-          "bible_text": "<h2>以馬內利的預兆</h2>必有<WH5959>童女<WH2029>懷孕生子([7.1]或譯…)"}
+SE_HIT = {
+    "bid": 23,
+    "chap": 7,
+    "sec": 14,
+    "chineses": "賽",
+    "bible_text": "<h2>以馬內利的預兆</h2>必有<WH5959>童女<WH2029>懷孕生子([7.1]或譯…)",
+}
 
 
 def test_a_hit_gets_the_full_book_name_and_a_reference(source):
-    source(get={corpus.SE_API: lambda p: ({"record_count": 42} if p.get("count_only") else {"record": [SE_HIT]})})
+    source(
+        get={
+            corpus.SE_API: lambda p: (
+                {"record_count": 42} if p.get("count_only") else {"record": [SE_HIT]}
+            )
+        }
+    )
     r = run(corpus.search("童女", "rcuv", 40))
     hit = r["records"][0]
     assert hit["book"] == "以賽亞書" and hit["ref"] == "以賽亞書 7:14"
@@ -61,28 +73,56 @@ def test_a_hit_gets_the_full_book_name_and_a_reference(source):
 
 
 def test_a_hit_is_cleaned_of_headings_strongs_numbers_and_translator_notes(source):
-    source(get={corpus.SE_API: lambda p: ({"record_count": 1} if p.get("count_only") else {"record": [SE_HIT]})})
+    source(
+        get={
+            corpus.SE_API: lambda p: (
+                {"record_count": 1} if p.get("count_only") else {"record": [SE_HIT]}
+            )
+        }
+    )
     assert run(corpus.search("童女", "rcuv", 40))["records"][0]["text"] == "必有童女懷孕生子"
 
 
 def test_a_book_id_no_version_knows_falls_back_to_the_abbreviation(source):
     odd = {**SE_HIT, "bid": 999, "bible_text": "經文"}
-    source(get={corpus.SE_API: lambda p: ({"record_count": 1} if p.get("count_only") else {"record": [odd]})})
+    source(
+        get={
+            corpus.SE_API: lambda p: (
+                {"record_count": 1} if p.get("count_only") else {"record": [odd]}
+            )
+        }
+    )
     assert run(corpus.search("x", "rcuv", 40))["records"][0]["book"] == "賽"
 
 
 def test_a_runaway_limit_is_capped_before_it_reaches_fhl(source):
-    s = source(get={corpus.SE_API: lambda p: ({"record_count": 0} if p.get("count_only") else {"record": []})})
+    s = source(
+        get={
+            corpus.SE_API: lambda p: {"record_count": 0} if p.get("count_only") else {"record": []}
+        }
+    )
     run(corpus.search("x", "rcuv", 9999))
     assert [c[1]["limit"] for c in s.calls if "limit" in c[1]] == [200]
 
 
 # ── interlinear ───────────────────────────────────────────────────────────────
 
-QP = {"N": 1, "record": [
-    {"wid": 0, "word": "  לָכֵן  יִתֵּן  ", "exp": " 因此  祂必賜 "},
-    {"wid": 1, "word": "עַלְמָה", "sn": "5959", "pro": "名詞", "wform": "陰性單數", "orig": "almah", "exp": "年輕女子", "remark": None},
-]}
+QP = {
+    "N": 1,
+    "record": [
+        {"wid": 0, "word": "  לָכֵן  יִתֵּן  ", "exp": " 因此  祂必賜 "},
+        {
+            "wid": 1,
+            "word": "עַלְמָה",
+            "sn": "5959",
+            "pro": "名詞",
+            "wform": "陰性單數",
+            "orig": "almah",
+            "exp": "年輕女子",
+            "remark": None,
+        },
+    ],
+}
 
 
 def test_the_whole_verse_and_its_literal_rendering_come_off_record_zero(source):
@@ -119,9 +159,20 @@ def test_an_unknown_book_never_reaches_the_network(source):
 
 # ── lexicon ───────────────────────────────────────────────────────────────────
 
+
 def test_a_strongs_entry_is_flattened_to_the_three_fields_the_card_shows(source):
-    source(get={corpus.SD_API: {"record": [{"sn": "5959", "orig": "עַלְמָה", "dic_text": "  young woman  "}]}})
-    assert run(corpus.lexicon("5959", ot=True)) == {"sn": "5959", "orig": "עַלְמָה", "text": "young woman"}
+    source(
+        get={
+            corpus.SD_API: {
+                "record": [{"sn": "5959", "orig": "עַלְמָה", "dic_text": "  young woman  "}]
+            }
+        }
+    )
+    assert run(corpus.lexicon("5959", ot=True)) == {
+        "sn": "5959",
+        "orig": "עַלְמָה",
+        "text": "young woman",
+    }
 
 
 def test_an_empty_dictionary_answer_still_names_the_number_that_was_asked_for(source):
@@ -138,9 +189,13 @@ def test_the_testament_decides_which_dictionary_is_asked(source):
 
 # ── passages ──────────────────────────────────────────────────────────────────
 
+
 def passage(*verses, reference="路加福音 1:1-6"):
-    return {"reference": reference, "version": "和合本2010",
-            "verses": [{"verse": str(n), "text": t} for n, t in verses]}
+    return {
+        "reference": reference,
+        "version": "和合本2010",
+        "verses": [{"verse": str(n), "text": t} for n, t in verses],
+    }
 
 
 def test_a_passage_comes_back_with_its_footnotes_split_off(source):
@@ -181,12 +236,16 @@ def test_a_single_verse_reads_as_one_verse(source):
 # Every caller used to write its own sentence for this. There is one place for it now, and it is
 # the reader's language, not a traceback.
 
-@pytest.mark.parametrize("call, doing", [
-    (lambda: corpus.verses("路加福音", 1, 1, 5, "rcuv"), "經文載入"),
-    (lambda: corpus.search("x", "rcuv", 10), "搜尋"),
-    (lambda: corpus.interlinear("以賽亞書", 7, 14), "原文分析"),
-    (lambda: corpus.lexicon("5959", ot=True), "字典"),
-])
+
+@pytest.mark.parametrize(
+    "call, doing",
+    [
+        (lambda: corpus.verses("路加福音", 1, 1, 5, "rcuv"), "經文載入"),
+        (lambda: corpus.search("x", "rcuv", 10), "搜尋"),
+        (lambda: corpus.interlinear("以賽亞書", 7, 14), "原文分析"),
+        (lambda: corpus.lexicon("5959", ot=True), "字典"),
+    ],
+)
 def test_a_dead_network_reaches_the_reader_as_a_sentence(source, call, doing):
     source(raises=OSError("connection refused"))
     with pytest.raises(corpus.CorpusError) as e:

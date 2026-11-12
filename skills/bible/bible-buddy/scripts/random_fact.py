@@ -21,6 +21,13 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
+# Hardcoded fallbacks in case fun-facts.md is missing or empty
+FALLBACK_FACTS = [
+    "希伯來文聖經沒有標點符號——所有的章節劃分都是中世紀才加上的，有時會切斷原本連貫的思想。",
+    "死海古卷中的以賽亞書卷軸（1QIsaᵃ）是目前最完整的希伯來聖經手抄本，比馬索拉文本早了約一千年。",
+    "「阿們」（אָמֵן）在希伯來文中的意思是「確實如此」或「我信靠」，字根 א-מ-נ 與 emunah（信實）相同。",
+]
+
 
 def main():
     exclude = None
@@ -31,19 +38,12 @@ def main():
 
     facts_path = os.path.join(os.path.dirname(__file__), "..", "references", "fun-facts.md")
 
-    # Hardcoded fallbacks in case fun-facts.md is missing or empty
-    FALLBACK_FACTS = [
-        "希伯來文聖經沒有標點符號——所有的章節劃分都是中世紀才加上的，有時會切斷原本連貫的思想。",
-        "死海古卷中的以賽亞書卷軸（1QIsaᵃ）是目前最完整的希伯來聖經手抄本，比馬索拉文本早了約一千年。",
-        "「阿們」（אָמֵן）在希伯來文中的意思是「確實如此」或「我信靠」，字根 א-מ-נ 與 emunah（信實）相同。",
-    ]
-
     if not os.path.exists(facts_path):
-        print(random.choice(FALLBACK_FACTS))
+        print(random.choice(FALLBACK_FACTS))  # nosec B311 - picks display text, not a secret
         return
 
     facts = []
-    with open(facts_path, "r", encoding="utf-8") as f:
+    with open(facts_path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line.startswith("- "):
@@ -55,7 +55,7 @@ def main():
     if not facts:
         facts = FALLBACK_FACTS
 
-    print(random.choice(facts))
+    print(random.choice(facts))  # nosec B311 - picks display text, not a secret
 
 
 if __name__ == "__main__":

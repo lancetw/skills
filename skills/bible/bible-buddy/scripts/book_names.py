@@ -86,7 +86,7 @@ for b in BOOKS:
     eng = b[1].lower()
     for roman, digit in [("i ", "1 "), ("ii ", "2 "), ("iii ", "3 ")]:
         if eng.startswith(roman):
-            _NUMERIC_ALIASES[digit + eng[len(roman):]] = eng
+            _NUMERIC_ALIASES[digit + eng[len(roman) :]] = eng
 
 
 def lookup(name: str):

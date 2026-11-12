@@ -5,3 +5,5 @@
 __pycache__/
 .venv/
 .gstack/
+.ruff_cache/
+.pytest_cache/

@@ -5,6 +5,7 @@ Single-user by design: module-level state, one event queue, notes on the local d
 
 Run:  uv run uvicorn server:app --port 8765   then open http://127.0.0.1:8765
 """
+
 import asyncio
 import hashlib
 import json
@@ -35,20 +36,26 @@ from fastapi.staticfiles import StaticFiles
 # A package-manager guard (pmg) launches `uv run` behind a short-lived loopback proxy and exports it
 # (HTTPS_PROXY=http://127.0.0.1:NNNNN, NODE_USE_ENV_PROXY=1). The Claude CLI we spawn would inherit
 # that and get "Connection refused" once the guard exits, so drop loopback proxies before anything spawns.
-for _k in [k for k in os.environ if k.lower() in ("http_proxy", "https_proxy", "all_proxy", "pip_proxy")]:
+for _k in [
+    k for k in os.environ if k.lower() in ("http_proxy", "https_proxy", "all_proxy", "pip_proxy")
+]:
     if "127.0.0.1" in os.environ[_k] or "localhost" in os.environ[_k]:
         del os.environ[_k]
 
-import corpus  # every call out to FHL; nothing else in this file talks to the network
-from corpus import MERGED_NOTE, SKILL, lookup
-from codex_backend import CodexClient, structured as codex_structured, selected_backend
+import corpus  # noqa: E402  every call out to FHL; nothing else in this file talks to the network
+from codex_backend import CodexClient, selected_backend  # noqa: E402
+from codex_backend import structured as codex_structured  # noqa: E402
+from corpus import MERGED_NOTE, SKILL, lookup  # noqa: E402
 
 HERE = Path(__file__).parent
 BACKEND = selected_backend()
 _SCRIPTS = str(SKILL / "scripts")
 if _SCRIPTS not in sys.path:
-    sys.path.append(_SCRIPTS)  # append, not insert(0): position 0 would let scripts/ shadow a stdlib module
+    sys.path.append(
+        _SCRIPTS
+    )  # append, not insert(0): position 0 would let scripts/ shadow a stdlib module
 from detect_desktop import detect_desktop  # noqa: E402
+
 
 @asynccontextmanager
 async def _lifespan(_app):
@@ -58,7 +65,9 @@ async def _lifespan(_app):
     if ref := os.environ.get("BIBLE_BUDDY_PASSAGE", "").strip():
         # seeded before the browser opens, so the page's first fetch is the requested passage —
         # no flash of whatever chapter this browser last had in localStorage
-        display.update(rev=1, ref=ref, version=os.environ.get("BIBLE_BUDDY_VERSION", "").strip() or "rcuv")
+        display.update(
+            rev=1, ref=ref, version=os.environ.get("BIBLE_BUDDY_VERSION", "").strip() or "rcuv"
+        )
     if not os.environ.get("BIBLE_BUDDY_NO_OPEN"):
         port = "8765"
         if "--port" in sys.argv:
@@ -74,7 +83,9 @@ async def _lifespan(_app):
 app = FastAPI(lifespan=_lifespan)
 passage: dict = {"reference": "", "version": "rcuv", "verses": []}
 notes: list[dict] = []
-hidden: set[str] = set()  # ids the user deleted; the auto passes are cached and must not resurrect them
+hidden: set[str] = (
+    set()
+)  # ids the user deleted; the auto passes are cached and must not resurrect them
 events: asyncio.Queue = asyncio.Queue()  # ponytail: one global queue = one user
 # What the page should be showing. The host agent writes here (POST /api/display); the page polls the rev
 # and reloads when it moves. Passage state above is what the *server* last fetched — the two only agree
@@ -92,7 +103,9 @@ SYSTEM_APPEND = """你在一個網頁查經工具裡工作。畫面左側顯示 
 
 @app.get("/")
 async def index():
-    return FileResponse(HERE / "static/index.html", headers={"Cache-Control": "no-cache"})  # a reload always revalidates
+    return FileResponse(
+        HERE / "static/index.html", headers={"Cache-Control": "no-cache"}
+    )  # a reload always revalidates
 
 
 class _NoCacheStatic(StaticFiles):
@@ -111,7 +124,9 @@ app.mount("/static", _NoCacheStatic(directory=HERE / "static"), name="static")
 # Note labels mix Chinese with Latin transliterations ("誤讀 · kecharitomene 蒙恩"), so a character
 # count is the wrong budget: a hard slice at 20 amputated words mid-token. Measure display width
 # instead (a CJK glyph is two half-widths, Latin/Greek/Hebrew one) and cut on a boundary.
-WIDE = re.compile(r"[\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]")
+WIDE = re.compile(
+    r"[\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6]"
+)
 LABEL_W = 40  # = 20 Chinese characters, the width the note chips and arrow labels were built for
 
 
@@ -132,7 +147,7 @@ def _fit(s: str, budget: int) -> str:
 def _whole_words(cut: str) -> str:
     """Never leave half a Latin word: back off to the last space if the cut landed inside one."""
     if cut and cut[-1].isascii() and cut[-1].isalnum() and " " in cut:
-        return cut[:cut.rfind(" ")]
+        return cut[: cut.rfind(" ")]
     return cut
 
 
@@ -140,26 +155,36 @@ def _short_label(s: str, budget: int = LABEL_W) -> str:
     s = " ".join(str(s).split())
     if _width(s) <= budget:
         return s
-    return _whole_words(_fit(s, budget - 1)).rstrip() + "…"  # budget - 1 leaves room for the ellipsis
+    return (
+        _whole_words(_fit(s, budget - 1)).rstrip() + "…"
+    )  # budget - 1 leaves room for the ellipsis
 
 
 @app.get("/api/passage")
-async def get_passage(book: str = "以賽亞書", chapter: int = 7, start: int = 10, end: int = 17, version: str = "rcuv"):
+async def get_passage(
+    book: str = "以賽亞書", chapter: int = 7, start: int = 10, end: int = 17, version: str = "rcuv"
+):
     try:
         r = await corpus.verses(book, chapter, start, end, version)
     except corpus.CorpusError as e:
         return {"error": str(e), "verses": []}
     changed = (r.get("reference", ""), version) != (passage["reference"], passage["version"])
-    passage.update(reference=r.get("reference", ""), version=version, verses=r.get("verses", []), book=book)
+    passage.update(
+        reference=r.get("reference", ""), version=version, verses=r.get("verses", []), book=book
+    )
     if changed:
         _load()  # notes live per passage+version on disk; the previous passage was saved on its last change
         global _client_stale
         _client_stale = True  # the agent's history is about the old passage; the next turn starts a fresh session
     if r.get("verses"):
         NOTES_DIR.mkdir(parents=True, exist_ok=True)
-        _LAST_FILE().write_text(json.dumps({"book": book, "chapter": chapter, "start": start, "end": end, "version": version}, ensure_ascii=False))
+        _last_file().write_text(
+            json.dumps(
+                {"book": book, "chapter": chapter, "start": start, "end": end, "version": version},
+                ensure_ascii=False,
+            )
+        )
     return r
-
 
 
 @app.get("/api/display")
@@ -176,11 +201,14 @@ async def set_display(body: dict):
     ref = (body.get("ref") or display["ref"] or passage["reference"]).strip()
     if not ref:
         return {"error": "尚未載入經文，請給 ref"}
-    display.update(rev=display["rev"] + 1, ref=ref, version=body.get("version") or passage["version"] or "rcuv")
+    display.update(
+        rev=display["rev"] + 1, ref=ref, version=body.get("version") or passage["version"] or "rcuv"
+    )
     return {"ok": True, **display}
 
 
 # ── FHL: everything below asks corpus, which owns the network and the shapes ──
+
 
 @app.get("/api/search")
 async def search(q: str, version: str = "rcuv", limit: int = 40):
@@ -219,10 +247,15 @@ async def side(book: str, chapter: int, start: int = 1, end: int = 200, version:
         r = await corpus.verses(book, chapter, start, end, version)
     except corpus.CorpusError as e:
         return {"version": version, "code": version, "verses": [], "error": str(e)}
-    return {"version": r.get("version", version), "code": version, "verses": r.get("verses", []), "error": r.get("error")}
+    return {
+        "version": r.get("version", version),
+        "code": version,
+        "verses": r.get("verses", []),
+        "error": r.get("error"),
+    }
 
 
-def _LAST_FILE() -> Path:
+def _last_file() -> Path:
     return NOTES_DIR / ".last-passage.json"
 
 
@@ -231,7 +264,7 @@ async def _ensure_passage() -> bool:
     depends on it (chat, ELI5, notes), reload the last passage the page asked for."""
     if passage["reference"]:
         return True
-    f = _LAST_FILE()
+    f = _last_file()
     if f.is_file():
         try:
             await get_passage(**json.loads(f.read_text()))
@@ -266,14 +299,16 @@ async def delete_quick_notes():
     p = _passes.get(key)
     for q in (p.notes if p else None) or []:
         hidden.discard(_note_id("quick", key, str(q["verse"]), q["quote"]))
-    _pass_forget(key)   # the cached notes, their cost and the Task that made them go together
+    _pass_forget(key)  # the cached notes, their cost and the Task that made them go together
     _save()
     return {"ok": True, "removed": len(gone)}
 
 
 @app.put("/api/notes/{nid}")
 async def edit_note(nid: str, body: dict):
-    n = _edit(nid, edited=True, **{k: body[k] for k in ("label", "body", "kind", "doodle") if k in body})
+    n = _edit(
+        nid, edited=True, **{k: body[k] for k in ("label", "body", "kind", "doodle") if k in body}
+    )
     return n or {"error": "not found"}
 
 
@@ -290,7 +325,9 @@ def _key() -> str:
 
 
 def _notes_file() -> Path:
-    return NOTES_DIR / f"{passage['reference'].replace(':', '.')} ({passage['version']}).json"  # ":" is awkward in macOS filenames
+    return (
+        NOTES_DIR / f"{passage['reference'].replace(':', '.')} ({passage['version']}).json"
+    )  # ":" is awkward in macOS filenames
 
 
 def _save() -> None:
@@ -299,9 +336,16 @@ def _save() -> None:
         return
     NOTES_DIR.mkdir(parents=True, exist_ok=True)
     p = _passes.get(_key())
-    data = {"reference": passage["reference"], "version": passage["version"], "book": passage.get("book", ""),
-            "notes": notes, "hidden": sorted(hidden), "quick": p.notes if p else None, "quick_cost": p.cost if p else None,
-            "clean": True}  # anchors are offsets into footnote-stripped text
+    data = {
+        "reference": passage["reference"],
+        "version": passage["version"],
+        "book": passage.get("book", ""),
+        "notes": notes,
+        "hidden": sorted(hidden),
+        "quick": p.notes if p else None,
+        "quick_cost": p.cost if p else None,
+        "clean": True,
+    }  # anchors are offsets into footnote-stripped text
     tmp = _notes_file().with_suffix(".json.tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=1))
     tmp.replace(_notes_file())  # atomic: a crash mid-write cannot leave a half file
@@ -310,7 +354,7 @@ def _save() -> None:
 def _shift(i: int, cuts: list) -> int:
     """Where offset `i` lands once the inline "([1.1]…)" footnotes are cut out. An offset inside a
     cut collapses to its start; one after a cut moves back by every cut that ended before it."""
-    return i - sum(l for s, l in cuts if s + l <= i) - sum(i - s for s, l in cuts if s < i < s + l)
+    return i - sum(n for s, n in cuts if s + n <= i) - sum(i - s for s, n in cuts if s < i < s + n)
 
 
 def _migrate_anchors() -> None:
@@ -336,17 +380,20 @@ def _restore_quick(d: dict) -> None:
 
 
 def _load() -> None:
-    notes.clear(); hidden.clear()
+    notes.clear()
+    hidden.clear()
     f = _notes_file() if passage["reference"] else None
     if not f or not f.is_file():
         return
     d = json.loads(f.read_text())
-    notes.extend(d.get("notes", [])); hidden.update(d.get("hidden", []))
+    notes.extend(d.get("notes", []))
+    hidden.update(d.get("hidden", []))
     zh = _zh_refs()  # a passage first read while the tables were still English gets its refs notes translated here
     for n in notes:
         n.update(zh.get(n["id"], {}))
     if not d.get("clean"):
-        _migrate_anchors(); _save()
+        _migrate_anchors()
+        _save()
     if d.get("quick") is not None:
         _restore_quick(d)
 
@@ -388,7 +435,11 @@ def _mint(verse, quote: str = "", *, id: str | None = None, label: str = "", **f
         "anchor": _anchor(verse, quote),
         "label": _short_label(label or quote),
         "kind": _one_of(fields.pop("kind", None), KINDS, "lexical"),
-        **({"doodle": _one_of(fields.pop("doodle", None), DOODLES, None)} if "doodle" in fields else {}),
+        **(
+            {"doodle": _one_of(fields.pop("doodle", None), DOODLES, None)}
+            if "doodle" in fields
+            else {}
+        ),
         **fields,
     }
 
@@ -399,7 +450,7 @@ def _add(note: dict) -> dict | None:
     if note["id"] in hidden or any(n["id"] == note["id"] for n in notes):
         return None
     notes.append(note)
-    _save()   # one small file per passage; a write per note is cheaper than a note lost to a missed save
+    _save()  # one small file per passage; a write per note is cheaper than a note lost to a missed save
     return note
 
 
@@ -450,8 +501,14 @@ def _drop(nid: str) -> bool:
     {"verse": int, "quote": str, "label": str, "body": str, "kind": str},
 )
 async def add_annotation(args: dict) -> dict:
-    note = _mint(args["verse"], args["quote"], label=args["label"],
-                 body=args.get("body", ""), kind=args.get("kind"), author="agent")
+    note = _mint(
+        args["verse"],
+        args["quote"],
+        label=args["label"],
+        body=args.get("body", ""),
+        kind=args.get("kind"),
+        author="agent",
+    )
     _add(note)
     await events.put({"type": "note", "note": note})
     miss = "" if note["anchor"] else "（quote 對不上畫面經文，已改為節層級筆記）"
@@ -468,9 +525,18 @@ async def update_annotation(args: dict) -> dict:
     if old is None:
         return {"content": [{"type": "text", "text": f"找不到筆記 {args['id']}"}], "is_error": True}
     body = str(args.get("body", old.get("body", "")))
-    if len(body) > 300:  # the tool asks for 1–3 sentences; a runaway body is cut rather than swallowing the card
+    if (
+        len(body) > 300
+    ):  # the tool asks for 1–3 sentences; a runaway body is cut rather than swallowing the card
         body = body[:300].rstrip() + "…"
-    n = _edit(old["id"], label=args["label"], body=body, kind=args.get("kind"), author="agent", verified=True)
+    n = _edit(
+        old["id"],
+        label=args["label"],
+        body=body,
+        kind=args.get("kind"),
+        author="agent",
+        verified=True,
+    )
     await events.put({"type": "note", "note": n})
     return {"content": [{"type": "text", "text": f"已更新筆記 {n['id']}"}]}
 
@@ -497,12 +563,24 @@ async def get_client() -> ClaudeSDKClient | CodexClient:
             cwd=str(HERE),
             setting_sources=["project"],
             system_prompt={"type": "preset", "preset": "claude_code", "append": SYSTEM_APPEND},
-            mcp_servers={"notes": create_sdk_mcp_server("notes", tools=[add_annotation, update_annotation])},
+            mcp_servers={
+                "notes": create_sdk_mcp_server("notes", tools=[add_annotation, update_annotation])
+            },
             # Least privilege: this agent's whole output is notes, which it writes through the notes MCP tools, so it
             # needs no Write/Edit (and with none, no acceptEdits). Bash stays because every bible-buddy fetch script runs
             # through it, but scoped to the two `uv` verbs the skill actually uses: anything else is denied, not prompted.
-            allowed_tools=["Read", "Grep", "Glob", "Bash(uv run:*)", "Bash(uv sync:*)", "WebSearch", "WebFetch", "Skill",
-                           "mcp__notes__add_annotation", "mcp__notes__update_annotation"],
+            allowed_tools=[
+                "Read",
+                "Grep",
+                "Glob",
+                "Bash(uv run:*)",
+                "Bash(uv sync:*)",
+                "WebSearch",
+                "WebFetch",
+                "Skill",
+                "mcp__notes__add_annotation",
+                "mcp__notes__update_annotation",
+            ],
             disallowed_tools=["AskUserQuestion", "Write", "Edit", "NotebookEdit"],
             max_turns=80,
             max_budget_usd=5.0,
@@ -523,10 +601,16 @@ _turn_running = False
 def _turn_prompt(message: str) -> str:
     """The passage as the agent sees it, fenced. The system prompt tells the agent the block is data,
     not instructions — so the verse text must not be able to close its own fence."""
-    ctx = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" + "".join(f"\n    （譯註：{f['text']}）" for f in v.get("footnotes", [])) for v in passage["verses"])
+    ctx = "\n".join(
+        f"[{v['verse']}] {v['text'] or MERGED_NOTE}"
+        + "".join(f"\n    （譯註：{f['text']}）" for f in v.get("footnotes", []))
+        for v in passage["verses"]
+    )
     ctx = ctx.replace("<<<PASSAGE", "＜＜＜PASSAGE").replace(">>>", "＞＞＞")
-    return (f"/bible-buddy {message}\n\n[目前畫面] {passage['reference']}（{passage['version']}）\n"
-            f"<<<PASSAGE\n{ctx}\n>>>")
+    return (
+        f"/bible-buddy {message}\n\n[目前畫面] {passage['reference']}（{passage['version']}）\n"
+        f"<<<PASSAGE\n{ctx}\n>>>"
+    )
 
 
 def _turn_event(m) -> list[dict]:
@@ -536,11 +620,23 @@ def _turn_event(m) -> list[dict]:
     if isinstance(m, SystemMessage) and m.subtype == "init":
         print("skills loaded:", m.data.get("skills"), file=sys.stderr)
     elif isinstance(m, AssistantMessage):
-        return [{"type": "text", "text": b.text} if isinstance(b, TextBlock)
-                else {"type": "tool", "name": b.name, "input": _short(b.input)}
-                for b in m.content if isinstance(b, (TextBlock, ToolUseBlock))]
+        return [
+            {"type": "text", "text": b.text}
+            if isinstance(b, TextBlock)
+            else {"type": "tool", "name": b.name, "input": _short(b.input)}
+            for b in m.content
+            if isinstance(b, (TextBlock, ToolUseBlock))
+        ]
     elif isinstance(m, ResultMessage):
-        return [{"type": "done", "cost": m.total_cost_usd, "turns": m.num_turns, "is_error": m.is_error, "result": m.result}]
+        return [
+            {
+                "type": "done",
+                "cost": m.total_cost_usd,
+                "turns": m.num_turns,
+                "is_error": m.is_error,
+                "result": m.result,
+            }
+        ]
     return []
 
 
@@ -592,6 +688,7 @@ def _event_stream():
                     break
         except asyncio.CancelledError:
             return
+
     return StreamingResponse(gen(), media_type="text/event-stream")
 
 
@@ -612,7 +709,9 @@ async def chat_reset():
 @app.post("/api/chat/stop")
 async def chat_stop():
     if _client is not None:
-        await _client.interrupt()  # the running turn ends with a ResultMessage, which the SSE loop turns into "done"
+        await (
+            _client.interrupt()
+        )  # the running turn ends with a ResultMessage, which the SSE loop turns into "done"
     return {"ok": True}
 
 
@@ -630,11 +729,11 @@ KINDS = ["lexical", "history", "misread", "crossref"]
 
 
 def _note_id(*parts: str) -> str:
-    return hashlib.sha1("|".join(parts).encode()).hexdigest()[:8]
+    return hashlib.sha1("|".join(parts).encode(), usedforsecurity=False).hexdigest()[:8]
 
 
 def _table_rows(path: Path):
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         if not line.startswith("| ") or line.startswith("| Scripture") or line.startswith("|---"):
             continue
         yield [c.strip() for c in line.strip().strip("|").split("|")]
@@ -647,7 +746,11 @@ def _verses_in(ref: str) -> list[str]:
         return []
     names = {info[1], info[3]}
     m = re.match(r"^(.+?) (\d+)(?::(\d+)(?:-(\d+))?)?$", ref)
-    if not m or m.group(1) not in names or int(m.group(2)) != int(re.search(r" (\d+)", passage["reference"]).group(1)):
+    if (
+        not m
+        or m.group(1) not in names
+        or int(m.group(2)) != int(re.search(r" (\d+)", passage["reference"]).group(1))
+    ):
         return []
     loaded = [str(v["verse"]) for v in passage["verses"]]
     if not m.group(3):
@@ -666,22 +769,39 @@ def _ref_notes():
         bold = re.search(r"\*\*(.+?)\*\*", cells[1])
         term = re.match(r"^(\S+) \((\w+)\)", cells[3])
         label = f"{bold.group(1)}＝{term.group(1)} {term.group(2)}" if bold and term else cells[3]
-        yield cells[0], (bold.group(1) if bold else None), {
-            "id": _note_id("bias", cells[0], cells[1]), "label": _short_label(label),
-            "body": f"**中譯：** {cells[2]}\n\n**原文：** {cells[3]}\n\n**影響：** {cells[4]}",
-            "kind": "misread", "author": "refs"}
+        yield (
+            cells[0],
+            (bold.group(1) if bold else None),
+            {
+                "id": _note_id("bias", cells[0], cells[1]),
+                "label": _short_label(label),
+                "body": f"**中譯：** {cells[2]}\n\n**原文：** {cells[3]}\n\n**影響：** {cells[4]}",
+                "kind": "misread",
+                "author": "refs",
+            },
+        )
     for cells in _table_rows(REFS / "commonly-misread-passages.md"):
         if len(cells) < 4:
             continue
-        term = re.search(r"\*\*(.+?)\*\*", cells[3])  # the key-term column leads with the bolded word: use it, not the first N characters
-        yield cells[0], None, {
-            "id": _note_id("misread", cells[0], cells[3]),
-            "label": _short_label(f"誤讀 · {term.group(1) if term else cells[3]}"),
-            "body": f"**常見誤讀：** {cells[1]}\n\n**第一世紀脈絡：** {cells[2]}",
-            "kind": "misread", "author": "refs"}
+        term = re.search(
+            r"\*\*(.+?)\*\*", cells[3]
+        )  # the key-term column leads with the bolded word: use it, not the first N characters
+        yield (
+            cells[0],
+            None,
+            {
+                "id": _note_id("misread", cells[0], cells[3]),
+                "label": _short_label(f"誤讀 · {term.group(1) if term else cells[3]}"),
+                "body": f"**常見誤讀：** {cells[1]}\n\n**第一世紀脈絡：** {cells[2]}",
+                "kind": "misread",
+                "author": "refs",
+            },
+        )
 
 
-ZH_REFS = HERE / "references/zh-notes.json"  # the tables are English; this is their label/body in Chinese, by note id
+ZH_REFS = (
+    HERE / "references/zh-notes.json"
+)  # the tables are English; this is their label/body in Chinese, by note id
 
 
 def _zh_refs() -> dict:
@@ -700,9 +820,9 @@ async def auto_notes_refs():
     for ref, phrase, fields in _ref_notes():
         for v in _verses_in(ref):
             text = _verse_text(v)
-            if phrase:                                     # a bias row underlines the Chinese phrase it is about
+            if phrase:  # a bias row underlines the Chinese phrase it is about
                 anchor = _anchor(v, phrase)
-            else:                                          # a misread row hangs its arrow off the first clause
+            else:  # a misread row hangs its arrow off the first clause
                 head = re.split(r"[，：「。；]", text)[0][:8]
                 anchor = {"start": 0, "end": len(head)} if head else None
             note = {**fields, **zh.get(fields["id"], {}), "verse": v, "anchor": anchor}
@@ -714,38 +834,75 @@ async def auto_notes_refs():
 # 塗鴉 vocabulary. The model picks a name, never a drawing: raw SVG from a model folds in on itself
 # at 26px and nothing here could check it before it reached the page. Keys must match DOODLES in
 # static/src/doodles.js — a name that doesn't just draws nothing, which is why the enum is pinned here.
-DOODLES = ["scroll", "lamp", "lens", "crown", "water", "fire", "mountain", "path", "door", "hand", "star", "sprout", "question"]
+DOODLES = [
+    "scroll",
+    "lamp",
+    "lens",
+    "crown",
+    "water",
+    "fire",
+    "mountain",
+    "path",
+    "door",
+    "hand",
+    "star",
+    "sprout",
+    "question",
+]
 DOODLE_RULE = """- doodle：從這組裡挑一個當這條筆記的塗鴉，挑最貼近筆記講的那件事，不要每條都挑同一個：
   scroll（文本、引用、用字）、lamp（看懂了、關鍵在這）、lens（值得細看的字）、crown（王、寶座）、
   water（海、河、洪水）、fire（火、審判）、mountain（山、高處）、path（路、遷徙、被擄）、
   door（門、入口）、hand（施行、賜下）、star（記號、應許）、sprout（新生、餘民）、question（一般讀法其實讀錯了）。"""
 
-QUICK_SCHEMA = {"type": "json_schema", "schema": {
-    "type": "object", "required": ["notes"],
-    "properties": {"notes": {"type": "array", "items": {
-        "type": "object", "required": ["verse", "quote", "label", "body", "kind", "doodle"],
-        "properties": {"verse": {"type": "integer"}, "quote": {"type": "string"}, "label": {"type": "string"},
-                       "body": {"type": "string"}, "kind": {"type": "string", "enum": KINDS},
-                       "doodle": {"type": "string", "enum": DOODLES}}}}}}}
+QUICK_SCHEMA = {
+    "type": "json_schema",
+    "schema": {
+        "type": "object",
+        "required": ["notes"],
+        "properties": {
+            "notes": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["verse", "quote", "label", "body", "kind", "doodle"],
+                    "properties": {
+                        "verse": {"type": "integer"},
+                        "quote": {"type": "string"},
+                        "label": {"type": "string"},
+                        "body": {"type": "string"},
+                        "kind": {"type": "string", "enum": KINDS},
+                        "doodle": {"type": "string", "enum": DOODLES},
+                    },
+                },
+            }
+        },
+    },
+}
 
 ELI5_RULES = """- 寫給完全沒有背景的人看（ELI5：像對聰明的 12 歲孩子解釋）：日常用語、短句，先說「這是什麼」再說「為什麼值得注意」，可用一個生活比喻。
 - 專有名詞或原文字出現時，緊接著用五個字內的白話解釋；不要堆術語。"""
 
-QUICK_PROMPT = """你是第一世紀猶太教背景的聖經學者。對下面這段經文產生 10 到 14 條 ELI5 筆記，讓讀者一眼看到值得停下來的字，而且看得懂為什麼。
+QUICK_PROMPT = (
+    """你是第一世紀猶太教背景的聖經學者。對下面這段經文產生 10 到 14 條 ELI5 筆記，讓讀者一眼看到值得停下來的字，而且看得懂為什麼。
 規則：
 - quote：逐字取自該節經文的子字串，2 到 8 個字，不含標點；每節最多 2 條，不同條不可重疊。
 - label：台灣繁體中文，20 個中文字寬（拉丁音譯算半形，兩個字母當一個中文字）以內，白話說重點；原文字義類可寫「音譯＝白話意思」，例「almah＝年輕女子」。
 - body：2 到 3 句、120 字內；不確定的寫「（待驗證）」。
-""" + ELI5_RULES + """
+"""
+    + ELI5_RULES
+    + """
 - kind：lexical（原文字義）、history（歷史處境）、misread（常見誤讀或翻譯偏差）、crossref（相關經文）。
-""" + DOODLE_RULE + """
+"""
+    + DOODLE_RULE
+    + """
 - 不要教會式應用，不要靈意化，不要說教。
 
 {ref}（{version}）
 {text}"""
+)
 
 
-QUICK_RETRIES = 3     # the CLI retries 529/5xx itself with backoff; its default (~10) kept the spinner up for minutes
+QUICK_RETRIES = 3  # the CLI retries 529/5xx itself with backoff; its default (~10) kept the spinner up for minutes
 QUICK_TIMEOUT_S = 180  # hard ceiling on one pass, so the button can never spin forever
 
 
@@ -764,10 +921,14 @@ class _Pass:
     __slots__ = ("status", "task", "notes", "cost")
 
     def __init__(self):
-        self.status = ""     # live progress, e.g. "API 529，重試 2/3（5s 後）"; the page polls it while it waits
-        self.task = None     # the Task doing the work: concurrent callers await this one, they do not start a second
-        self.notes = None    # what the pass produced, kept so the button cannot re-spend on the same passage
-        self.cost = None     # USD of that pass, shown next to the note count
+        self.status = (
+            ""  # live progress, e.g. "API 529，重試 2/3（5s 後）"; the page polls it while it waits
+        )
+        self.task = None  # the Task doing the work: concurrent callers await this one, they do not start a second
+        self.notes = (
+            None  # what the pass produced, kept so the button cannot re-spend on the same passage
+        )
+        self.cost = None  # USD of that pass, shown next to the note count
 
 
 _passes: dict[str, _Pass] = {}  # ponytail: in-memory; sqlite in the real thing
@@ -789,12 +950,19 @@ class LiveModel:
     def __call__(self, prompt: str, schema: dict):
         if BACKEND == "codex":
             return codex_structured(prompt, schema)
-        opts = ClaudeAgentOptions(cwd=str(HERE), setting_sources=[], tools=[], allowed_tools=[], max_turns=1,
-                                  output_format=schema, env={"CLAUDE_CODE_MAX_RETRIES": str(QUICK_RETRIES)})
+        opts = ClaudeAgentOptions(
+            cwd=str(HERE),
+            setting_sources=[],
+            tools=[],
+            allowed_tools=[],
+            max_turns=1,
+            output_format=schema,
+            env={"CLAUDE_CODE_MAX_RETRIES": str(QUICK_RETRIES)},
+        )
         return query(prompt=prompt, options=opts)
 
 
-MODEL = LiveModel()   # the seam: tests put a recorded model here and the API never comes into it
+MODEL = LiveModel()  # the seam: tests put a recorded model here and the API never comes into it
 
 
 def _retry_line(d: dict) -> str:
@@ -824,38 +992,57 @@ async def _structured(prompt: str, schema: dict, key: str) -> tuple[dict, float 
     finally:
         p.status = ""
         if p.task is None and p.notes is None:
-            _pass_forget(key)  # a one-off note leaves no record; the quick pass's is held open by its Task
+            _pass_forget(
+                key
+            )  # a one-off note leaves no record; the quick pass's is held open by its Task
     return {}, None
 
 
 async def _quick_run(key: str, ref: str, version: str, verses: list[dict]) -> list[dict]:
     """The model pass itself. Runs as its own Task so a page refresh (client disconnect) cannot cancel it."""
     text = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" for v in verses)
-    data, cost = await _structured(QUICK_PROMPT.format(ref=ref, version=version, text=text), QUICK_SCHEMA, key)
+    data, cost = await _structured(
+        QUICK_PROMPT.format(ref=ref, version=version, text=text), QUICK_SCHEMA, key
+    )
     _pass(key).cost = cost
     return data.get("notes", [])
 
 
-ONE_SCHEMA = {"type": "json_schema", "schema": {
-    "type": "object", "required": ["label", "body", "kind", "doodle"],
-    "properties": {"label": {"type": "string"}, "body": {"type": "string"}, "kind": {"type": "string", "enum": KINDS},
-                   "doodle": {"type": "string", "enum": DOODLES}}}}
+ONE_SCHEMA = {
+    "type": "json_schema",
+    "schema": {
+        "type": "object",
+        "required": ["label", "body", "kind", "doodle"],
+        "properties": {
+            "label": {"type": "string"},
+            "body": {"type": "string"},
+            "kind": {"type": "string", "enum": KINDS},
+            "doodle": {"type": "string", "enum": DOODLES},
+        },
+    },
+}
 
-ONE_PROMPT = """你是第一世紀猶太教背景的聖經學者。針對下面經文第 {verse} 節中的「{quote}」寫一條筆記。
+ONE_PROMPT = (
+    """你是第一世紀猶太教背景的聖經學者。針對下面經文第 {verse} 節中的「{quote}」寫一條筆記。
 規則：
 - label：台灣繁體中文，20 個中文字寬（拉丁音譯算半形，兩個字母當一個中文字）以內；原文字義類寫成「希伯來/希臘字 音譯＝意思」，例「עַלְמָה almah＝年輕女子」。
 - body：1 到 3 句，說明為什麼重要；不確定的寫「（待驗證）」。
 - kind：lexical（原文字義）、history（歷史處境）、misread（常見誤讀或翻譯偏差）、crossref（相關經文）。
-""" + DOODLE_RULE + """
+"""
+    + DOODLE_RULE
+    + """
 - 不要教會式應用，不要靈意化。
 
 {ref}（{version}）
 {text}"""
+)
 
 
 def _one_prompt(verse: str, quote: str, old: dict | None, eli5: bool) -> str:
     ctx = "\n".join(f"[{v['verse']}] {v['text'] or MERGED_NOTE}" for v in passage["verses"])
-    prompt = ONE_PROMPT.format(verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx)
+    prompt = ONE_PROMPT.format(
+        verse=verse, quote=quote, ref=passage["reference"], version=passage["version"], text=ctx
+    )
     if eli5:
         prompt += "\n補充規則：\n" + ELI5_RULES
     if old:
@@ -872,15 +1059,27 @@ async def auto_note_one(body: dict):
     if _anchor(verse, quote) is None:
         return {"error": "選取的字不在該節經文裡"}
     old = _find_note(str(body["replace"])) if body.get("replace") else None
-    eli5 = bool(body.get("eli5")) or (old or {}).get("style") == "eli5"  # a rewrite keeps the note's register
+    eli5 = (
+        bool(body.get("eli5")) or (old or {}).get("style") == "eli5"
+    )  # a rewrite keeps the note's register
     try:
-        r, cost = await _structured(_one_prompt(verse, quote, old, eli5), ONE_SCHEMA, f"one|{verse}|{quote}")
+        r, cost = await _structured(
+            _one_prompt(verse, quote, old, eli5), ONE_SCHEMA, f"one|{verse}|{quote}"
+        )
     except Exception as e:
         print("one-note failed:", verse, quote, repr(e), file=sys.stderr)
         return {"error": str(e)}
-    note = _mint(verse, quote, label=r.get("label", quote), body=r.get("body", ""),
-                 kind=r.get("kind"), doodle=r.get("doodle"), author="quick", cost=cost,
-                 **({"style": "eli5"} if eli5 else {}))
+    note = _mint(
+        verse,
+        quote,
+        label=r.get("label", quote),
+        body=r.get("body", ""),
+        kind=r.get("kind"),
+        doodle=r.get("doodle"),
+        author="quick",
+        cost=cost,
+        **({"style": "eli5"} if eli5 else {}),
+    )
     _replace(old, note) if old and old in notes else _add(note)
     return note
 
@@ -903,9 +1102,13 @@ async def auto_notes_quick():
     cached = p.notes is not None
     if not cached:
         if p.task is None or (p.task.done() and p.task.exception() is not None):
-            p.task = asyncio.create_task(_quick_run(key, passage["reference"], passage["version"], list(passage["verses"])))
+            p.task = asyncio.create_task(
+                _quick_run(key, passage["reference"], passage["version"], list(passage["verses"]))
+            )
         try:
-            p.notes = await asyncio.shield(p.task)  # shield: cancelling this request must not cancel the shared task
+            p.notes = await asyncio.shield(
+                p.task
+            )  # shield: cancelling this request must not cancel the shared task
         except Exception as e:
             print("quick pass failed:", key, repr(e), file=sys.stderr)
             return {"error": str(e)}
@@ -913,10 +1116,18 @@ async def auto_notes_quick():
         return []  # the passage changed while the pass ran; its notes belong to the other file, not this one
     out = []
     for n in p.notes:
-        note = _mint(n["verse"], n["quote"], id=_note_id("quick", key, str(n["verse"]), n["quote"]),
-                     label=n["label"], body=n["body"], kind=n["kind"], doodle=n.get("doodle"),
-                     author="quick",   # what the UI flags as unverified
-                     style="eli5", pass_cost=p.cost)  # the whole pass's USD, carried on each of its notes
+        note = _mint(
+            n["verse"],
+            n["quote"],
+            id=_note_id("quick", key, str(n["verse"]), n["quote"]),
+            label=n["label"],
+            body=n["body"],
+            kind=n["kind"],
+            doodle=n.get("doodle"),
+            author="quick",  # what the UI flags as unverified
+            style="eli5",
+            pass_cost=p.cost,
+        )  # the whole pass's USD, carried on each of its notes
         if _add(note):
             out.append(note)
     return {"notes": out, "cost": p.cost, "cached": cached}

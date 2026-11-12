@@ -23,11 +23,12 @@ Examples:
 
 import re
 import sys
-import xml.etree.ElementTree as ET
-import urllib.request
 import urllib.error
+import urllib.request
+import xml.etree.ElementTree as ET  # nosec B405 - parses a pinned upstream TEI file
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 
 BASE = "https://raw.githubusercontent.com/OpenGreekAndLatin/First1KGreek/master/data"
 NS = {"tei": "http://www.tei-c.org/ns/1.0"}
@@ -170,8 +171,13 @@ WORKS = [
         "book_range": (1, 5),
     },
     {
-        "keys": ["hermas mandates", "黑馬牧人書：誡命", "shepherd mandates",
-                 "hermas commandments", "shepherd commandments"],
+        "keys": [
+            "hermas mandates",
+            "黑馬牧人書：誡命",
+            "shepherd mandates",
+            "hermas commandments",
+            "shepherd commandments",
+        ],
         "name": "Shepherd of Hermas: Mandates (Greek)",
         "tlg": "tlg1419/tlg001",
         "xml": "tlg1419.tlg001.1st1K-grc1.xml",
@@ -180,8 +186,12 @@ WORKS = [
         "book_range": (6, 17),
     },
     {
-        "keys": ["hermas similitudes", "黑馬牧人書：比喻", "shepherd similitudes",
-                 "hermas parables"],
+        "keys": [
+            "hermas similitudes",
+            "黑馬牧人書：比喻",
+            "shepherd similitudes",
+            "hermas parables",
+        ],
         "name": "Shepherd of Hermas: Similitudes (Greek)",
         "tlg": "tlg1419/tlg001",
         "xml": "tlg1419.tlg001.1st1K-grc1.xml",
@@ -233,14 +243,17 @@ def _fetch_xml(tlg: str, xml_file: str) -> ET.Element:
         return _xml_cache[cache_key]
 
     url = f"{BASE}/{tlg}/{xml_file}"
-    req = urllib.request.Request(url, headers={
-        "User-Agent": "bible-buddy-skill/1.0",
-        "Accept": "application/xml",
-    })
-    with urllib.request.urlopen(req, timeout=30) as resp:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "bible-buddy-skill/1.0",
+            "Accept": "application/xml",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 - fixed https host
         data = resp.read()
 
-    root = ET.fromstring(data)
+    root = ET.fromstring(data)  # nosec B314 - parses a pinned upstream TEI file
     _xml_cache[cache_key] = root
     return root
 
@@ -276,6 +289,7 @@ def _safe_int(val: str) -> int | None:
 
 
 # ── Parsers ─────────────────────────────────────────────────────────
+
 
 def _parse_flat(root, chapter=None, section=None) -> list[dict]:
     """Parse flat chapter→section structure (most works)."""
@@ -316,8 +330,7 @@ def _parse_flat(root, chapter=None, section=None) -> list[dict]:
     return results
 
 
-def _parse_ignatius(root, epistle_n: int,
-                    chapter=None, section=None) -> list[dict]:
+def _parse_ignatius(root, epistle_n: int, chapter=None, section=None) -> list[dict]:
     """Parse Ignatius XML — select one epistle by number."""
     body = root.find(".//tei:text/tei:body", NS)
     top = body.find("tei:div", NS)
@@ -362,8 +375,7 @@ def _parse_ignatius(root, epistle_n: int,
     return results
 
 
-def _parse_hermas(root, book_start: int, book_end: int,
-                  div_num=None, chapter=None) -> list[dict]:
+def _parse_hermas(root, book_start: int, book_end: int, div_num=None, chapter=None) -> list[dict]:
     """Parse Hermas XML for a specific division range."""
     body = root.find(".//tei:text/tei:body", NS)
     top = body.find("tei:div", NS)
@@ -393,11 +405,13 @@ def _parse_hermas(root, book_start: int, book_end: int,
                     sec_texts.append(f"[{sec.get('n')}] {text}")
 
             if sec_texts:
-                results.append({
-                    "division": local_num,
-                    "chapter": ch_n,
-                    "text": "\n".join(sec_texts),
-                })
+                results.append(
+                    {
+                        "division": local_num,
+                        "chapter": ch_n,
+                        "text": "\n".join(sec_texts),
+                    }
+                )
 
     return results
 
@@ -437,24 +451,29 @@ def _parse_papias(root, fragments: list, frag_num=None) -> list[dict]:
                     if text:
                         para_texts.append(f"[{pi}] {text}")
                 if para_texts:
-                    results.append({
-                        "chapter": idx,
-                        "label": label,
-                        "text": "\n".join(para_texts),
-                    })
+                    results.append(
+                        {
+                            "chapter": idx,
+                            "label": label,
+                            "text": "\n".join(para_texts),
+                        }
+                    )
             else:
                 text = _clean(_extract_text(ch))
                 if text:
-                    results.append({
-                        "chapter": idx,
-                        "label": label,
-                        "text": text,
-                    })
+                    results.append(
+                        {
+                            "chapter": idx,
+                            "label": label,
+                            "text": text,
+                        }
+                    )
 
     return results
 
 
 # ── Public API ──────────────────────────────────────────────────────
+
 
 def fetch(work: str, arg1: int = None, arg2: int = None) -> dict:
     """Fetch Greek text.
@@ -563,13 +582,13 @@ def list_works() -> str:
         "  Fragment 3: HE 3.36",
         "",
         "Usage:",
-        '  fetch_apostolic_fathers_greek.py didache 1',
+        "  fetch_apostolic_fathers_greek.py didache 1",
         '  fetch_apostolic_fathers_greek.py "1 clement" 5',
         '  fetch_apostolic_fathers_greek.py "ignatius ephesians" 1',
         '  fetch_apostolic_fathers_greek.py "hermas mandates" 12 3',
-        '  fetch_apostolic_fathers_greek.py barnabas 5 3',
-        '  fetch_apostolic_fathers_greek.py papias',
-        '  fetch_apostolic_fathers_greek.py papias 1',
+        "  fetch_apostolic_fathers_greek.py barnabas 5 3",
+        "  fetch_apostolic_fathers_greek.py papias",
+        "  fetch_apostolic_fathers_greek.py papias 1",
     ]
     return "\n".join(lines)
 

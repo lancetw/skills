@@ -26,13 +26,11 @@ import html as html_mod
 import json
 import re
 import sys
+import urllib.request
+
+from book_names import lookup
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-import urllib.request
-import os
-
-sys.path.insert(0, os.path.dirname(__file__))
-from book_names import lookup
 
 API_BASE = "https://bible.fhl.net/api/qb.php"
 
@@ -46,23 +44,77 @@ def split_heading(text: str) -> tuple[str, str]:
     heads = [re.sub(r"<[^>]+>", "", h).strip() for h in HEADING.findall(text)]
     return HEADING.sub("", text), " ".join(h for h in heads if h)
 
+
 # bid: Protestant canon order, 1-66
 BOOK_BID = {
-    "Gen": 1, "Exod": 2, "Lev": 3, "Num": 4, "Deut": 5,
-    "Josh": 6, "Judg": 7, "Ruth": 8, "1Sam": 9, "2Sam": 10,
-    "1Kgs": 11, "2Kgs": 12, "1Chr": 13, "2Chr": 14, "Ezra": 15,
-    "Neh": 16, "Esth": 17, "Job": 18, "Ps": 19, "Prov": 20,
-    "Eccl": 21, "Song": 22, "Isa": 23, "Jer": 24, "Lam": 25,
-    "Ezek": 26, "Dan": 27, "Hos": 28, "Joel": 29, "Amos": 30,
-    "Obad": 31, "Jonah": 32, "Mic": 33, "Nah": 34, "Hab": 35,
-    "Zeph": 36, "Hag": 37, "Zech": 38, "Mal": 39,
-    "Matt": 40, "Mark": 41, "Luke": 42, "John": 43, "Acts": 44,
-    "Rom": 45, "1Cor": 46, "2Cor": 47, "Gal": 48, "Eph": 49,
-    "Phil": 50, "Col": 51, "1Thess": 52, "2Thess": 53,
-    "1Tim": 54, "2Tim": 55, "Titus": 56, "Phlm": 57, "Heb": 58,
-    "Jas": 59, "1Pet": 60, "2Pet": 61, "1John": 62, "2John": 63,
-    "3John": 64, "Jude": 65, "Rev": 66,
+    "Gen": 1,
+    "Exod": 2,
+    "Lev": 3,
+    "Num": 4,
+    "Deut": 5,
+    "Josh": 6,
+    "Judg": 7,
+    "Ruth": 8,
+    "1Sam": 9,
+    "2Sam": 10,
+    "1Kgs": 11,
+    "2Kgs": 12,
+    "1Chr": 13,
+    "2Chr": 14,
+    "Ezra": 15,
+    "Neh": 16,
+    "Esth": 17,
+    "Job": 18,
+    "Ps": 19,
+    "Prov": 20,
+    "Eccl": 21,
+    "Song": 22,
+    "Isa": 23,
+    "Jer": 24,
+    "Lam": 25,
+    "Ezek": 26,
+    "Dan": 27,
+    "Hos": 28,
+    "Joel": 29,
+    "Amos": 30,
+    "Obad": 31,
+    "Jonah": 32,
+    "Mic": 33,
+    "Nah": 34,
+    "Hab": 35,
+    "Zeph": 36,
+    "Hag": 37,
+    "Zech": 38,
+    "Mal": 39,
+    "Matt": 40,
+    "Mark": 41,
+    "Luke": 42,
+    "John": 43,
+    "Acts": 44,
+    "Rom": 45,
+    "1Cor": 46,
+    "2Cor": 47,
+    "Gal": 48,
+    "Eph": 49,
+    "Phil": 50,
+    "Col": 51,
+    "1Thess": 52,
+    "2Thess": 53,
+    "1Tim": 54,
+    "2Tim": 55,
+    "Titus": 56,
+    "Phlm": 57,
+    "Heb": 58,
+    "Jas": 59,
+    "1Pet": 60,
+    "2Pet": 61,
+    "1John": 62,
+    "2John": 63,
+    "3John": 64,
+    "Jude": 65,
+    "Rev": 66,
 }
+
 
 def _get_version_names() -> dict:
     """Fetch version names from FHL API (cached after first call)."""
@@ -71,19 +123,35 @@ def _get_version_names() -> dict:
 
     # Hardcoded common versions as fallback
     names = {
-        "unv": "和合本", "rcuv": "和合本2010", "lcc": "呂振中譯本",
-        "ncv": "新譯本", "tcv95": "現代中文譯本1995", "tcv2019": "現代中文譯本2019",
-        "ofm": "思高譯本", "recover": "恢復本", "wcb": "環球譯本",
-        "cnet": "NET聖經中譯本", "csb": "中文標準譯本", "cbol": "原文直譯",
-        "bhs": "舊約馬索拉原文", "fhlwh": "新約原文", "lxx": "七十士譯本",
-        "kjv": "KJV", "esv": "ESV", "nasb": "NASB", "asv": "ASV",
-        "bbe": "BBE", "web": "WEB", "darby": "Darby", "erv": "ERV",
+        "unv": "和合本",
+        "rcuv": "和合本2010",
+        "lcc": "呂振中譯本",
+        "ncv": "新譯本",
+        "tcv95": "現代中文譯本1995",
+        "tcv2019": "現代中文譯本2019",
+        "ofm": "思高譯本",
+        "recover": "恢復本",
+        "wcb": "環球譯本",
+        "cnet": "NET聖經中譯本",
+        "csb": "中文標準譯本",
+        "cbol": "原文直譯",
+        "bhs": "舊約馬索拉原文",
+        "fhlwh": "新約原文",
+        "lxx": "七十士譯本",
+        "kjv": "KJV",
+        "esv": "ESV",
+        "nasb": "NASB",
+        "asv": "ASV",
+        "bbe": "BBE",
+        "web": "WEB",
+        "darby": "Darby",
+        "erv": "ERV",
     }
 
     try:
         url = "https://bible.fhl.net/api/abv.php"
         req = urllib.request.Request(url, headers={"User-Agent": "torah-first-century-skill/1.0"})
-        resp = urllib.request.urlopen(req, timeout=10)
+        resp = urllib.request.urlopen(req, timeout=10)  # nosec B310 - fixed https host
         data = json.loads(resp.read().decode("utf-8"))
         for r in data.get("record", []):
             code = r.get("book", "")
@@ -99,6 +167,7 @@ def _get_version_names() -> dict:
 
 VERSION_NAMES = None  # Loaded lazily
 
+
 def _version_name(code: str) -> str:
     global VERSION_NAMES
     if VERSION_NAMES is None:
@@ -106,7 +175,9 @@ def _version_name(code: str) -> str:
     return VERSION_NAMES.get(code, code)
 
 
-def fetch(book: str, chapter: int, start_verse: int = None, end_verse: int = None, version: str = "rcuv") -> dict:
+def fetch(
+    book: str, chapter: int, start_verse: int = None, end_verse: int = None, version: str = "rcuv"
+) -> dict:
     # Always redirect 和合本(unv) to 和合本修訂版(rcuv)
     if version == "unv":
         version = "rcuv"
@@ -139,7 +210,7 @@ def fetch(book: str, chapter: int, start_verse: int = None, end_verse: int = Non
 
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "torah-first-century-skill/1.0"})
-        resp = urllib.request.urlopen(req, timeout=15)
+        resp = urllib.request.urlopen(req, timeout=15)  # nosec B310 - fixed https host
         data = json.loads(resp.read().decode("utf-8"))
     except Exception as e:
         return {"error": f"FHL API error: {e}", "url": url}
@@ -155,11 +226,11 @@ def fetch(book: str, chapter: int, start_verse: int = None, end_verse: int = Non
             continue
         text, heading = split_heading(text)
         # Clean up: remove HTML tags, heading markers
-        text = re.sub(r'<[^>]+>', '', text)
+        text = re.sub(r"<[^>]+>", "", text)
         text = html_mod.unescape(text).strip()
-        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r"\s+", " ", text)
         # Remove footnote markers like 【6】
-        text = re.sub(r'【\d+】', '', text)
+        text = re.sub(r"【\d+】", "", text)
         v = {"verse": str(rec.get("sec", "?")), "text": text}
         if heading:
             v["heading"] = html_mod.unescape(heading)

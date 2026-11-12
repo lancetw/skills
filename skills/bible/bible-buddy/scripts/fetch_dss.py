@@ -58,37 +58,85 @@ SCROLL_ALIASES = {
 
 # Chinese aliases for biblical books (DSS use abbreviated names)
 BOOK_ALIASES = {
-    "創世記": "Gen", "出埃及記": "Ex", "利未記": "Lev",
-    "民數記": "Num", "申命記": "Deut", "約書亞記": "Josh",
-    "士師記": "Judg", "路得記": "Ruth",
-    "撒母耳記上": "1Sam", "撒母耳記下": "2Sam",
-    "列王紀上": "1Kgs", "列王紀下": "2Kgs",
-    "以賽亞書": "Is", "耶利米書": "Jer", "以西結書": "Ezek",
-    "但以理書": "Dan", "何西阿書": "Hos", "約珥書": "Joel",
-    "阿摩司書": "Amos", "俄巴底亞書": "Obad", "約拿書": "Jonah",
-    "彌迦書": "Mic", "那鴻書": "Nah", "哈巴谷書": "Hab",
-    "西番雅書": "Zeph", "哈該書": "Hag", "撒迦利亞書": "Zech",
+    "創世記": "Gen",
+    "出埃及記": "Ex",
+    "利未記": "Lev",
+    "民數記": "Num",
+    "申命記": "Deut",
+    "約書亞記": "Josh",
+    "士師記": "Judg",
+    "路得記": "Ruth",
+    "撒母耳記上": "1Sam",
+    "撒母耳記下": "2Sam",
+    "列王紀上": "1Kgs",
+    "列王紀下": "2Kgs",
+    "以賽亞書": "Is",
+    "耶利米書": "Jer",
+    "以西結書": "Ezek",
+    "但以理書": "Dan",
+    "何西阿書": "Hos",
+    "約珥書": "Joel",
+    "阿摩司書": "Amos",
+    "俄巴底亞書": "Obad",
+    "約拿書": "Jonah",
+    "彌迦書": "Mic",
+    "那鴻書": "Nah",
+    "哈巴谷書": "Hab",
+    "西番雅書": "Zeph",
+    "哈該書": "Hag",
+    "撒迦利亞書": "Zech",
     "瑪拉基書": "Mal",
-    "詩篇": "Ps", "箴言": "Prov", "約伯記": "Job",
-    "雅歌": "Song", "傳道書": "Eccl", "哀歌": "Lam",
-    "以斯帖記": "Esth", "以斯拉記": "Ezra", "尼希米記": "Neh",
-    "歷代志上": "1Chr", "歷代志下": "2Chr",
+    "詩篇": "Ps",
+    "箴言": "Prov",
+    "約伯記": "Job",
+    "雅歌": "Song",
+    "傳道書": "Eccl",
+    "哀歌": "Lam",
+    "以斯帖記": "Esth",
+    "以斯拉記": "Ezra",
+    "尼希米記": "Neh",
+    "歷代志上": "1Chr",
+    "歷代志下": "2Chr",
     # English full names → DSS abbreviations
-    "genesis": "Gen", "exodus": "Ex", "leviticus": "Lev",
-    "numbers": "Num", "deuteronomy": "Deut", "joshua": "Josh",
-    "judges": "Judg", "ruth": "Ruth",
-    "1 samuel": "1Sam", "2 samuel": "2Sam",
-    "1 kings": "1Kgs", "2 kings": "2Kgs",
-    "isaiah": "Is", "jeremiah": "Jer", "ezekiel": "Ezek",
-    "daniel": "Dan", "hosea": "Hos", "joel": "Joel",
-    "amos": "Amos", "obadiah": "Obad", "jonah": "Jonah",
-    "micah": "Mic", "nahum": "Nah", "habakkuk": "Hab",
-    "zephaniah": "Zeph", "haggai": "Hag", "zechariah": "Zech",
+    "genesis": "Gen",
+    "exodus": "Ex",
+    "leviticus": "Lev",
+    "numbers": "Num",
+    "deuteronomy": "Deut",
+    "joshua": "Josh",
+    "judges": "Judg",
+    "ruth": "Ruth",
+    "1 samuel": "1Sam",
+    "2 samuel": "2Sam",
+    "1 kings": "1Kgs",
+    "2 kings": "2Kgs",
+    "isaiah": "Is",
+    "jeremiah": "Jer",
+    "ezekiel": "Ezek",
+    "daniel": "Dan",
+    "hosea": "Hos",
+    "joel": "Joel",
+    "amos": "Amos",
+    "obadiah": "Obad",
+    "jonah": "Jonah",
+    "micah": "Mic",
+    "nahum": "Nah",
+    "habakkuk": "Hab",
+    "zephaniah": "Zeph",
+    "haggai": "Hag",
+    "zechariah": "Zech",
     "malachi": "Mal",
-    "psalms": "Ps", "proverbs": "Prov", "job": "Job",
-    "song of songs": "Song", "ecclesiastes": "Eccl", "lamentations": "Lam",
-    "esther": "Esth", "ezra": "Ezra", "nehemiah": "Neh",
-    "1 chronicles": "1Chr", "2 chronicles": "2Chr",
+    "psalms": "Ps",
+    "proverbs": "Prov",
+    "job": "Job",
+    "song of songs": "Song",
+    "ecclesiastes": "Eccl",
+    "lamentations": "Lam",
+    "esther": "Esth",
+    "ezra": "Ezra",
+    "nehemiah": "Neh",
+    "1 chronicles": "1Chr",
+    "2 chronicles": "2Chr",
 }
 
 
@@ -128,14 +176,37 @@ def _resolve_book(name: str) -> str:
 def _scroll_books(F, L, s):
     """Return set of real biblical book names in a scroll (scanning line-first-words)."""
     books = set()
-    for frag in L.d(s, otype='fragment'):
-        for ln in L.d(frag, otype='line'):
-            words = L.d(ln, otype='word')
+    for frag in L.d(s, otype="fragment"):
+        for ln in L.d(frag, otype="line"):
+            words = L.d(ln, otype="word")
             if words:
                 b = F.book.v(words[0])
-                if b and b != 'NA' and not b.startswith(('1Q', '2Q', '3Q', '4Q', '5Q',
-                        '6Q', '8Q', '11Q', 'Mur', 'Mas', 'Pam', 'XH', 'XJ',
-                        'X4', '5/', 'Sd', 'Ar', '34')):
+                if (
+                    b
+                    and b != "NA"
+                    and not b.startswith(
+                        (
+                            "1Q",
+                            "2Q",
+                            "3Q",
+                            "4Q",
+                            "5Q",
+                            "6Q",
+                            "8Q",
+                            "11Q",
+                            "Mur",
+                            "Mas",
+                            "Pam",
+                            "XH",
+                            "XJ",
+                            "X4",
+                            "5/",
+                            "Sd",
+                            "Ar",
+                            "34",
+                        )
+                    )
+                ):
                     books.add(b)
     return books
 
@@ -144,15 +215,15 @@ def cmd_list(A):
     """List all scrolls."""
     F = A.api.F
     L = A.api.L
-    scrolls = sorted(F.otype.s('scroll'), key=lambda s: F.scroll.v(s))
+    scrolls = sorted(F.otype.s("scroll"), key=lambda s: F.scroll.v(s))
 
     biblical = []
     nonbiblical = []
 
     for s in scrolls:
         name = F.scroll.v(s)
-        frags = L.d(s, otype='fragment')
-        words = L.d(s, otype='word')
+        frags = L.d(s, otype="fragment")
+        words = L.d(s, otype="word")
         word_count = len(words)
         books = _scroll_books(F, L, s)
 
@@ -162,7 +233,7 @@ def cmd_list(A):
         else:
             nonbiblical.append(entry)
 
-    print(f"=== Dead Sea Scrolls Corpus ===")
+    print("=== Dead Sea Scrolls Corpus ===")
     print(f"Total: {len(biblical) + len(nonbiblical)} scrolls\n")
 
     print(f"── Biblical ({len(biblical)}) ──")
@@ -180,8 +251,8 @@ def cmd_list_biblical(A):
     L = A.api.L
 
     books = {}
-    for s in F.otype.s('scroll'):
-        words = L.d(s, otype='word')
+    for s in F.otype.s("scroll"):
+        words = L.d(s, otype="word")
         if not words:
             continue
         scroll_books = _scroll_books(F, L, s)
@@ -192,7 +263,7 @@ def cmd_list_biblical(A):
     print("=== DSS Biblical Manuscripts by Book ===\n")
     for book in sorted(books):
         items = sorted(books[book], key=lambda x: -x[1])
-        witnesses = ', '.join(f"{n}({w}w)" for n, w in items)
+        witnesses = ", ".join(f"{n}({w}w)" for n, w in items)
         print(f"  {book:<8} [{len(items)} witnesses] {witnesses}")
 
 
@@ -208,16 +279,16 @@ def cmd_info(A, scroll_id: str):
         print(f"Error: scroll '{scroll_id}' not found.", file=sys.stderr)
         sys.exit(1)
 
-    frags = L.d(s, otype='fragment')
-    words = L.d(s, otype='word')
-    lines = L.d(s, otype='line')
+    frags = L.d(s, otype="fragment")
+    words = L.d(s, otype="word")
+    lines = L.d(s, otype="line")
     book = F.book.v(words[0]) if words else None
 
     print(f"=== {scroll_id} ===")
     print(f"Fragments: {len(frags)}")
     print(f"Lines: {len(lines)}")
     print(f"Words: {len(words)}")
-    if book and book != 'NA':
+    if book and book != "NA":
         # Get chapter range
         chapters = set()
         for w in words:
@@ -227,13 +298,13 @@ def cmd_info(A, scroll_id: str):
         if chapters:
             print(f"Biblical: {book} (chapters {min(chapters)}-{max(chapters)})")
     else:
-        print(f"Type: Non-Biblical")
+        print("Type: Non-Biblical")
 
-    print(f"\nFragments:")
+    print("\nFragments:")
     for frag in frags:
         fname = F.fragment.v(frag)
-        flines = L.d(frag, otype='line')
-        fwords = L.d(frag, otype='word')
+        flines = L.d(frag, otype="line")
+        fwords = L.d(frag, otype="word")
         print(f"  Fragment {fname}: {len(flines)} lines, {len(fwords)} words")
 
 
@@ -244,12 +315,12 @@ def _find_scroll_node(A, scroll_id: str):
     """
     F = A.api.F
     # Exact match first
-    for s in F.otype.s('scroll'):
+    for s in F.otype.s("scroll"):
         if F.scroll.v(s) == scroll_id:
             return s, scroll_id
     # Case-insensitive fallback
     low = scroll_id.lower()
-    for s in F.otype.s('scroll'):
+    for s in F.otype.s("scroll"):
         if F.scroll.v(s).lower() == low:
             return s, F.scroll.v(s)
     return None, None
@@ -268,10 +339,10 @@ def cmd_fetch_scroll(A, scroll_id: str, frag_filter=None, start_line=None, end_l
         _suggest_scroll(A, scroll_id)
         sys.exit(1)
 
-    frags = L.d(s, otype='fragment')
-    words_total = L.d(s, otype='word')
+    frags = L.d(s, otype="fragment")
+    words_total = L.d(s, otype="word")
     book = F.book.v(words_total[0]) if words_total else None
-    is_biblical = book and book != 'NA'
+    is_biblical = book and book != "NA"
 
     print(f"=== {scroll_id} ===")
     if is_biblical:
@@ -283,7 +354,7 @@ def cmd_fetch_scroll(A, scroll_id: str, frag_filter=None, start_line=None, end_l
         if frag_filter is not None and str(fname) != str(frag_filter):
             continue
 
-        line_nodes = L.d(frag, otype='line')
+        line_nodes = L.d(frag, otype="line")
 
         print(f"── Fragment {fname} ──")
         for ln in line_nodes:
@@ -300,8 +371,8 @@ def cmd_fetch_scroll(A, scroll_id: str, frag_filter=None, start_line=None, end_l
                 except ValueError:
                     pass
 
-            word_nodes = L.d(ln, otype='word')
-            text = ' '.join(F.full.v(w) for w in word_nodes)
+            word_nodes = L.d(ln, otype="word")
+            text = " ".join(F.full.v(w) for w in word_nodes)
 
             if is_biblical:
                 # Add chapter:verse reference
@@ -324,18 +395,18 @@ def cmd_fetch_biblical(A, book_name: str, chapter=None, start_verse=None, end_ve
     # Find all scrolls containing this book
     matches = []
     target = book_abbr.lower()
-    for s in F.otype.s('scroll'):
-        frags = L.d(s, otype='fragment')
+    for s in F.otype.s("scroll"):
+        frags = L.d(s, otype="fragment")
         if not frags:
             continue
         # Check first word of each fragment — book changes happen at fragment boundaries
         # Also check first word of each line for scrolls with mixed content within fragments
         found = False
         for frag in frags:
-            lines = L.d(frag, otype='line')
+            lines = L.d(frag, otype="line")
             for ln in lines:
-                words = L.d(ln, otype='word')
-                if words and (F.book.v(words[0]) or '').lower() == target:
+                words = L.d(ln, otype="word")
+                if words and (F.book.v(words[0]) or "").lower() == target:
                     found = True
                     break
             if found:
@@ -344,23 +415,26 @@ def cmd_fetch_biblical(A, book_name: str, chapter=None, start_verse=None, end_ve
             matches.append(s)
 
     if not matches:
-        print(f"Error: no DSS manuscripts found for '{book_name}' (resolved: {book_abbr})", file=sys.stderr)
+        print(
+            f"Error: no DSS manuscripts found for '{book_name}' (resolved: {book_abbr})",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     print(f"=== DSS witnesses for {book_abbr} ({len(matches)} manuscripts) ===\n")
 
     for s in matches:
         scroll_name = F.scroll.v(s)
-        frags = L.d(s, otype='fragment')
+        frags = L.d(s, otype="fragment")
 
         scroll_lines = []
         for frag in frags:
             fname = F.fragment.v(frag)
-            line_nodes = L.d(frag, otype='line')
+            line_nodes = L.d(frag, otype="line")
 
             frag_lines = []
             for ln in line_nodes:
-                word_nodes = L.d(ln, otype='word')
+                word_nodes = L.d(ln, otype="word")
                 if not word_nodes:
                     continue
 
@@ -386,7 +460,7 @@ def cmd_fetch_biblical(A, book_name: str, chapter=None, start_verse=None, end_ve
                     except ValueError:
                         pass
 
-                text = ' '.join(F.full.v(w) for w in word_nodes)
+                text = " ".join(F.full.v(w) for w in word_nodes)
                 line_label = F.line.v(ln)
                 ref = f"{ch}:{vs}" if ch and vs else "?"
                 frag_lines.append(f"  [{ref:<8}] F{fname} L{line_label:<4} {text}")
@@ -394,8 +468,8 @@ def cmd_fetch_biblical(A, book_name: str, chapter=None, start_verse=None, end_ve
             if not frag_lines and chapter is None:
                 # Show fragment preview
                 for ln in line_nodes[:3]:
-                    word_nodes = L.d(ln, otype='word')
-                    text = ' '.join(F.full.v(w) for w in word_nodes)
+                    word_nodes = L.d(ln, otype="word")
+                    text = " ".join(F.full.v(w) for w in word_nodes)
                     line_label = F.line.v(ln)
                     frag_lines.append(f"  F{fname} L{line_label:<4} {text}")
                 if len(line_nodes) > 3:
@@ -415,7 +489,7 @@ def _suggest_scroll(A, query: str):
     F = A.api.F
     q = query.lower()
     suggestions = []
-    for s in F.otype.s('scroll'):
+    for s in F.otype.s("scroll"):
         name = F.scroll.v(s)
         if q in name.lower() or name.lower() in q:
             suggestions.append(name)
@@ -453,7 +527,10 @@ def main():
         cmd_info(A, args[1])
     elif cmd == "biblical":
         if len(args) < 2:
-            print("Usage: fetch_dss.py biblical <book> [chapter] [start_verse] [end_verse]", file=sys.stderr)
+            print(
+                "Usage: fetch_dss.py biblical <book> [chapter] [start_verse] [end_verse]",
+                file=sys.stderr,
+            )
             sys.exit(1)
         book = args[1]
         chapter = args[2] if len(args) > 2 else None

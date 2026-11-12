@@ -1645,11 +1645,15 @@ def _render_meta_card(fields: dict, title: str = "") -> str:
             if not items:
                 continue
             if all(" " not in x and len(x) <= 24 for x in items):  # tag-like -> pills
-                dd = '<dd class="doc-meta__tags">' + "".join(
-                    f"<span>{html.escape(x)}</span>" for x in items
-                ) + "</dd>"
+                dd = (
+                    '<dd class="doc-meta__tags">'
+                    + "".join(f"<span>{html.escape(x)}</span>" for x in items)
+                    + "</dd>"
+                )
             else:  # prose / long items -> bullet stack
-                dd = "<dd><ul>" + "".join(f"<li>{html.escape(x)}</li>" for x in items) + "</ul></dd>"
+                dd = (
+                    "<dd><ul>" + "".join(f"<li>{html.escape(x)}</li>" for x in items) + "</ul></dd>"
+                )
         else:
             if title and val.strip() == title.strip():
                 continue  # a field that only restates the H1 title adds nothing
@@ -1712,9 +1716,7 @@ def convert(md_text: str, title: str = "文件", timestamp: str | None = None) -
     meta_card = _render_meta_card(fields, title)
     if meta_card:
         body = (
-            body.replace("</h1>", "</h1>\n" + meta_card, 1)
-            if "</h1>" in body
-            else meta_card + body
+            body.replace("</h1>", "</h1>\n" + meta_card, 1) if "</h1>" in body else meta_card + body
         )
 
     return f"""<!DOCTYPE html>

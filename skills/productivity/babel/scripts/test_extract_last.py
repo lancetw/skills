@@ -7,6 +7,7 @@ several interim "let me check" text blocks, a final review block, then two
 response-less slash commands (/reload-skills, /babel). The extractor must return
 ONLY the final block.
 """
+
 import os
 import sys
 
@@ -31,7 +32,10 @@ def _asst_text(text):
 
 
 def _asst_tool():
-    return {"type": "assistant", "message": {"content": [{"type": "tool_use", "id": "x", "name": "Bash", "input": {}}]}}
+    return {
+        "type": "assistant",
+        "message": {"content": [{"type": "tool_use", "id": "x", "name": "Bash", "input": {}}]},
+    }
 
 
 def _tool_result():  # type "user" but NOT real input
@@ -67,10 +71,15 @@ def combined_text_and_tool_entry():
     """Rare: interim narration text lives in the SAME entry as its tool_use."""
     return [
         _user("do the thing"),
-        {"type": "assistant", "message": {"content": [
-            {"type": "text", "text": "Let me run it."},
-            {"type": "tool_use", "id": "x", "name": "Bash", "input": {}},
-        ]}},
+        {
+            "type": "assistant",
+            "message": {
+                "content": [
+                    {"type": "text", "text": "Let me run it."},
+                    {"type": "tool_use", "id": "x", "name": "Bash", "input": {}},
+                ]
+            },
+        },
         _tool_result(),
         _asst_text("Done — all green."),
         _cmd("babel"),
@@ -98,7 +107,7 @@ def split_final_answer():
     ]
 
 
-def demo():
+def test_extract_last_response():
     r = extract_last_response(tool_driven_turn())
     assert r == FINAL, f"expected only the final block, got:\n{r!r}"
     assert INTERIM not in r, "interim narration leaked into the translation source"
@@ -119,4 +128,4 @@ def demo():
 
 
 if __name__ == "__main__":
-    demo()
+    test_extract_last_response()

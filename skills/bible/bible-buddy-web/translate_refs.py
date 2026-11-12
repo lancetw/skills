@@ -6,17 +6,34 @@ falls back to English until this is re-run. Rerunning only translates ids the fi
 
     uv run --directory . python translate_refs.py [--batch 6] [--force]
 """
+
 import asyncio
 import json
 import sys
 
 from server import ZH_REFS, _ref_notes, _short_label, _structured
 
-SCHEMA = {"type": "json_schema", "schema": {
-    "type": "object", "required": ["items"],
-    "properties": {"items": {"type": "array", "items": {
-        "type": "object", "required": ["id", "label", "body"],
-        "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "body": {"type": "string"}}}}}}}
+SCHEMA = {
+    "type": "json_schema",
+    "schema": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+            "items": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["id", "label", "body"],
+                    "properties": {
+                        "id": {"type": "string"},
+                        "label": {"type": "string"},
+                        "body": {"type": "string"},
+                    },
+                },
+            }
+        },
+    },
+}
 
 PROMPT = """把下面每一條聖經筆記翻成台灣繁體中文。這些筆記給一般讀經的人看，不是給學者看。
 
@@ -63,7 +80,7 @@ async def main() -> None:
     print(f"{len(done)} already translated, {len(todo)} to go", file=sys.stderr)
     ids = list(todo)
     for n in range(0, len(ids), size):
-        chunk = {i: todo[i] for i in ids[n:n + size]}
+        chunk = {i: todo[i] for i in ids[n : n + size]}
         print(f"batch {n // size + 1}/{-(-len(ids) // size)} ({len(chunk)} rows)", file=sys.stderr)
         try:
             items = await run(chunk)

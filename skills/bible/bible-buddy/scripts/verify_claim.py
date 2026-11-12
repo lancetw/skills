@@ -21,14 +21,12 @@ import json
 import re
 import sys
 import unicodedata
-
-sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 import urllib.parse
 import urllib.request
-import os
 
-sys.path.insert(0, os.path.dirname(__file__))
 from book_names import lookup
+
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def verify(book: str, chapter: int, verse: int, word: str) -> dict:
@@ -38,11 +36,13 @@ def verify(book: str, chapter: int, verse: int, word: str) -> dict:
 
     chinese_name, sefaria_name, osis, _ = info
     ref = f"{sefaria_name}.{chapter}.{verse}"
-    url = f"https://www.sefaria.org/api/v3/texts/{urllib.parse.quote(ref)}?version=source&version=all"
+    url = (
+        f"https://www.sefaria.org/api/v3/texts/{urllib.parse.quote(ref)}?version=source&version=all"
+    )
 
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "bible-buddy-verify/1.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310 - fixed https host
             data = json.loads(resp.read().decode("utf-8"))
     except Exception as e:
         return {"verified": False, "error": f"Sefaria API error: {e}", "ref": ref}
@@ -62,7 +62,7 @@ def verify(book: str, chapter: int, verse: int, word: str) -> dict:
         return {"verified": False, "error": "No Hebrew text found", "ref": ref}
 
     # Clean HTML tags from Sefaria text
-    hebrew_text = re.sub(r'<[^>]+>', '', hebrew_text)
+    hebrew_text = re.sub(r"<[^>]+>", "", hebrew_text)
 
     # Strip cantillation marks for fuzzy matching
     def strip_accents(s):
@@ -79,13 +79,18 @@ def verify(book: str, chapter: int, verse: int, word: str) -> dict:
 
     def strip_all_marks(s):
         """Remove all diacritics for loosest matching."""
-        return "".join(c for c in unicodedata.normalize("NFD", s)
-                       if unicodedata.category(c) not in ("Mn", "Me", "Mc"))
+        return "".join(
+            c
+            for c in unicodedata.normalize("NFD", s)
+            if unicodedata.category(c) not in ("Mn", "Me", "Mc")
+        )
 
     # Try exact match, then stripped cantillation, then fully stripped
-    found = (word in hebrew_text or
-             strip_accents(word) in strip_accents(hebrew_text) or
-             strip_all_marks(word) in strip_all_marks(hebrew_text))
+    found = (
+        word in hebrew_text
+        or strip_accents(word) in strip_accents(hebrew_text)
+        or strip_all_marks(word) in strip_all_marks(hebrew_text)
+    )
 
     return {
         "verified": found,
