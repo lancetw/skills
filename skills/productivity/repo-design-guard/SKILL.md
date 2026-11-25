@@ -43,7 +43,7 @@ List the rules this repo's design system has: from its docs, from the component 
 - Every control has a name; list keys are values or ids, not indexes.
 - State is styled from state attributes, not inline styles.
 
-Then prove which are already gated. Make a throwaway copy (`git worktree add --detach "$(mktemp -d)/probe" HEAD`, install its dependencies there), plant one violation per rule, each in its own file written to pass every other rule of the house lint, and run the repo's lint and type check on it. A violation that fails only on an unrelated rule proves nothing: rewrite it until the only error is the rule under test, or none. Remove the copy with `git worktree remove --force` afterwards.
+Then prove which are already gated, one case per value where a rule lists several (each widget role on its own: a linter that flags `role="listbox"` may let `role="menu"` through). Make a throwaway copy (`git worktree add --detach "$(mktemp -d)/probe" HEAD`, install its dependencies there), plant one violation per rule, each in its own file written to pass every other rule of the house lint, and run the repo's lint and type check on it. A violation that fails only on an unrelated rule proves nothing (a `role="switch"` that fails for a missing `aria-checked` passes once the attribute is added): rewrite it until the only error is the rule under test, or none. Remove the copy with `git worktree remove --force` afterwards.
 
 Record a table: rule, gate that already catches it (with the error it prints), or "none". Only the "none" rows get a new check. Strict TypeScript and an every-category linter often catch most component rules already; CSS is the usual gap, because JS linters never read it.
 
@@ -57,23 +57,23 @@ Use what the repo already runs, in this order:
 
 1. **A rule of its existing linter**, configured in its config file, with the reason beside it as the repo does.
 2. **A linter built for it, when the stack fits and the repo allows a new dependency**: `@shadcn/lint` for Tailwind v4 (ESLint or Oxlint; contracts per component, no arbitrary values). Install it through the repo's dependency policy.
-3. **A small script in the repo's own script style** (a shell `scripts/check-*.sh` beside its others, or the language its scripts use) for what no linter reads, typically colors written outside the token file. Count literals in declaration values only: strip comments first, so neither a comment nor a selector such as `:hover` or `#id` counts.
+3. **A small script in the repo's own script style** (a shell `scripts/check-*.sh` beside its others, or the language its scripts use) for what no linter reads: colors written outside the token file, and widget roles the linter let through. Colors hide in two places: stylesheet declarations (hex, functional notation, common named colors; strip comments first and count values only, so neither a comment nor a selector such as `:hover` or `#id` counts) and strings in code (an SVG `fill="#fff"`, a chart color constant). Roles are a `grep` over JSX for `role=` with the library's widget roles. Read the baseline with `tr -d '\r'`, since a Windows checkout may turn its line ends into CRLF, and let every failure message point to DESIGN.md.
 
 Wire each new check into the command the existing lint job runs (`"lint": "<linter> && bash scripts/check-tokens.sh"`), never into a new CI job, so job names a merge rule requires stay as they are. When the repo tests its scripts in CI, add the script's test and lint (`shellcheck`) to that job's list.
 
 **Existing violations**: a new check usually starts red. Do not rewrite the screens in this change. Record a baseline (each file's count) that the check must match exactly: a new violation fails, a removed one fails until the baseline is lowered, so it never goes loose. Note in the script: `shortcut: counts literals, so swapping one literal for another passes`.
 
-Give each script a test that runs it on a throwaway folder: green when counts match, red on a new literal, red on a stale baseline, blind to comments, selectors and the token file.
+Give each script a test that runs it on a throwaway folder: green when counts match, red on a new literal in a stylesheet and in a code string, red on a stale baseline, red on a hand-made role, blind to comments, selectors and the token file.
 
 ### DESIGN.md
 
 At the root of the UI package (the path its merge rule allows), in the [DESIGN.md format](https://github.com/google-labs-code/design.md) (alpha: YAML front matter, markdown body).
 
-- **A token file or prototype already holds the values** → front matter has `name` and `description` only; the body names those files as the source and never copies a value, which would drift.
+- **A token file or prototype already holds the values** → front matter has `name`, `description` and `omitted`, listing each token section (`colors`, `typography`, `spacing`, `rounded`, `motion`, `components`) with the reason "values live in <token file>"; the body names those files as the source and never copies a value, which would drift.
 - **No token source, Tailwind or a DTCG pipeline** → DESIGN.md is the source: tokens in its front matter, written out with `npx -p @google/design.md designmd export --format css-tailwind|json-tailwind|dtcg DESIGN.md` (the dot-free `designmd` alias; the CLI has no plain-CSS format).
 - **No token source, plain CSS** → write the custom properties into one token stylesheet first, then treat it as the case above.
 
-Body, about forty lines: tokens grouped by role with what each group is for, and the line "pick a token by its role, not by its value"; how components take the look (the library's styling hook, the layer order); a table of each rule and the gate that enforces it, including the rules that only a reviewer can judge. Do not restate decisions already written in `AGENTS.md` / `CLAUDE.md`: point to them. Every fact in it comes from the repo; leave out what you cannot point to.
+Body, about sixty lines, in the format's section order, leaving out the sections the repo has nothing for: Overview (where the values live, as `@path` references resolved from DESIGN.md's folder, and "pick a token by its role, not by its value"), Colors (token groups by role), Typography, Layout, Elevation & Depth, Shapes, Motion, Components (how components take the look: the library's styling hook, the layer order), Do's and Don'ts (each rule and the gate that enforces it, stating the gate's reach honestly: what it reads, what it skips, and the rules only a reviewer can judge). When the repo allows running it, `npx -p @google/design.md designmd lint DESIGN.md` checks the file against the format. Do not restate decisions already written in `AGENTS.md` / `CLAUDE.md`: point to them. Every fact in it comes from the repo; leave out what you cannot point to.
 
 ### Component library skill
 
@@ -93,6 +93,7 @@ Body, about forty lines: tokens grouped by role with what each group is for, and
 1. **Green**: in the worktree, the full lint and type commands exit 0, and each new script's test passes.
 2. **Red**, once per new check: in a throwaway copy that carries the change, plant one violation the check covers (a color literal in a stylesheet) and run the lint command. It must exit non-zero with the new check's own message. A failure from another rule does not count.
 3. For each rule an existing gate already covered (section 2), the probe's output is the red evidence.
+4. **Landing**: run the new checks, from this branch, against every other open worktree or branch of the repo (`git worktree list`), with this branch's baseline. Each one that goes red is a branch the change would break on its next rebase: list them. The baseline is a snapshot of the base commit; regenerate it right before landing.
 
 Done when every rule in the table has a red run, each with the command and its output.
 
