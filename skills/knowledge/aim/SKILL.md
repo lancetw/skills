@@ -1,10 +1,10 @@
 ---
-name: ambition
+name: aim
 description: Rewrite a task prompt so a model aims higher instead of only faster — up in altitude (the goal beyond the goal), down in depth (an expert's instruments, the raw data, an outside judge) and out in range (fields the task never names) — and hand back the rewritten prompt without running it. Use when the user asks to make a prompt, task or plan more ambitious, deeper or less shallow, says "we're not ambitious enough", 「更有野心」「想大一點」「做深一點」「幫我把這個 prompt 升級」, or hands over a routine task (fill a template, fix one bug, make a deck) and asks how to get more out of the model.
 license: MIT
 ---
 
-# Ambition
+# Aim
 
 Speed (the same work in less time) needs no help. This skill works the other three kinds of ambition:
 

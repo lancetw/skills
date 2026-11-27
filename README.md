@@ -32,7 +32,7 @@ skills/
 | [prd-tw](skills/knowledge/prd-tw/SKILL.md) | Help non-technical stakeholders write clear requirements documents in Taiwan Traditional Chinese |
 | [humanizer-zh-tw](skills/knowledge/humanizer-zh-tw/SKILL.md) | Remove AI-generated traces from Chinese text |
 | [know-your-unknowns](skills/knowledge/know-your-unknowns/SKILL.md) | Surface unknowns as interactive HTML artifacts — 11 techniques for before, during, and after implementation |
-| [ambition](skills/knowledge/ambition/SKILL.md) | Rewrite a task prompt to aim higher in altitude, depth and range — returns the prompt, does not run it |
+| [aim](skills/knowledge/aim/SKILL.md) | Rewrite a task prompt to aim higher in altitude, depth and range — returns the prompt, does not run it |
 
 ### Productivity &nbsp;·&nbsp; `skills/productivity/`
 
