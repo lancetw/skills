@@ -3,6 +3,7 @@
   "description": "Taiwan Traditional Chinese (繁體中文) skills for AI coding agents — Bible study, zh-TW knowledge and writing, productivity and dev tools.",
   "skills": [
     "./skills/app/app-device-fix",
+    "./skills/app/app-entropy-fix",
     "./skills/app/app-fresh-fix",
     "./skills/app/app-state-fix",
     "./skills/app/app-unwaterfall-fix",

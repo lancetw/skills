@@ -51,6 +51,7 @@ skills/
 | [app-fresh-fix](skills/app/app-fresh-fix/SKILL.md) | Whole-project sweep after a new model release: fix what is proven broken, inconsistent, inefficient or unneeded; list the rest |
 | [app-state-fix](skills/app/app-state-fix/SKILL.md) | Find implicit state machines, make the safe ones explicit without behavior change, list impossible states for review |
 | [app-device-fix](skills/app/app-device-fix/SKILL.md) | Browser sweep across widths, touch and throttled 3G; fix what breaks with before/after screenshots |
+| [app-entropy-fix](skills/app/app-entropy-fix/SKILL.md) | Long-running architecture entropy reduction: converge on the day-one shape in rounds, each migrating every caller, deleting the old code and adding a regression guard |
 | [app-unwaterfall-fix](skills/app/app-unwaterfall-fix/SKILL.md) | Make independent awaits on hot paths concurrent, pinned by tests; list unsure or ordering-sensitive ones for review |
 
 ### Matt &nbsp;·&nbsp; `skills/matt/`
